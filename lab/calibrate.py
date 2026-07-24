@@ -34,7 +34,12 @@ ROOT = Path(__file__).resolve().parents[1]
 FLIGHTS_DIR = ROOT / "data/flights"
 OUT = ROOT / "data/calibration.json"
 TOL = 0.10          # only correct types off by more than 10%
-MIN_N = 8           # need at least this many clean flights to trust a factor
+# Emit a factor only from a well-sampled median. With n in the teens the median
+# is noisy and we would be fitting sampling noise into a "correction" — visible
+# in the widebodies, where small-n types disagree in sign among near-identical
+# aircraft. Under-sampled types stay uncalibrated and are flagged provisional.
+MIN_N = 100
+MIN_N_SHOW = 8      # still report the observed median down to this n
 
 # Published typical CRUISE fuel flow (kg/h), whole-aircraft — industry figures
 # used as calibration anchors. Documented in the README; a firmer source
@@ -69,9 +74,10 @@ def main():
     rows = load_clean()
     factors = {}
     print(f"{'type':5} {'n':>4} {'obs_median':>10} {'published':>9} {'dev%':>6} {'factor':>7}")
+    provisional = []
     for t in sorted(rows, key=lambda x: -len(rows[x])):
         ffs = rows[t]
-        if len(ffs) < MIN_N:
+        if len(ffs) < MIN_N_SHOW:
             continue
         obs = st.median(ffs)
         pub = PUB_CRUISE_FF.get(t)
@@ -82,29 +88,45 @@ def main():
         factor = pub / obs
         mark = ""
         if abs(factor - 1.0) > TOL:
-            factors[t] = round(factor, 4)
-            mark = "  <-- calibrated"
+            if len(ffs) >= MIN_N:
+                factors[t] = round(factor, 4)
+                mark = "  <-- calibrated"
+            else:
+                provisional.append((t, len(ffs), dev))
+                mark = f"  <-- provisional (n<{MIN_N}, NOT calibrated)"
         print(f"{t:5} {len(ffs):>4} {obs:>10.0f} {pub:>9} {dev:>+6.0f} {factor:>7.3f}{mark}")
 
     OUT.write_text(json.dumps(factors, indent=2, sort_keys=True))
     print(f"\nwrote {OUT} with {len(factors)} correction factor(s):")
     print(json.dumps(factors, indent=2, sort_keys=True))
 
-    # post-calibration check
-    print("\n### post-calibration deviation vs published ###")
-    worst = 0.0
+    if provisional:
+        print("\nPROVISIONAL (bias seen but sample too small to correct): "
+              + ", ".join(f"{t} n={n} ({d:+.0f}%)" for t, n, d in provisional))
+
+    # Post-calibration check. NOTE: for a CALIBRATED type this is tautological
+    # (the factor is defined to hit the published value) — it is a consistency
+    # check, not independent validation. The meaningful evidence is the set of
+    # UNcalibrated types: those were modelled with no anchoring and still land
+    # near the published figures, which is what validates the underlying model.
+    print("\n### deviation vs published, after calibration ###")
+    worst_uncal = 0.0
+    print(f"  {'type':5} {'n':>5} {'dev%':>6}   status")
     for t in sorted(rows):
         ffs = rows[t]
         pub = PUB_CRUISE_FF.get(t)
-        if len(ffs) < MIN_N or not pub:
+        if len(ffs) < MIN_N_SHOW or not pub:
             continue
         k = factors.get(t, 1.0)
-        obs = st.median(ffs) * k
-        dev = (obs - pub) / pub * 100
-        worst = max(worst, abs(dev))
-        flag = "" if abs(dev) <= 15 else "  <-- STILL >15%"
-        print(f"  {t:5} n={len(ffs):>3}  dev {dev:>+5.0f}%{flag}")
-    print(f"\nworst |dev| after calibration: {worst:.0f}%  (target <=15%)")
+        dev = (st.median(ffs) * k - pub) / pub * 100
+        if t in factors:
+            status = "calibrated (anchored: dev=0 by construction)"
+        else:
+            status = "UNcalibrated -> independent check"
+            worst_uncal = max(worst_uncal, abs(dev))
+        flag = "  <-- >15%" if abs(dev) > 15 else ""
+        print(f"  {t:5} {len(ffs):>5} {dev:>+6.0f}   {status}{flag}")
+    print(f"\nworst |dev| among UNCALIBRATED types: {worst_uncal:.0f}%  (target <=15%)")
 
 
 if __name__ == "__main__":
