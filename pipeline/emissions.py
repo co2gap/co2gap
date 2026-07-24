@@ -25,6 +25,8 @@ import math
 from dataclasses import dataclass
 from typing import Optional
 
+import numpy as np
+
 from openap import FuelFlow, prop
 import openap.aero as _aero
 
@@ -141,9 +143,10 @@ def _get_ac(model: str) -> dict:
     return ac
 
 
-def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
-                  reserve_kg=DEFAULT_RESERVE_KG, tas_mode="ias",
-                  iters=3) -> FuelResult:
+def _estimate_fuel_scalar(flight, load_factor=DEFAULT_LOAD_FACTOR,
+                          reserve_kg=DEFAULT_RESERVE_KG, tas_mode="ias",
+                          iters=3) -> FuelResult:
+    """Reference per-step integrator (kept for validation of the vector path)."""
     from trajectories import haversine_km
 
     model = openap_model(flight.typecode)
@@ -221,5 +224,124 @@ def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
         typecode=flight.typecode, ok=True, fuel_kg=burned,
         co2_kg=burned * CO2_PER_KG_FUEL, duration_s=duration,
         dist_flown_km=dist_km, init_mass_kg=m0, cruise_ff_kgph=cruise_ff,
+        tas_mode=tas_mode, phase_fuel=phase_fuel,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Vectorised integrator (default). Same physics as the scalar reference, but
+# FuelFlow.enroute is called once per iteration on the whole step array instead
+# of once per step in a Python loop (~100x faster). Mass decreases along the
+# flight, so we converge a mass *profile* over a few array passes (fuel is a
+# small, weakly-coupled fraction of mass, so this converges in 3-4 passes).
+# ---------------------------------------------------------------------------
+
+def _haversine_km_arr(lat1, lon1, lat2, lon2):
+    r = 6371.0088
+    p1, p2 = np.radians(lat1), np.radians(lat2)
+    dphi = np.radians(lat2 - lat1)
+    dlmb = np.radians(lon2 - lon1)
+    a = np.sin(dphi / 2) ** 2 + np.cos(p1) * np.cos(p2) * np.sin(dlmb / 2) ** 2
+    return 2 * r * np.arcsin(np.sqrt(np.clip(a, 0.0, 1.0)))
+
+
+def _tas_kt_arr(ias_kt, alt_ft, gs_kt, mode):
+    """Vectorised best-available TAS (kt): IAS->TAS (compressible) else GS."""
+    use_ias = (mode != "gs") & np.isfinite(ias_kt) & (ias_kt > 40)
+    cas_ms = np.where(np.isfinite(ias_kt), ias_kt, 0.0) * KTS_TO_MS
+    h_m = alt_ft * 0.3048
+    tas_ias_kt = np.full_like(alt_ft, np.nan)
+    fn = getattr(_aero, "vcas2vtas", None) or getattr(_aero, "cas2tas", None)
+    if fn is not None:
+        try:
+            tas_ias_kt = np.asarray(fn(cas_ms, h_m), dtype=float) / KTS_TO_MS
+        except Exception:
+            fn = None
+    if fn is None:
+        try:
+            _, rho, _ = _aero.vatmos(h_m)
+            tas_ias_kt = cas_ms * np.sqrt(_aero.rho0 / rho) / KTS_TO_MS
+        except Exception:
+            tas_ias_kt = cas_ms / KTS_TO_MS
+    return np.where(use_ias, tas_ias_kt, gs_kt)
+
+
+def _steps_from_flight(flight, tas_mode):
+    pts = flight.points
+    n = len(pts)
+    if n < 2:
+        return None
+    t = np.fromiter((p.t for p in pts), float, n)
+    lat = np.fromiter((p.lat for p in pts), float, n)
+    lon = np.fromiter((p.lon for p in pts), float, n)
+    alt = np.fromiter((p.alt if p.alt is not None else 0.0 for p in pts), float, n)
+    gs = np.fromiter((p.gs if p.gs is not None else np.nan for p in pts), float, n)
+    ias = np.fromiter((p.ias if p.ias is not None else np.nan for p in pts), float, n)
+
+    dt = np.diff(t)
+    d_km = _haversine_km_arr(lat[:-1], lon[:-1], lat[1:], lon[1:])
+    alt0 = alt[:-1]
+    vs = (alt[1:] - alt0) / np.where(dt > 0, dt, 1.0) * 60.0
+    tas = _tas_kt_arr(ias[:-1], alt0, gs[:-1], tas_mode)
+    valid = (dt > 0) & (dt <= 600) & np.isfinite(tas) & (tas > 0)
+    if valid.sum() < 10:
+        return None
+    return dt[valid], alt0[valid], vs[valid], tas[valid], d_km[valid]
+
+
+def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
+                  reserve_kg=DEFAULT_RESERVE_KG, tas_mode="ias",
+                  iters=4) -> FuelResult:
+    model = openap_model(flight.typecode)
+    if model is None:
+        return FuelResult(flight.typecode, False, "type not in OpenAP")
+    ff = _get_ff(model)
+    if ff is None:
+        return FuelResult(flight.typecode, False, "no OpenAP model/drag polar")
+
+    steps = _steps_from_flight(flight, tas_mode)
+    if steps is None:
+        return FuelResult(flight.typecode, False, "too few usable steps")
+    dt, alt, vs, tas, d_km = steps
+
+    ac = _get_ac(model)
+    oew, mtow = ac["oew"], ac["mtow"]
+    pax_max = ac.get("pax", {}).get("max", 150)
+    payload = load_factor * pax_max * PAX_WEIGHT_KG
+
+    trip_fuel = 0.25 * (mtow - oew)
+    cum_before = np.zeros_like(dt)
+    burn = np.zeros_like(dt)
+    m0 = min(oew + payload + reserve_kg + trip_fuel, mtow)
+    for _ in range(iters):
+        m0 = min(oew + payload + reserve_kg + trip_fuel, mtow)
+        mass = np.maximum(m0 - cum_before, oew)
+        fps = np.asarray(ff.enroute(mass=mass, tas=tas, alt=alt, vs=vs), dtype=float)
+        fps = np.where(np.isfinite(fps) & (fps > 0), fps, 0.0)
+        burn = fps * dt
+        cum = np.cumsum(burn)
+        cum_before = cum - burn
+        trip_fuel = float(cum[-1])
+    burned = trip_fuel
+
+    # phase breakdown (vectorised)
+    ph_climb = (alt >= 1000) & (vs > 350)
+    ph_desc = (alt >= 1000) & (vs < -350)
+    ph_ground = alt < 1000
+    ph_cruise = ~(ph_climb | ph_desc | ph_ground)
+    phase_fuel = {
+        "climb": float(burn[ph_climb].sum()),
+        "cruise": float(burn[ph_cruise].sum()),
+        "descent": float(burn[ph_desc].sum()),
+        "ground": float(burn[ph_ground].sum()),
+        "unknown": 0.0,
+    }
+    cruise_time = float(dt[ph_cruise].sum())
+    cruise_ff = (phase_fuel["cruise"] / cruise_time * 3600.0) if cruise_time > 0 else 0.0
+
+    return FuelResult(
+        typecode=flight.typecode, ok=True, fuel_kg=burned,
+        co2_kg=burned * CO2_PER_KG_FUEL, duration_s=float(dt.sum()),
+        dist_flown_km=float(d_km.sum()), init_mass_kg=m0, cruise_ff_kgph=cruise_ff,
         tas_mode=tas_mode, phase_fuel=phase_fuel,
     )
