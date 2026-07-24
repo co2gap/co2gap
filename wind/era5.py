@@ -75,9 +75,10 @@ class WindField:
         import xarray as xr
         from scipy.interpolate import RegularGridInterpolator
 
-        ds = xr.open_mfdataset(sorted(map(str, nc_paths)), combine="by_coords")
+        # open each day and concat on time (no dask / open_mfdataset needed)
+        parts = [xr.open_dataset(str(p)) for p in sorted(map(str, nc_paths))]
+        ds = xr.concat(parts, dim="valid_time") if len(parts) > 1 else parts[0]
         ds = ds.sortby("valid_time").sortby("latitude").sortby("longitude")
-        # levels ascending in hPa
         ds = ds.sortby("pressure_level")
 
         self.times = ds["valid_time"].values.astype("datetime64[s]").astype(np.int64)
