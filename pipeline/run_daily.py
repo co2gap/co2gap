@@ -160,10 +160,10 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
     day_iso = d.isoformat()
     # accept either "2026.07.19" or the full release tag
     base = day_tag if day_tag.startswith("v") else f"v{day_tag}-planes-readsb-prod-0"
-    parts = [ROOT / "data/raw" / f"{base}.tar.{s}" for s in ("aa", "ab", "ac")]
-    for p in parts:
-        if not p.exists():
-            raise SystemExit(f"missing dump part: {p}")
+    # the dump has a day-dependent number of parts (aa, ab, [ac], ...) — take all
+    parts = sorted((ROOT / "data/raw").glob(f"{base}.tar.*"))
+    if not parts:
+        raise SystemExit(f"no dump parts for {base} in data/raw")
 
     writer = DayWriter(OUT_DIR, day_iso)
     t0 = time.time()

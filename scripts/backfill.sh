@@ -21,7 +21,7 @@ for DAY in "$@"; do
   fi
   if WORKERS="$WORKERS" nice -n15 ionice -c3 "$VENV" "$ROOT/pipeline/run_daily.py" --day "$DAY"; then
     echo "$(date +%FT%T) $DAY OK; deleting raw"
-    rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar.a"[abc]
+    rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."*
   else
     echo "$(date +%FT%T) pipeline failed for $DAY; raw kept"
   fi

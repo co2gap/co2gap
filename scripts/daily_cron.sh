@@ -66,7 +66,7 @@ for off in $(seq 1 "$CATCHUP_DAYS"); do
 done
 
 # rotate raw dumps older than RAW_RETENTION_DAYS (parquet kept forever)
-find "$ROOT/data/raw" -maxdepth 1 -name '*.tar.a[abc]' -mtime +"$RAW_RETENTION_DAYS" -print -delete \
+find "$ROOT/data/raw" -maxdepth 1 -name '*.tar.a?' -mtime +"$RAW_RETENTION_DAYS" -print -delete \
   2>/dev/null | sed "s/^/$(date -Is) rotated: /"
 
 echo "==== $(date -Is) daily_cron done (processed=$processed) ===="
