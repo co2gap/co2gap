@@ -1,0 +1,7 @@
+# raw dumps and derived data — huge, never commit
+data/raw/
+data/interim/
+venv/
+__pycache__/
+*.pyc
+*.log
