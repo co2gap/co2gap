@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang=it><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Osservatorio CO₂ e inefficienza — aviazione EU-Sud</title>
+<style>
+:root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
+--pos:#ff8a6b;--neg:#5fd0a8;--hi:#5ac8fa;--warn:#f0b429}
+@media(prefers-color-scheme:light){:root{--bg:#fbfcfd;--card:#fff;--fg:#16212b;
+--mut:#5b6b78;--line:#e2e8ee;--pos:#c2410c;--neg:#0f766e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:36px 20px 90px}
+h1{font-size:1.75rem;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:1.1rem;margin:42px 0 6px;letter-spacing:-.01em}
+h2+p.hint{margin:0 0 14px;color:var(--mut);font-size:.88rem}
+.sub{color:var(--mut);margin:0 0 22px}
+.stats{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;
+padding:13px 16px;flex:1;min-width:150px}
+.stat .v{font-size:1.45rem;font-weight:650;letter-spacing:-.02em}
+.stat .l{color:var(--mut);font-size:.8rem;margin-top:2px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:4px 0;font-size:.9rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:500;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.big{font-weight:650}
+td.pos{color:var(--pos)} td.neg{color:var(--neg)}
+td.r{font-weight:500;white-space:normal}
+.code{color:var(--mut);font-size:.75rem;margin-left:7px;font-family:ui-monospace,monospace}
+.note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--hi);
+border-radius:8px;padding:14px 18px;color:var(--mut);font-size:.89rem;margin:16px 0}
+.note.warn{border-left-color:var(--warn)}
+.note b{color:var(--fg)}
+.foot{color:var(--mut);font-size:.8rem;margin-top:44px;border-top:1px solid var(--line);padding-top:16px}
+a{color:var(--hi)}
+</style></head><body><div class=wrap>
+
+<h1>Osservatorio CO₂ e inefficienza — aviazione EU-Sud</h1>
+<p class=sub>Emissioni reali e <b>excess CO₂</b> calcolati dalle traiettorie ADS-B
+di ogni volo, con baseline great-circle <b>al netto del vento</b>.
+Finestra: <b>2026-07-15 → 2026-07-19</b> · 5 giorni · generato 2026-07-24 22:02 UTC.</p>
+
+<div class=stats>
+  <div class=stat><div class=v>29,642</div><div class=l>voli modellati</div></div>
+  <div class=stat><div class=v>397,133 t</div><div class=l>CO₂ totale stimata</div></div>
+  <div class=stat><div class=v>866</div><div class=l>rotte con n≥10</div></div>
+  <div class=stat><div class=v>146</div><div class=l>aeroporti con n≥10</div></div>
+</div>
+
+<div class=note>
+<b>Che cosa è l'“excess CO₂”.</b> È l'emissione in più rispetto al volo ideale
+sulla rotta diretta (great-circle), dello stesso tipo di aeromobile, alla quota
+di crociera più efficiente per quella distanza e <b>con lo stesso vento</b>.
+Isola quindi l'inefficienza da rotte allungate, livelli non ottimali e attese —
+non l'effetto del vento, che è già scontato da entrambi i lati del confronto.
+</div>
+
+<div class=note warn>
+<b>Perché classifichiamo sull'excess “normalizzato”.</b> L'excess grezzo dipende
+molto dalla distanza: un volo corto è dominato da salita, discesa e manovre di
+avvicinamento, quindi una classifica sull'excess grezzo ordinerebbe le rotte
+soprattutto per <i>brevità</i>. La colonna <b>Δ norma</b> confronta ogni volo con
+la <b>mediana europea dei voli di pari lunghezza</b>: <b>+10</b> significa dieci
+punti percentuali peggio di un volo comparabile. L'excess grezzo resta in tabella.
+</div>
+
+<h2>Norma europea per fascia di distanza</h2>
+<p class=hint>La linea di riferimento usata per la normalizzazione. È il metro, non un giudizio.</p>
+<div class=scroll><table><thead><tr><th>Fascia</th><th class=num>voli</th>
+<th class=num>excess mediano</th></tr></thead><tbody>
+<tr><td>150–300 km</td><td class=num>1,309</td><td class=num>+64%</td></tr>
+<tr><td>300–500 km</td><td class=num>3,149</td><td class=num>+44%</td></tr>
+<tr><td>500–800 km</td><td class=num>6,324</td><td class=num>+30%</td></tr>
+<tr><td>800–1200 km</td><td class=num>8,455</td><td class=num>+20%</td></tr>
+<tr><td>1200–2000 km</td><td class=num>9,393</td><td class=num>+15%</td></tr>
+<tr><td>&gt;2000 km</td><td class=num>1,012</td><td class=num>+11%</td></tr>
+</tbody></table></div>
+
+<h2>Rotte meno efficienti rispetto alla norma</h2>
+<p class=hint>Top 30 per Δ norma. Solo rotte con almeno 10 voli nella finestra.</p>
+<div class=scroll><table><thead><tr><th>Rotta</th><th class=num>voli</th>
+<th class=num>km</th><th class=num>Δ norma</th><th class=num>excess</th>
+<th class=num>CO₂ (t)</th></tr></thead><tbody>
+<tr><td class=r>Munich ↔ Stuttgart<span class=code>EDDM–EDDS</span></td><td class=num>33</td><td class=num>196</td><td class='num big pos'>+42</td><td class=num>+107%</td><td class=num>181</td></tr>
+<tr><td class=r>Brussels ↔ London Heathrow<span class=code>EBBR–EGLL</span></td><td class=num>50</td><td class=num>350</td><td class='num big pos'>+37</td><td class=num>+81%</td><td class=num>387</td></tr>
+<tr><td class=r>Munich ↔ Venice Marco Polo<span class=code>EDDM–LIPZ</span></td><td class=num>36</td><td class=num>320</td><td class='num big pos'>+36</td><td class=num>+80%</td><td class=num>187</td></tr>
+<tr><td class=r>Munich ↔ Zürich<span class=code>EDDM–LSZH</span></td><td class=num>42</td><td class=num>262</td><td class='num big pos'>+36</td><td class=num>+100%</td><td class=num>203</td></tr>
+<tr><td class=r>Brussels ↔ Frankfurt Main<span class=code>EBBR–EDDF</span></td><td class=num>52</td><td class=num>304</td><td class='num big pos'>+35</td><td class=num>+80%</td><td class=num>421</td></tr>
+<tr><td class=r>Frankfurt Main ↔ Lyon Saint-Exupéry<span class=code>EDDF–LFLL</span></td><td class=num>32</td><td class=num>546</td><td class='num big pos'>+31</td><td class=num>+61%</td><td class=num>329</td></tr>
+<tr><td class=r>Munich ↔ Verona Villafranca Valerio Catullo<span class=code>EDDM–LIPX</span></td><td class=num>11</td><td class=num>337</td><td class='num big pos'>+29</td><td class=num>+73%</td><td class=num>56</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat ↔ Lyon Saint-Exupéry<span class=code>LEBL–LFLL</span></td><td class=num>13</td><td class=num>548</td><td class='num big pos'>+28</td><td class=num>+58%</td><td class=num>153</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat ↔ Geneva<span class=code>LEBL–LSGG</span></td><td class=num>47</td><td class=num>637</td><td class='num big pos'>+27</td><td class=num>+57%</td><td class=num>540</td></tr>
+<tr><td class=r>Frankfurt Main ↔ EuroAirport Basel–Mulhouse–Freiburg<span class=code>EDDF–LFSB</span></td><td class=num>21</td><td class=num>282</td><td class='num big pos'>+26</td><td class=num>+90%</td><td class=num>96</td></tr>
+<tr><td class=r>Málaga-Costa del Sol ↔ Lisbon Humberto Delgado<span class=code>LEMG–LPPT</span></td><td class=num>26</td><td class=num>470</td><td class='num big pos'>+25</td><td class=num>+69%</td><td class=num>171</td></tr>
+<tr><td class=r>London Heathrow ↔ Bilbao<span class=code>EGLL–LEBB</span></td><td class=num>10</td><td class=num>926</td><td class='num big pos'>+25</td><td class=num>+45%</td><td class=num>150</td></tr>
+<tr><td class=r>Frankfurt Main ↔ London Gatwick<span class=code>EDDF–EGKK</span></td><td class=num>30</td><td class=num>629</td><td class='num big pos'>+24</td><td class=num>+55%</td><td class=num>220</td></tr>
+<tr><td class=r>Munich ↔ EuroAirport Basel–Mulhouse–Freiburg<span class=code>EDDM–LFSB</span></td><td class=num>24</td><td class=num>329</td><td class='num big pos'>+23</td><td class=num>+67%</td><td class=num>171</td></tr>
+<tr><td class=r>London Stansted ↔ Adolfo Suárez Madrid–Barajas<span class=code>EGSS–LEMD</span></td><td class=num>35</td><td class=num>1304</td><td class='num big pos'>+23</td><td class=num>+38%</td><td class=num>657</td></tr>
+<tr><td class=r>Brussels ↔ Geneva<span class=code>EBBR–LSGG</span></td><td class=num>49</td><td class=num>533</td><td class='num big pos'>+22</td><td class=num>+52%</td><td class=num>466</td></tr>
+<tr><td class=r>Munich ↔ Lyon Saint-Exupéry<span class=code>EDDM–LFLL</span></td><td class=num>22</td><td class=num>587</td><td class='num big pos'>+22</td><td class=num>+52%</td><td class=num>226</td></tr>
+<tr><td class=r>Frankfurt Main ↔ Munich<span class=code>EDDF–EDDM</span></td><td class=num>140</td><td class=num>301</td><td class='num big pos'>+22</td><td class=num>+71%</td><td class=num>1,174</td></tr>
+<tr><td class=r>London Heathrow ↔ Charles de Gaulle<span class=code>EGLL–LFPG</span></td><td class=num>37</td><td class=num>350</td><td class='num big pos'>+21</td><td class=num>+66%</td><td class=num>266</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat ↔ Adolfo Suárez Madrid–Barajas<span class=code>LEBL–LEMD</span></td><td class=num>98</td><td class=num>482</td><td class='num big pos'>+21</td><td class=num>+66%</td><td class=num>1,155</td></tr>
+<tr><td class=r>Nice-Côte d&#x27;Azur ↔ Zürich<span class=code>LFMN–LSZH</span></td><td class=num>22</td><td class=num>436</td><td class='num big pos'>+21</td><td class=num>+66%</td><td class=num>180</td></tr>
+<tr><td class=r>Venice Marco Polo ↔ Zürich<span class=code>LIPZ–LSZH</span></td><td class=num>15</td><td class=num>362</td><td class='num big pos'>+21</td><td class=num>+65%</td><td class=num>89</td></tr>
+<tr><td class=r>London Luton ↔ Adolfo Suárez Madrid–Barajas<span class=code>EGGW–LEMD</span></td><td class=num>17</td><td class=num>1292</td><td class='num big pos'>+21</td><td class=num>+36%</td><td class=num>297</td></tr>
+<tr><td class=r>Václav Havel Prague ↔ Zürich<span class=code>LKPR–LSZH</span></td><td class=num>14</td><td class=num>511</td><td class='num big pos'>+20</td><td class=num>+51%</td><td class=num>138</td></tr>
+<tr><td class=r>Budapest Liszt Ferenc ↔ Vienna<span class=code>LHBP–LOWW</span></td><td class=num>28</td><td class=num>215</td><td class='num big pos'>+20</td><td class=num>+85%</td><td class=num>110</td></tr>
+<tr><td class=r>Munich ↔ Václav Havel Prague<span class=code>EDDM–LKPR</span></td><td class=num>38</td><td class=num>264</td><td class='num big pos'>+20</td><td class=num>+85%</td><td class=num>258</td></tr>
+<tr><td class=r>Cologne Bonn ↔ Václav Havel Prague<span class=code>EDDK–LKPR</span></td><td class=num>10</td><td class=num>512</td><td class='num big pos'>+20</td><td class=num>+50%</td><td class=num>130</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat ↔ Alghero-Fertilia<span class=code>LEBL–LIEA</span></td><td class=num>10</td><td class=num>527</td><td class='num big pos'>+20</td><td class=num>+50%</td><td class=num>99</td></tr>
+<tr><td class=r>Brussels ↔ Charles de Gaulle<span class=code>EBBR–LFPG</span></td><td class=num>22</td><td class=num>250</td><td class='num big pos'>+20</td><td class=num>+84%</td><td class=num>165</td></tr>
+<tr><td class=r>Munich ↔ Geneva<span class=code>EDDM–LSGG</span></td><td class=num>10</td><td class=num>490</td><td class='num big pos'>+20</td><td class=num>+64%</td><td class=num>70</td></tr>
+</tbody></table></div>
+
+<h2>Rotte più efficienti rispetto alla norma</h2>
+<p class=hint>Le dieci migliori: utile come controprova che la metrica separa i due estremi.</p>
+<div class=scroll><table><thead><tr><th>Rotta</th><th class=num>voli</th>
+<th class=num>km</th><th class=num>Δ norma</th><th class=num>excess</th>
+<th class=num>CO₂ (t)</th></tr></thead><tbody>
+<tr><td class=r>Palma de Mallorca ↔ Valencia<span class=code>LEPA–LEVC</span></td><td class=num>10</td><td class=num>278</td><td class='num big neg'>-53</td><td class=num>+11%</td><td class=num>44</td></tr>
+<tr><td class=r>Tirana Mother Teresa ↔ Bari Karol Wojtyła<span class=code>LATI–LIBD</span></td><td class=num>16</td><td class=num>245</td><td class='num big neg'>-35</td><td class=num>+29%</td><td class=num>80</td></tr>
+<tr><td class=r>Milano Linate ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>LIML–LIRF</span></td><td class=num>50</td><td class=num>467</td><td class='num big neg'>-32</td><td class=num>+12%</td><td class=num>316</td></tr>
+<tr><td class=r>Lamezia Terme Sant&#x27;Eufemia ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>LICA–LIRF</span></td><td class=num>13</td><td class=num>467</td><td class='num big neg'>-31</td><td class=num>+13%</td><td class=num>79</td></tr>
+<tr><td class=r>Tirana Mother Teresa ↔ Abruzzo<span class=code>LATI–LIBP</span></td><td class=num>15</td><td class=num>471</td><td class='num big neg'>-30</td><td class=num>+14%</td><td class=num>109</td></tr>
+<tr><td class=r>Athens Eleftherios Venizelos ↔ Thessaloniki Macedonia<span class=code>LGAV–LGTS</span></td><td class=num>72</td><td class=num>298</td><td class='num big neg'>-29</td><td class=num>+30%</td><td class=num>389</td></tr>
+<tr><td class=r>Athens Eleftherios Venizelos ↔ Corfu Ioannis Kapodistrias<span class=code>LGAV–LGKR</span></td><td class=num>17</td><td class=num>392</td><td class='num big neg'>-28</td><td class=num>+17%</td><td class=num>100</td></tr>
+<tr><td class=r>Bari Karol Wojtyła ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>LIBD–LIRF</span></td><td class=num>28</td><td class=num>387</td><td class='num big neg'>-27</td><td class=num>+17%</td><td class=num>165</td></tr>
+<tr><td class=r>Faro - Gago Coutinho ↔ Francisco de Sá Carneiro<span class=code>LPFR–LPPR</span></td><td class=num>15</td><td class=num>477</td><td class='num big neg'>-27</td><td class=num>+17%</td><td class=num>97</td></tr>
+<tr><td class=r>Palma de Mallorca ↔ Marseille Provence<span class=code>LEPA–LFML</span></td><td class=num>12</td><td class=num>483</td><td class='num big neg'>-27</td><td class=num>+18%</td><td class=num>81</td></tr>
+</tbody></table></div>
+
+<h2>Aeroporti per inefficienza in partenza</h2>
+<p class=hint>Top 25 per Δ norma delle partenze — indica congestione e vettoramenti in uscita.</p>
+<div class=scroll><table><thead><tr><th>Aeroporto</th><th class=num>partenze</th>
+<th class=num>Δ norma</th><th class=num>excess</th><th class=num>CO₂ (t)</th></tr></thead><tbody>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat<span class=code>LEBL</span></td><td class=num>1381</td><td class='num big pos'>+17</td><td class=num>+42%</td><td class=num>19,387</td></tr>
+<tr><td class=r>EuroAirport Basel–Mulhouse–Freiburg<span class=code>LFSB</span></td><td class=num>208</td><td class='num big pos'>+11</td><td class=num>+35%</td><td class=num>2,681</td></tr>
+<tr><td class=r>Graz<span class=code>LOWG</span></td><td class=num>34</td><td class='num big pos'>+10</td><td class=num>+46%</td><td class=num>228</td></tr>
+<tr><td class=r>Venice Marco Polo<span class=code>LIPZ</span></td><td class=num>338</td><td class='num big pos'>+10</td><td class=num>+34%</td><td class=num>4,437</td></tr>
+<tr><td class=r>Dresden<span class=code>EDDC</span></td><td class=num>33</td><td class='num big pos'>+9</td><td class=num>+52%</td><td class=num>286</td></tr>
+<tr><td class=r>Geneva<span class=code>LSGG</span></td><td class=num>338</td><td class='num big pos'>+8</td><td class=num>+33%</td><td class=num>4,358</td></tr>
+<tr><td class=r>Václav Havel Prague<span class=code>LKPR</span></td><td class=num>350</td><td class='num big pos'>+7</td><td class=num>+32%</td><td class=num>4,713</td></tr>
+<tr><td class=r>Stuttgart<span class=code>EDDS</span></td><td class=num>174</td><td class='num big pos'>+7</td><td class=num>+32%</td><td class=num>2,318</td></tr>
+<tr><td class=r>Munich<span class=code>EDDM</span></td><td class=num>948</td><td class='num big pos'>+7</td><td class=num>+40%</td><td class=num>10,804</td></tr>
+<tr><td class=r>Bilbao<span class=code>LEBB</span></td><td class=num>228</td><td class='num big pos'>+7</td><td class=num>+33%</td><td class=num>2,698</td></tr>
+<tr><td class=r>Almería<span class=code>LEAM</span></td><td class=num>28</td><td class='num big pos'>+7</td><td class=num>+22%</td><td class=num>471</td></tr>
+<tr><td class=r>Brussels<span class=code>EBBR</span></td><td class=num>551</td><td class='num big pos'>+6</td><td class=num>+26%</td><td class=num>8,130</td></tr>
+<tr><td class=r>Nice-Côte d&#x27;Azur<span class=code>LFMN</span></td><td class=num>509</td><td class='num big pos'>+6</td><td class=num>+32%</td><td class=num>5,812</td></tr>
+<tr><td class=r>London Stansted<span class=code>EGSS</span></td><td class=num>620</td><td class='num big pos'>+6</td><td class=num>+23%</td><td class=num>9,810</td></tr>
+<tr><td class=r>Perugia San Francesco d&#x27;Assisi – Umbria<span class=code>LIRZ</span></td><td class=num>28</td><td class='num big pos'>+6</td><td class=num>+28%</td><td class=num>366</td></tr>
+<tr><td class=r>Bordeaux–Mérignac<span class=code>LFBD</span></td><td class=num>179</td><td class='num big pos'>+6</td><td class=num>+35%</td><td class=num>1,959</td></tr>
+<tr><td class=r>Podgorica / Podgorica Golubovci Airbase<span class=code>LYPG</span></td><td class=num>71</td><td class='num big pos'>+5</td><td class=num>+26%</td><td class=num>969</td></tr>
+<tr><td class=r>Menorca<span class=code>LEMH</span></td><td class=num>265</td><td class='num big pos'>+5</td><td class=num>+28%</td><td class=num>3,033</td></tr>
+<tr><td class=r>Strasbourg<span class=code>LFST</span></td><td class=num>28</td><td class='num big pos'>+5</td><td class=num>+35%</td><td class=num>309</td></tr>
+<tr><td class=r>Toulouse-Blagnac<span class=code>LFBO</span></td><td class=num>221</td><td class='num big pos'>+4</td><td class=num>+32%</td><td class=num>2,395</td></tr>
+<tr><td class=r>Zürich<span class=code>LSZH</span></td><td class=num>557</td><td class='num big pos'>+4</td><td class=num>+36%</td><td class=num>6,165</td></tr>
+<tr><td class=r>London Heathrow<span class=code>EGLL</span></td><td class=num>836</td><td class='num big pos'>+4</td><td class=num>+26%</td><td class=num>11,443</td></tr>
+<tr><td class=r>Dubrovnik Ruđer Bošković<span class=code>LDDU</span></td><td class=num>164</td><td class='num big pos'>+4</td><td class=num>+22%</td><td class=num>2,742</td></tr>
+<tr><td class=r>Košice<span class=code>LZKZ</span></td><td class=num>36</td><td class='num big pos'>+4</td><td class=num>+38%</td><td class=num>367</td></tr>
+<tr><td class=r>Lyon Saint-Exupéry<span class=code>LFLL</span></td><td class=num>247</td><td class='num big pos'>+4</td><td class=num>+35%</td><td class=num>2,615</td></tr>
+</tbody></table></div>
+
+<h2>Rotte per CO₂ totale</h2>
+<p class=hint>Volume assoluto nella finestra: qui pesano traffico e distanza, non l'efficienza.</p>
+<div class=scroll><table><thead><tr><th>Rotta</th><th class=num>voli</th>
+<th class=num>km</th><th class=num>excess</th><th class=num>CO₂ (t)</th></tr></thead><tbody>
+<tr><td class=r>London Gatwick ↔ Málaga-Costa del Sol<span class=code>EGKK–LEMG</span></td><td class=num>135</td><td class=num>1646</td><td class=num>+20%</td><td class=num>2,806</td></tr>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>LEMD–LIRF</span></td><td class=num>133</td><td class=num>1330</td><td class=num>+15%</td><td class=num>2,233</td></tr>
+<tr><td class=r>London Heathrow ↔ Adolfo Suárez Madrid–Barajas<span class=code>EGLL–LEMD</span></td><td class=num>113</td><td class=num>1243</td><td class=num>+26%</td><td class=num>2,040</td></tr>
+<tr><td class=r>London Heathrow ↔ Lisbon Humberto Delgado<span class=code>EGLL–LPPT</span></td><td class=num>106</td><td class=num>1565</td><td class=num>+21%</td><td class=num>1,998</td></tr>
+<tr><td class=r>Paris-Orly ↔ Lisbon Humberto Delgado<span class=code>LFPO–LPPT</span></td><td class=num>122</td><td class=num>1437</td><td class=num>+16%</td><td class=num>1,991</td></tr>
+<tr><td class=r>London Gatwick ↔ Josep Tarradellas Barcelona-El Prat<span class=code>EGKK–LEBL</span></td><td class=num>118</td><td class=num>1110</td><td class=num>+39%</td><td class=num>1,969</td></tr>
+<tr><td class=r>Frankfurt Main ↔ Josep Tarradellas Barcelona-El Prat<span class=code>EDDF–LEBL</span></td><td class=num>105</td><td class=num>1094</td><td class=num>+35%</td><td class=num>1,772</td></tr>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas ↔ Paris-Orly<span class=code>LEMD–LFPO</span></td><td class=num>115</td><td class=num>1027</td><td class=num>+17%</td><td class=num>1,640</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat ↔ Lisbon Humberto Delgado<span class=code>LEBL–LPPT</span></td><td class=num>114</td><td class=num>995</td><td class=num>+30%</td><td class=num>1,583</td></tr>
+<tr><td class=r>Brussels ↔ Josep Tarradellas Barcelona-El Prat<span class=code>EBBR–LEBL</span></td><td class=num>93</td><td class=num>1085</td><td class=num>+38%</td><td class=num>1,562</td></tr>
+<tr><td class=r>Frankfurt Main ↔ Lisbon Humberto Delgado<span class=code>EDDF–LPPT</span></td><td class=num>63</td><td class=num>1874</td><td class=num>+22%</td><td class=num>1,546</td></tr>
+<tr><td class=r>London Heathrow ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>EGLL–LIRF</span></td><td class=num>93</td><td class=num>1443</td><td class=num>+15%</td><td class=num>1,543</td></tr>
+<tr><td class=r>Brussels ↔ Málaga-Costa del Sol<span class=code>EBBR–LEMG</span></td><td class=num>74</td><td class=num>1735</td><td class=num>+17%</td><td class=num>1,517</td></tr>
+<tr><td class=r>Munich ↔ London Heathrow<span class=code>EDDM–EGLL</span></td><td class=num>116</td><td class=num>941</td><td class=num>+40%</td><td class=num>1,509</td></tr>
+<tr><td class=r>Rome–Fiumicino Leonardo da Vinci ↔ Lisbon Humberto Delgado<span class=code>LIRF–LPPT</span></td><td class=num>68</td><td class=num>1840</td><td class=num>+12%</td><td class=num>1,477</td></tr>
+<tr><td class=r>London Heathrow ↔ Josep Tarradellas Barcelona-El Prat<span class=code>EGLL–LEBL</span></td><td class=num>89</td><td class=num>1149</td><td class=num>+37%</td><td class=num>1,454</td></tr>
+<tr><td class=r>London Heathrow ↔ Athens Eleftherios Venizelos<span class=code>EGLL–LGAV</span></td><td class=num>48</td><td class=num>2427</td><td class=num>+14%</td><td class=num>1,392</td></tr>
+<tr><td class=r>Paris-Orly ↔ Francisco de Sá Carneiro<span class=code>LFPO–LPPR</span></td><td class=num>102</td><td class=num>1199</td><td class=num>+10%</td><td class=num>1,387</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>LEBL–LIRF</span></td><td class=num>112</td><td class=num>847</td><td class=num>+25%</td><td class=num>1,362</td></tr>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas ↔ Milan Malpensa<span class=code>LEMD–LIMC</span></td><td class=num>87</td><td class=num>1149</td><td class=num>+19%</td><td class=num>1,353</td></tr>
+</tbody></table></div>
+
+<h2>Metodologia</h2>
+<div class=note>
+<b>Dati.</b> Traiettorie ADS-B dei dump storici giornalieri adsb.lol. Un volo entra
+nell'analisi solo se: origine e destinazione riconosciute (aeroporto entro 8 km),
+distanza volata ≥ 0,9 × great-circle, copertura ≥ 85% del tempo di volo,
+great-circle ≥ 150 km.<br><br>
+<b>Modello.</b> Consumo istantaneo con <a href="https://openap.dev">OpenAP</a>
+(TU Delft) integrato sulla traiettoria reale; velocità vera ricavata dalla
+velocità indicata (quindi non contaminata dal vento). Massa iniziale stimata
+iterativamente da peso operativo, carico pagante a load factor 0,82 e riserve.
+CO₂ = carburante × 3,16.<br><br>
+<b>Baseline.</b> Volo nominale sul great-circle, stesso tipo, alla quota che
+minimizza il consumo per quella distanza, con tempo di crociera calcolato alla
+velocità al suolo (vento <b>ERA5</b> Copernicus lungo la rotta, all'ora del volo).<br><br>
+<b>Calibrazione per tipo</b> (agisce sulle tonnellate, non sull'excess, perché si
+semplifica fra volo reale e baseline): A20N ×1.3946, A21N ×1.3751, B763 ×0.8629, E170 ×0.7613, E190 ×0.8414, E195 ×0.8548, E290 ×0.7769, E295 ×0.8778.
+</div>
+
+<div class=note warn>
+<b>Limiti dichiarati.</b>
+La massa è stimata, non nota: incide ±8–12% sulle tonnellate assolute, molto meno
+sull'excess percentuale.
+I fattori di calibrazione sono <i>ancorati</i> a valori di consumo pubblicati, non
+validati in modo indipendente; la prova a favore del modello è che i tipi
+<i>non</i> calibrati (A320, B738, A319, A321 — la maggioranza dei voli) cadono da
+soli entro il 9% dei valori pubblicati. I widebody con pochi voli nella finestra
+restano provvisori.
+Il vento è una rianalisi a ~0,25°, non il vento puntuale incontrato.
+L'excess include manovre di avvicinamento e attese: su tratte brevi pesa molto,
+ed è la ragione della normalizzazione per distanza.
+Una finestra di 5 giorni cattura una situazione meteo e di traffico
+specifica: le classifiche vanno lette come fotografia del periodo, non come
+giudizio strutturale.
+</div>
+
+<div class=foot>
+Traiettorie © <a href="https://www.adsb.lol/">adsb.lol</a> contributors, licenza
+<b>ODbL v1.0</b> — questo lavoro è un <i>Produced Work</i> ai sensi della licenza.
+Aeroporti: OurAirports (CC0). Vento: ERA5 © Copernicus/ECMWF. Modello: OpenAP.<br>
+<b>Tutti i dati sono aggregati per rotta o aeroporto, con almeno 10 voli.
+Nessuna informazione su singoli voli, aeromobili o persone.</b>
+</div>
+
+</div></body></html>
