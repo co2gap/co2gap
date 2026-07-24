@@ -113,17 +113,31 @@ _FF_CACHE: dict = {}
 _AC_CACHE: dict = {}
 
 
-def _get_ff(model: str) -> FuelFlow:
-    ff = _FF_CACHE.get(model)
-    if ff is None:
-        ff = _FF_CACHE[model] = FuelFlow(ac=model)
+def _get_ff(model: str):
+    """FuelFlow for a model, or None if OpenAP can't build one even with
+    synonym fallback. Cached (incl. failures) so a bad type is cheap."""
+    if model in _FF_CACHE:
+        return _FF_CACHE[model]
+    ff = None
+    try:
+        ff = FuelFlow(ac=model, use_synonym=True)
+    except Exception:
+        try:
+            ff = FuelFlow(ac=model)
+        except Exception:
+            ff = None
+    _FF_CACHE[model] = ff
     return ff
 
 
 def _get_ac(model: str) -> dict:
     ac = _AC_CACHE.get(model)
     if ac is None:
-        ac = _AC_CACHE[model] = prop.aircraft(model)
+        try:
+            ac = prop.aircraft(model, use_synonym=True)
+        except Exception:
+            ac = prop.aircraft(model)
+        _AC_CACHE[model] = ac
     return ac
 
 
@@ -136,12 +150,14 @@ def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
     if model is None:
         return FuelResult(flight.typecode, False, "type not in OpenAP")
 
+    ff = _get_ff(model)
+    if ff is None:
+        return FuelResult(flight.typecode, False, "no OpenAP model/drag polar")
     ac = _get_ac(model)
     oew = ac["oew"]
     mtow = ac["mtow"]
     pax_max = ac.get("pax", {}).get("max", 150)
     payload = load_factor * pax_max * PAX_WEIGHT_KG
-    ff = _get_ff(model)
 
     pts = flight.points
     # precompute per-step tas / vs / dt / dist

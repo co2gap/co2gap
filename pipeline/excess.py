@@ -16,11 +16,10 @@ from __future__ import annotations
 
 import math
 
-from openap import prop
 import openap.aero as _aero
 
 from trajectories import Flight, Point, haversine_km
-from emissions import estimate_fuel, openap_model, FuelResult
+from emissions import estimate_fuel, openap_model, FuelResult, _get_ac
 
 CLIMB_RATE_FPM = 2000.0
 DESCENT_RATE_FPM = 1800.0
@@ -47,7 +46,7 @@ def build_nominal_flight(typecode: str, gc_km: float) -> Flight | None:
     model = openap_model(typecode)
     if model is None:
         return None
-    ac = prop.aircraft(model)
+    ac = _get_ac(model)
     cruise_alt = _cruise_alt_ft(ac)
     mach = ac.get("cruise", {}).get("mach", 0.78)
     cruise_tas_kt = mach * _sound_speed_ms(cruise_alt) / 0.514444
