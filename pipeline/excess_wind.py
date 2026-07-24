@@ -97,14 +97,77 @@ def mean_along_track_wind_ms(lat1, lon1, lat2, lon2, dep_ts, cruise_tas_kt,
     return float(np.nanmean(wpar))
 
 
+MAX_CRUISE_CAS_KT = 310.0   # structural/operational cap; keeps low-level cruise honest
+
+
+def _cruise_tas_kt(ac, alt_ft) -> float:
+    """Cruise TAS at a given altitude: the type's cruise Mach, capped by a
+    realistic max CAS (at low levels Mach-based TAS would be unflyable)."""
+    mach = ac.get("cruise", {}).get("mach", 0.78)
+    tas_mach = mach * _sound_speed_ms(alt_ft) / KTS_TO_MS
+    try:
+        fn = getattr(_aero, "vcas2vtas", None) or getattr(_aero, "cas2tas", None)
+        tas_cas = float(fn(MAX_CRUISE_CAS_KT * KTS_TO_MS, alt_ft * 0.3048)) / KTS_TO_MS
+    except Exception:
+        tas_cas = tas_mach
+    return min(tas_mach, tas_cas)
+
+
+_best_alt_cache: dict = {}
+
+
+def optimal_cruise_alt_ft(typecode, gc_km) -> float:
+    """
+    Fuel-optimal cruise altitude for this type over this distance.
+
+    A short sector cannot sensibly climb to the type's long-range cruise level:
+    comparing a 480 km flight against an FL360 baseline invents 'inefficiency'
+    that is really an infeasible reference. We therefore let the baseline pick
+    the altitude that MINIMISES its own fuel for the given great-circle
+    distance (wind-free, so the choice is a property of type+distance and can
+    be cached). On long sectors this returns the type's normal cruise level;
+    on short ones it correctly settles lower.
+    """
+    key = (typecode, round(gc_km / 50) * 50)
+    if key in _best_alt_cache:
+        return _best_alt_cache[key]
+    model = openap_model(typecode)
+    ac = _get_ac(model)
+    top = _cruise_alt_ft(ac)
+    best_alt, best_fuel = top, float("inf")
+    alt = 16000.0
+    while alt <= top + 1:
+        f = _nominal_fuel_kg(typecode, gc_km, alt, 0.0)
+        if f is not None and f < best_fuel:
+            best_alt, best_fuel = alt, f
+        alt += 2000.0
+    _best_alt_cache[key] = best_alt
+    return best_alt
+
+
+def _nominal_fuel_kg(typecode, gc_km, cruise_alt_ft, wpar_ms,
+                     load_factor=0.82, reserve_kg=2000.0):
+    fl = _build_profile(typecode, gc_km, cruise_alt_ft, wpar_ms)
+    if fl is None:
+        return None
+    r = estimate_fuel(fl, load_factor=load_factor, reserve_kg=reserve_kg, tas_mode="gs")
+    return r.fuel_kg if r.ok else None
+
+
 def build_nominal_windaware(typecode, gc_km, mean_wpar_ms) -> Flight | None:
+    """Nominal at the fuel-optimal altitude for this distance, wind-aware clock."""
+    if openap_model(typecode) is None:
+        return None
+    alt = optimal_cruise_alt_ft(typecode, gc_km)
+    return _build_profile(typecode, gc_km, alt, mean_wpar_ms)
+
+
+def _build_profile(typecode, gc_km, cruise_alt, mean_wpar_ms) -> Flight | None:
     model = openap_model(typecode)
     if model is None:
         return None
     ac = _get_ac(model)
-    cruise_alt = _cruise_alt_ft(ac)
-    mach = ac.get("cruise", {}).get("mach", 0.78)
-    cruise_tas_kt = mach * _sound_speed_ms(cruise_alt) / KTS_TO_MS
+    cruise_tas_kt = _cruise_tas_kt(ac, cruise_alt)
     cruise_tas_ms = cruise_tas_kt * KTS_TO_MS
     gs_cruise_ms = max(cruise_tas_ms + mean_wpar_ms, 50.0)  # guard absurd headwind
 
@@ -151,12 +214,12 @@ def ideal_co2_windaware(typecode, o_lat, o_lon, d_lat, d_lon, dep_ts, gc_km,
     if model is None:
         return None
     ac = _get_ac(model)
-    cruise_alt = _cruise_alt_ft(ac)
-    mach = ac.get("cruise", {}).get("mach", 0.78)
-    cruise_tas_kt = mach * _sound_speed_ms(cruise_alt) / KTS_TO_MS
+    # sample the wind at the altitude the baseline will actually cruise at
+    cruise_alt = optimal_cruise_alt_ft(typecode, gc_km)
+    cruise_tas_kt = _cruise_tas_kt(ac, cruise_alt)
     wpar = mean_along_track_wind_ms(o_lat, o_lon, d_lat, d_lon, dep_ts,
                                     cruise_tas_kt, cruise_alt, windfield, gc_km)
-    nominal = build_nominal_windaware(typecode, gc_km, wpar)
+    nominal = _build_profile(typecode, gc_km, cruise_alt, wpar)
     if nominal is None:
         return None
     res = estimate_fuel(nominal, load_factor=load_factor, reserve_kg=reserve_kg,
