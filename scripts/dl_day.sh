@@ -14,7 +14,9 @@ cd "$DEST"
 for p in aa ab ac; do
   f="${TAG}.tar.${p}"
   echo "$(date -Is) downloading $f"
-  ionice -c3 nice -n15 curl -fL --retry 5 --retry-delay 10 -C - \
+  # -c2 -n7 (best-effort, low prio): yields to containers but is not starved to
+  # a crawl the way the idle class (-c3) throttles a large sequential WD write.
+  ionice -c2 -n7 nice -n15 curl -fL --retry 5 --retry-delay 10 -C - \
     -o "$f" "${BASE}/${TAG}.tar.${p}"
 done
 echo "$(date -Is) DONE $TAG"
