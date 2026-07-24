@@ -69,24 +69,36 @@ _FLIGHTS_SCHEMA = pa.schema([
 
 
 class DayWriter:
-    """Accumulate per-flight rows and write the two parquet files for a day."""
+    """
+    Accumulate per-flight rows and stream them to two parquet files.
+
+    Rows are flushed as parquet row groups every FLUSH_EVERY flights and the
+    in-memory buffers cleared, so peak RAM stays flat regardless of how many
+    flights a day holds (the whole-EU day would otherwise grow the buffers to
+    ~1 GB+). flight_id is a monotonic counter, so points keep their link across
+    row groups.
+    """
+
+    FLUSH_EVERY = 1500
 
     def __init__(self, out_dir: Path, day_iso: str):
         self.out_dir = Path(out_dir)
         self.day_iso = day_iso
+        self._d = self.out_dir / day_iso
+        self._d.mkdir(parents=True, exist_ok=True)
         self._pt_cols = {n: [] for n in _POINTS_SCHEMA.names}
         self._fl_cols = {n: [] for n in _FLIGHTS_SCHEMA.names}
         self._n = 0
+        self._pt_rows = 0
+        self._since = 0
+        self._pw = None
+        self._fw = None
 
     def add(self, meta: dict, points: list) -> None:
-        """meta: flight metadata dict; points: thinned list of trajectory Points."""
         fid = self._n
         self._n += 1
         for n in _FLIGHTS_SCHEMA.names:
-            if n == "flight_id":
-                self._fl_cols[n].append(fid)
-            else:
-                self._fl_cols[n].append(meta.get(n))
+            self._fl_cols[n].append(fid if n == "flight_id" else meta.get(n))
         for p in points:
             self._pt_cols["flight_id"].append(fid)
             self._pt_cols["t"].append(p.t)
@@ -96,27 +108,45 @@ class DayWriter:
             self._pt_cols["gs_kt"].append(p.gs)
             self._pt_cols["ias_kt"].append(p.ias)
             self._pt_cols["vs_fpm"].append(p.vs_rep)
+        self._since += 1
+        if self._since >= self.FLUSH_EVERY:
+            self._write_rowgroup()
+
+    def _write_rowgroup(self) -> None:
+        if not self._fl_cols["flight_id"]:
+            return
+        pts_tbl = pa.table(
+            {n: pa.array(self._pt_cols[n], type=_POINTS_SCHEMA.field(n).type)
+             for n in _POINTS_SCHEMA.names}, schema=_POINTS_SCHEMA)
+        fl_tbl = pa.table(
+            {n: pa.array(self._fl_cols[n], type=_FLIGHTS_SCHEMA.field(n).type)
+             for n in _FLIGHTS_SCHEMA.names}, schema=_FLIGHTS_SCHEMA)
+        if self._pw is None:
+            self._pw = pq.ParquetWriter(self._d / "points.parquet",
+                                        _POINTS_SCHEMA, compression="zstd")
+            self._fw = pq.ParquetWriter(self._d / "flights.parquet",
+                                        _FLIGHTS_SCHEMA, compression="zstd")
+        self._pw.write_table(pts_tbl)
+        self._fw.write_table(fl_tbl)
+        self._pt_rows += pts_tbl.num_rows
+        for n in self._pt_cols:
+            self._pt_cols[n].clear()
+        for n in self._fl_cols:
+            self._fl_cols[n].clear()
+        self._since = 0
 
     @property
     def n_flights(self) -> int:
         return self._n
 
     def flush(self) -> dict:
-        d = self.out_dir / self.day_iso
-        d.mkdir(parents=True, exist_ok=True)
-        pts_tbl = pa.table(
-            {n: pa.array(self._pt_cols[n], type=_POINTS_SCHEMA.field(n).type)
-             for n in _POINTS_SCHEMA.names},
-            schema=_POINTS_SCHEMA)
-        fl_tbl = pa.table(
-            {n: pa.array(self._fl_cols[n], type=_FLIGHTS_SCHEMA.field(n).type)
-             for n in _FLIGHTS_SCHEMA.names},
-            schema=_FLIGHTS_SCHEMA)
-        pq.write_table(pts_tbl, d / "points.parquet", compression="zstd")
-        pq.write_table(fl_tbl, d / "flights.parquet", compression="zstd")
+        self._write_rowgroup()
+        if self._pw is not None:
+            self._pw.close()
+            self._fw.close()
         return {
-            "points_rows": pts_tbl.num_rows,
-            "flights_rows": fl_tbl.num_rows,
-            "points_file": str(d / "points.parquet"),
-            "flights_file": str(d / "flights.parquet"),
+            "points_rows": self._pt_rows,
+            "flights_rows": self._n,
+            "points_file": str(self._d / "points.parquet"),
+            "flights_file": str(self._d / "flights.parquet"),
         }
