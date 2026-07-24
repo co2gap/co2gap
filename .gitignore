@@ -1,6 +1,9 @@
 # raw dumps and derived data — huge, never commit
 data/raw/
 data/interim/
+data/flights/
+# ERA5 wind cache (Mac lab only)
+data/era5/
 venv/
 __pycache__/
 *.pyc
