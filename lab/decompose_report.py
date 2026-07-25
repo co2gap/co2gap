@@ -35,6 +35,8 @@ BANDS = [150, 300, 500, 800, 1200, 2000, 20000]
 BAND_LABELS = ["150–300", "300–500", "500–800", "800–1200",
                "1200–2000", ">2000"]
 KEA_REFERENCE_PCT = 3.0    # EUROCONTROL published en-route extension, ~3%
+BENEFIT_POOL_PCT = 6.3     # EUROCONTROL ATM fuel benefit pool, ECAC area
+IPCC_RANGE = (6, 12)       # IPCC recoverable ATM inefficiency
 MIN_N_ROUTE = 30
 
 
@@ -61,6 +63,18 @@ def kea_ratio(d) -> float:
     return (d.flown_enroute_km.sum() - gc.sum()) / gc.sum() * 100.0
 
 
+def fuel_weighted(d) -> tuple[float, float, float]:
+    """(total, lateral, vertical) excess as a ratio of SUMMED fuel, which is
+    what a fleet-level '% of fuel' figure means. A median of per-flight
+    percentages is a different quantity: short sectors have huge percentages
+    but tiny absolute fuel, so they dominate the median and not the fleet."""
+    real, ideal, hyb = (d.co2_kg_v0.sum(), d.ideal_gc_co2_kg.sum(),
+                        d.hybrid_co2_kg.sum())
+    return ((real - ideal) / ideal * 100.0,
+            (hyb - ideal) / ideal * 100.0,
+            (real - hyb) / ideal * 100.0)
+
+
 def main():
     df = load()
     days = sorted(df.day.unique())
@@ -70,20 +84,37 @@ def main():
           "primavera/estate. ***")
 
     # ---- 1. headline ------------------------------------------------------
-    banner("1. Scomposizione dell'excess (mediane, punti percentuali)")
+    banner("1. Scomposizione dell'excess (punti percentuali)")
     tot = df.excess_total_pct.median()
     lat = df.excess_lateral_pct.median()
     ver = df.excess_vertical_pct.median()
-    print(f"  excess TOTALE               {tot:8.2f} %")
-    print(f"    di cui LATERALE           {lat:8.2f} %   "
+    print("  MEDIANA dei rapporti per volo:")
+    print(f"    excess TOTALE               {tot:8.2f} %")
+    print(f"      di cui LATERALE           {lat:8.2f} %   "
           f"({lat/tot*100:.0f}% del totale)")
-    print(f"    di cui VERTICALE/VELOCITÀ {ver:8.2f} %   "
+    print(f"      di cui VERTICALE/VELOCITÀ {ver:8.2f} %   "
           f"({ver/tot*100:.0f}% del totale)")
-    print("  (le due componenti sono additive per costruzione: stesso "
+    ft, fl, fv = fuel_weighted(df)
+    print("\n  PESATA SUL CARBURANTE (rapporto di somme) — è questa la forma")
+    print("  confrontabile con un dato di flotta tipo 'benefit pool':")
+    print(f"    excess TOTALE               {ft:8.2f} %")
+    print(f"      di cui LATERALE           {fl:8.2f} %")
+    print(f"      di cui VERTICALE/VELOCITÀ {fv:8.2f} %")
+    print("\n  (le due componenti sono additive per costruzione: stesso "
           "denominatore)")
     resid = (df.excess_total_pct
              - df.excess_lateral_pct - df.excess_vertical_pct).abs().max()
     print(f"  verifica additività: max |residuo| = {resid:.2e} punti")
+    print()
+    print(f"  Riferimenti esterni: benefit pool ATM ECAC {BENEFIT_POOL_PCT}% · "
+          f"IPCC {IPCC_RANGE[0]}-{IPCC_RANGE[1]}%")
+    print("  ⚠️  Siamo SOPRA, ed è atteso: quelle cifre stimano l'inefficienza")
+    print("  RECUPERABILE dall'ATM, noi misuriamo lo scarto dall'ottimo")
+    print("  TEORICO (great-circle + profilo perfetto), che nessun volo reale")
+    print("  può raggiungere — separazione, step climb, vincoli di traffico.")
+    print("  È il criterio 6 del go/no-go: o si adotta un riferimento più")
+    print("  realistico, o si dichiara a chiare lettere che misuriamo")
+    print("  l'inefficienza TOTALE e non quella evitabile.")
 
     # ---- 2. by distance band ---------------------------------------------
     banner("2. Per fascia di distanza (mediane)")
