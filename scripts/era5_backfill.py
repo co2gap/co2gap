@@ -107,7 +107,13 @@ def fetch_one(day_iso: str):
         download_day(day_iso, levels=LEVELS, area=AREA, force=True)
         dt = time.time() - t0
         if not is_valid(out):
-            return day_iso, "FAIL(integrity)", dt, 0
+            # Near the ERA5T boundary (~5 days behind real time) CDS returns a
+            # PARTIAL day rather than an error — 2026-07-20 arrived with 15 of
+            # 24 hours. Delete it: leaving it on disk would let any consumer
+            # that merely checks existence build a wind field with a silent
+            # hole in it. Deleting also makes the retry a clean redownload.
+            out.unlink(missing_ok=True)
+            return day_iso, "FAIL(incomplete: partial/invalid file removed)", dt, 0
         return day_iso, "OK", dt, out.stat().st_size
     except Exception as e:
         return day_iso, f"FAIL({e.__class__.__name__}: {e})", time.time() - t0, 0

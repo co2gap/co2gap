@@ -50,12 +50,48 @@ OUT_COLS = ["day", "flight_id", "typecode", "origin_icao", "dest_icao",
             "mean_wpar_gc_ms", "mean_wpar_track_ms", "cruise_alt_ft"]
 
 
+def era5_is_complete(path: Path) -> bool:
+    """
+    A day counts as usable only if its ERA5 file is COMPLETE, not merely
+    present.
+
+    This is the same trap the Pi backfill already learned about parquet
+    ("valid footer, >0 rows" rather than "the file exists"), and it bites
+    harder here. ERA5T trails real time by ~5 days, and at that boundary CDS
+    happily returns a PARTIAL day — 2026-07-20 came back with 15 of 24 hours.
+    Nothing errors: WindField would build fine and RegularGridInterpolator,
+    which extrapolates by design, would silently invent wind for every flight
+    departing after the last available hour. Wrong numbers with no warning
+    are worse than a missing day, so we require all 11 pressure levels and
+    at least 20 of the 24 hourly steps, and skip the day otherwise.
+    """
+    try:
+        import xarray as xr
+        ds = xr.open_dataset(str(path))
+        ok = (ds.sizes.get("valid_time", 0) >= 20
+              and ds.sizes.get("pressure_level", 0) == 11
+              and "u" in ds.variables and "v" in ds.variables)
+        ds.close()
+        return ok
+    except Exception:
+        return False
+
+
 def ready_days() -> list[str]:
-    days = []
+    days, partial = [], []
     for d in sorted(FLIGHTS_DIR.glob("*")):
-        if (d / "flights.parquet").exists() and (d / "points.parquet").exists() \
-                and (ERA5_DIR / f"{d.name}.nc").exists():
+        nc = ERA5_DIR / f"{d.name}.nc"
+        if not ((d / "flights.parquet").exists()
+                and (d / "points.parquet").exists() and nc.exists()):
+            continue
+        if era5_is_complete(nc):
             days.append(d.name)
+        else:
+            partial.append(d.name)
+    if partial:
+        print(f"skipping {len(partial)} day(s) with INCOMPLETE ERA5 "
+              f"(re-run the ERA5 backfill once the data is published): "
+              f"{', '.join(partial)}")
     return days
 
 
