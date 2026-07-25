@@ -54,6 +54,7 @@ AIRPORTS_CSV = ROOT / "data/airports.csv"
 LOAD_FACTOR = 0.82
 RESERVE_KG = 2000.0
 BATCH = 150                      # trace members per work unit
+MIN_DUMP_COVERAGE = 0.90         # below this the dump was not read to the end
 
 # per-worker globals (set by _init)
 _BOX = None
@@ -131,9 +132,16 @@ def _any_in_box(trace):
     return False
 
 
-def _iter_raw_members(part_paths):
-    """Yield raw (still-gzipped) bytes of every trace_full member, streaming."""
+def _iter_raw_members(part_paths, progress=None):
+    """Yield raw (still-gzipped) bytes of every trace_full member, streaming.
+
+    `progress`, if given, is a one-element list that receives the number of
+    bytes actually consumed from the dump, so the caller can verify the
+    stream reached the end instead of stopping early on a damaged archive.
+    """
     stream = _MultiFileReader(part_paths)
+    if progress is not None:
+        progress[0] = stream          # expose the reader; n_bytes read later
     with tarfile.open(fileobj=stream, mode="r|") as tar:
         for member in tar:
             if not member.isfile():
@@ -189,9 +197,11 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
             meta["day"] = day_iso
             writer.add(meta, pts)
 
+    reader_ref = [None]
+
     if workers <= 1:
         _init(BOX, AIRPORTS_CSV)
-        for batch in _batched(_iter_raw_members(parts), BATCH):
+        for batch in _batched(_iter_raw_members(parts, reader_ref), BATCH):
             n_batches += 1
             n_traces_est += len(batch)
             _consume(_process_batch(batch))
@@ -205,7 +215,7 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
         pending = deque()
         max_pending = workers * 3
         try:
-            for batch in _batched(_iter_raw_members(parts), BATCH):
+            for batch in _batched(_iter_raw_members(parts, reader_ref), BATCH):
                 n_batches += 1
                 n_traces_est += len(batch)
                 pending.append(pool.apply_async(_process_batch, (batch,)))
@@ -224,10 +234,17 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
 
     info = writer.flush()
     elapsed = time.time() - t0
+    consumed = reader_ref[0].n_bytes if reader_ref[0] is not None else 0
+    dump_size = sum(p.stat().st_size for p in parts)
+    coverage = consumed / dump_size if dump_size else 0.0
     summary = {
         "day": day_iso, "day_tag": base,
         "box": [BOX.lat_min, BOX.lat_max, BOX.lon_min, BOX.lon_max],
         "workers": workers,
+        "n_parts": len(parts),
+        "dump_bytes": dump_size,
+        "bytes_consumed": consumed,
+        "dump_coverage": round(coverage, 4),
         "n_members_scanned": n_traces_est,
         "n_undecodable_members": n_undecodable,
         "n_flights": writer.n_flights,
@@ -239,6 +256,20 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
     print("\n=== SUMMARY ===")
     for k, v in summary.items():
         print(f"  {k}: {v}")
+
+    # Coverage guard. A tar stream ends at the first pair of zero blocks, and a
+    # damaged dump can carry that pattern at the seam between split parts: the
+    # reader then stops early, reports no error, and the day looks like a clean
+    # success while a whole part was silently dropped. Observed on the two
+    # damaged dumps 2026-05-04 and 2026-04-30, which stop at the end of part
+    # aa. Across 80 healthy days the member count never fell below 57.744, so a
+    # day that reads well under its own file size is anomalous by construction.
+    if coverage < MIN_DUMP_COVERAGE:
+        print(f"\n!!! ATTENZIONE: letti solo {coverage*100:.1f}% dei byte del "
+              f"dump ({consumed:,} di {dump_size:,}).")
+        print("!!! Il tar si e' chiuso prima della fine: la giornata e' "
+              "INCOMPLETA, non fidarsi del conteggio voli.")
+        summary["incomplete"] = True
     print(f"wrote {info['flights_file']} ({info['flights_rows']} flights) "
           f"and {info['points_file']} ({info['points_rows']} points)")
     return summary

@@ -44,6 +44,8 @@ class _MultiFileReader(io.RawIOBase):
     def __init__(self, paths: Sequence[Path]):
         self._paths = [Path(p) for p in paths]
         self._idx = 0
+        self.n_bytes = 0          # consumed so far -> lets the caller check
+                                  # it actually reached the end of the dump
         self._fh = open(self._paths[0], "rb") if self._paths else None
 
     def readable(self) -> bool:
@@ -55,6 +57,7 @@ class _MultiFileReader(io.RawIOBase):
         while True:
             n = self._fh.readinto(b)
             if n:
+                self.n_bytes += n
                 return n
             # current part exhausted -> advance
             self._fh.close()
