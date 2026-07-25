@@ -54,6 +54,13 @@ def banner(s):
     print(f"\n{'='*72}\n{s}\n{'='*72}")
 
 
+def kea_ratio(d) -> float:
+    """En-route extension aggregated the way EUROCONTROL aggregates KEA: a
+    ratio of SUMS over the sample, not a median of per-flight ratios."""
+    gc = d.flown_enroute_km / d.dist_ratio_enroute
+    return (d.flown_enroute_km.sum() - gc.sum()) / gc.sum() * 100.0
+
+
 def main():
     df = load()
     days = sorted(df.day.unique())
@@ -98,22 +105,51 @@ def main():
 
     # ---- 3. KEA reconciliation -------------------------------------------
     banner("3. Riconciliazione con EUROCONTROL KEA (criterio 5 del go/no-go)")
-    er = df.dist_ratio_enroute.dropna()
-    gg = df.dist_ratio.dropna()
-    print(f"  estensione di percorso GATE-TO-GATE   "
-          f"{(gg.median()-1)*100:+6.2f} %   (n={len(gg):,})")
-    print(f"  estensione di percorso EN-ROUTE       "
-          f"{(er.median()-1)*100:+6.2f} %   (n={len(er):,})  "
-          f"<-- omogenea al KEA")
-    print(f"  KEA pubblicato EUROCONTROL (Europa)   {KEA_REFERENCE_PCT:+6.2f} % "
-          f"  (riferimento)")
+    d = df.dropna(subset=["dist_ratio_enroute"]).copy()
+    d["gc_enroute_km"] = d.flown_enroute_km / d.dist_ratio_enroute
+    kea_style = kea_ratio(d)
+    print(f"  estensione EN-ROUTE, aggregata come il KEA   "
+          f"{kea_style:+6.2f} %   (n={len(d):,})  <-- IL CONFRONTO")
+    print(f"  KEA pubblicato EUROCONTROL (Europa)          "
+          f"{KEA_REFERENCE_PCT:+6.2f} %     (riferimento)")
     print()
-    print("  Il KEA è definito sulla porzione EN-ROUTE (fuori da un cerchio di")
-    print("  40 NM dagli aeroporti) e usa come riferimento la 'achieved")
-    print("  distance', cioè una distanza great-circle — quindi la nostra")
-    print("  metrica en-route è costruita nello stesso modo. Il confronto")
-    print("  gate-to-gate NON sarebbe legittimo: include SID/STAR, vettoramento")
-    print("  e avvicinamento, che il KEA esclude per definizione.")
+    print(f"  per confronto, stesse tracce ma altre aggregazioni:")
+    print(f"    mediana dei rapporti per volo (en-route)   "
+          f"{(d.dist_ratio_enroute.median()-1)*100:+6.2f} %")
+    print(f"    mediana dei rapporti per volo (gate-gate)  "
+          f"{(df.dist_ratio.median()-1)*100:+6.2f} %  <-- NON confrontabile")
+    print()
+    print("  Perché queste tre cifre sono diverse, e quale è quella giusta:")
+    print("  * il KEA è un RAPPORTO DI SOMME (distanza totale volata su")
+    print("    distanza totale 'achieved'), non una mediana di rapporti per")
+    print("    volo: pesa quindi di più i voli lunghi. La distribuzione è")
+    print("    asimmetrica a destra, quindi il rapporto di somme viene più")
+    print("    alto della mediana. Usiamo la loro aggregazione.")
+    print("  * il KEA è EN-ROUTE, cioè fuori da un cerchio di 40 NM dagli")
+    print("    aeroporti. Il gate-to-gate include SID/STAR, vettoramento e")
+    print("    avvicinamento, che il KEA esclude per definizione: confrontarlo")
+    print("    col KEA gonfierebbe il nostro numero di tre volte.")
+    print()
+    print("  Differenza residua che NON possiamo togliere: il KEA è calcolato")
+    print("  sull'area di riferimento EUROCONTROL con i dati radar ETFMS, noi")
+    print("  su un box EU-Sud da ADS-B, su un sottoinsieme quality-gated e su")
+    print("  giorni estivi. Il confronto dice 'stesso ordine di grandezza,")
+    print("  costruito allo stesso modo', non 'riproduciamo il loro numero'.")
+
+    print("\n  --- controllo: la metrica en-route è affidabile solo se la")
+    print("      porzione en-route è una parte consistente del volo ---")
+    d["frac_enroute"] = d.flown_enroute_km / d.flown_km
+    fr = d.groupby("band", observed=True).agg(
+        n=("gc_km", "size"),
+        frazione_enroute=("frac_enroute", "median"),
+        kea_style=("gc_km", "size"),
+    )
+    fr["kea_style"] = [kea_ratio(g) for _, g in d.groupby("band", observed=True)]
+    print(fr.round(3).to_string())
+    print("  Sulle tratte <500 km i due cilindri da 40 NM mangiano metà o più")
+    print("  del volo: lì la metrica en-route è diluita e va letta con cautela.")
+    print("  Sopra gli 800 km si stabilizza, ed è il regime in cui il confronto")
+    print("  col KEA ha senso.")
 
     # ---- 4. stability preview --------------------------------------------
     banner("4. Anteprima di stabilità mese-su-mese (criterio 2, PARZIALE)")
@@ -122,8 +158,9 @@ def main():
         excess=("excess_total_pct", "median"),
         lat=("excess_lateral_pct", "median"),
         vert=("excess_vertical_pct", "median"),
-        enroute=("dist_ratio_enroute", lambda s: (s.median() - 1) * 100),
     )
+    m["kea_style"] = [kea_ratio(g.dropna(subset=["dist_ratio_enroute"]))
+                      for _, g in df.groupby("month")]
     print(m.round(2).to_string())
     print("\n  ATTENZIONE: mesi incompleti e tutti estivi. Non è il test di")
     print("  stabilità della fase 2b, è solo un controllo che la macchina")
