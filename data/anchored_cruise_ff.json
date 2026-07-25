@@ -1,0 +1,209 @@
+{
+  "_meta": {
+    "method": "cruise_ff_kgph = slope(last two ICAO distance points, kg/nm) * type's OpenAP cruise TAS (kt); see module docstring",
+    "source": "ICAO Carbon Emissions Calculator (ICEC) Methodology, Version 13.1, August 2024, Appendix C \"ICAO Fuel Consumption Table\"",
+    "url": "https://icec.icao.int/Documents/Methodology%20ICAO%20Carbon%20Emissions%20Calculator_v13_Final.pdf"
+  },
+  "types": {
+    "A20N": {
+      "cruise_ff_kgph": 2369.3,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "32N",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 5.3
+    },
+    "A21N": {
+      "cruise_ff_kgph": 2506.2,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "32Q",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 5.6
+    },
+    "A319": {
+      "cruise_ff_kgph": 2364.0,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "319",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 5.28
+    },
+    "A320": {
+      "cruise_ff_kgph": 2578.7,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "320",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 5.76
+    },
+    "A321": {
+      "cruise_ff_kgph": 3008.2,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "321",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 6.72
+    },
+    "A332": {
+      "cruise_ff_kgph": 5856.5,
+      "cruise_tas_kt": 470.3,
+      "icao_code": "332",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 12.45
+    },
+    "A333": {
+      "cruise_ff_kgph": 6120.8,
+      "cruise_tas_kt": 470.3,
+      "icao_code": "333",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 13.01
+    },
+    "A359": {
+      "cruise_ff_kgph": 6640.2,
+      "cruise_tas_kt": 487.5,
+      "icao_code": "359",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 13.62
+    },
+    "B38M": {
+      "cruise_ff_kgph": 2334.5,
+      "cruise_tas_kt": 453.1,
+      "icao_code": "7M8",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 5.15
+    },
+    "B738": {
+      "cruise_ff_kgph": 2528.8,
+      "cruise_tas_kt": 452.5,
+      "icao_code": "738",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 5.59
+    },
+    "B739": {
+      "cruise_ff_kgph": 2698.8,
+      "cruise_tas_kt": 453.1,
+      "icao_code": "739",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 5.96
+    },
+    "B752": {
+      "cruise_ff_kgph": 3446.9,
+      "cruise_tas_kt": 458.9,
+      "icao_code": "752",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 7.51
+    },
+    "B763": {
+      "cruise_ff_kgph": 5090.5,
+      "cruise_tas_kt": 458.9,
+      "icao_code": "763",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 11.09
+    },
+    "B772": {
+      "cruise_ff_kgph": 7192.3,
+      "cruise_tas_kt": 481.8,
+      "icao_code": "772",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 14.93
+    },
+    "B77W": {
+      "cruise_ff_kgph": 8222.4,
+      "cruise_tas_kt": 481.8,
+      "icao_code": "77W",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 17.07
+    },
+    "E170": {
+      "cruise_ff_kgph": 1454.0,
+      "cruise_tas_kt": 430.2,
+      "icao_code": "E70",
+      "segment_nm": [
+        1000,
+        1500
+      ],
+      "slope_kg_per_nm": 3.38
+    },
+    "E190": {
+      "cruise_ff_kgph": 1827.1,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "E90",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 4.08
+    },
+    "E195": {
+      "cruise_ff_kgph": 2089.3,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "E95",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 4.67
+    },
+    "E290": {
+      "cruise_ff_kgph": 1573.0,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "290",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 3.52
+    },
+    "E295": {
+      "cruise_ff_kgph": 1716.2,
+      "cruise_tas_kt": 447.4,
+      "icao_code": "295",
+      "segment_nm": [
+        1500,
+        2000
+      ],
+      "slope_kg_per_nm": 3.84
+    }
+  }
+}

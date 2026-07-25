@@ -99,13 +99,59 @@ Un volo entra nell'analisi solo se: O/D noti (aeroporto entro 8 km), `flown ≥
 `GC ≥ 150 km`. Le metriche (`max_gap_s`, `hole_time_s`, `coverage_frac`) sono nel
 parquet per volo.
 
-## Calibrazione per-tipo
+## Scomposizione laterale / verticale dell'excess (fase 2a)
 
-Il modello OpenAP ha bias sistematici per alcuni tipi (neo Airbus bassi, Embraer
-E-Jet alti). Si correggono con un **fattore scalare per tipo** ancorato al fuel
-flow di crociera pubblicato, applicato **a valle** (il `co2_kg_v0` nel parquet
-resta grezzo e model-indipendente). Fattori in `data/calibration.json`, derivati
-da `lab/calibrate.py`. _(Tabella e ancoraggi: vedi report fase 1.)_
+L'excess misurato contro un ottimo great-circle mette insieme due cose molto
+diverse: aver volato **più lontano** del necessario, e aver volato **male in
+verticale** il percorso assegnato (quota di crociera non ottima, discese
+anticipate, attese). Solo la prima è confrontabile con le metriche pubblicate.
+`pipeline/decompose.py` introduce una **baseline intermedia**:
+
+```
+ideal_gc = profilo ottimo sulla distanza GREAT-CIRCLE
+hybrid   = profilo ottimo sulla GROUND TRACK REALE
+real     = volo effettivo
+
+excess_laterale  = (hybrid   − ideal_gc) / ideal_gc × 100
+excess_verticale = (real     − hybrid  ) / ideal_gc × 100
+excess_totale    = (real     − ideal_gc) / ideal_gc × 100  = laterale + verticale
+```
+
+Le due componenti sono **additive per costruzione** (stesso denominatore).
+Due scelte deliberate: la quota di crociera dell'`hybrid` è quella ottima per
+la distanza *great-circle* (così la componente laterale isola una sola cosa,
+la distanza in più), mentre il **vento** dell'`hybrid` è campionato lungo la
+**traccia reale** (una deviazione fatta per prendere vento in coda deve
+risultare "laterale ma economica").
+
+Oltre al fuel si produce la metrica puramente geometrica **omogenea al KEA di
+EUROCONTROL**: `dist_ratio_enroute`, cioè il rapporto distanza volata /
+great-circle calcolato **escludendo le aree terminali** (punti entro 40 NM dai
+due aeroporti, esattamente la definizione en-route del KEA). Il rapporto
+gate-to-gate è riportato accanto ma **non** è confrontabile col KEA, perché
+include SID/STAR e vettoramento che il KEA esclude per definizione.
+
+## Calibrazione per-tipo e ancoraggio delle fonti
+
+Il modello OpenAP ha bias sistematici per alcuni tipi (neo Airbus bassi,
+alcuni Embraer alti). Si correggono con un **fattore scalare per tipo**
+ancorato al fuel flow di crociera pubblicato, applicato **a valle** (il
+`co2_kg_v0` nel parquet resta grezzo e model-indipendente). Fattori in
+`data/calibration.json`, derivati da `lab/calibrate.py`.
+
+**Fase 2a — i riferimenti sono ora citabili.** Le cifre industriali indicative
+usate in fase 1 sono state sostituite con valori derivati dalla
+**ICAO Carbon Emissions Calculator (ICEC) Methodology v13.1 (agosto 2024),
+Appendice C "ICAO Fuel Consumption Table"**
+(<https://icec.icao.int/Documents/Methodology%20ICAO%20Carbon%20Emissions%20Calculator_v13_Final.pdf>).
+La tabella ICAO dà il **carburante totale di tratta** (kg) a distanze fisse,
+non un consumo orario di crociera: `lab/anchor_refs.py` ricava il kg/h
+prendendo la **pendenza** della curva sul segmento **1500–2000 NM** (regime
+dominato dalla crociera) e moltiplicandola per la TAS di crociera del tipo.
+La derivazione è esplicita e riproducibile, ed è documentata come *conversione*
+— non come misura indipendente. Tabella completa in `data/icao_fuel_table.json`
+(dati grezzi ICAO, versionati) e `data/anchored_cruise_ff.json` (derivati).
+I business jet (C550, GLF6) non sono coperti dall'ICEC e restano non ancorati.
 
 ## Esecuzione
 
@@ -115,9 +161,20 @@ WORKERS=4 nice -n15 ionice -c3 venv/bin/python pipeline/run_daily.py --day 2026.
 ```
 Cron notturno: `scripts/daily_cron.sh` (installato in crontab alle 02:00).
 
-Laboratorio (Mac):
+Laboratorio (Mac) — **catena completa in un comando**, idempotente e
+riprendibile (è lo stesso comando che rifà la fase 2b sull'anno intero):
 ```
-./sync_parquet.sh                        # rsync parquet dal Pi
-lab-venv/bin/python lab/gate.py          # gate del vento
-lab-venv/bin/python lab/calibrate.py     # fattori di calibrazione
+scripts/run_phase2.sh
 ```
+Singoli passi, se servono:
+```
+./sync_parquet.sh                              # rsync parquet dal Pi
+lab-venv/bin/python scripts/era5_backfill.py   # ERA5 per tutti i giorni
+lab-venv/bin/python lab/gate.py                # gate del vento
+lab-venv/bin/python lab/anchor_refs.py         # riferimenti ICAO -> kg/h
+lab-venv/bin/python lab/calibrate.py           # fattori di calibrazione
+lab-venv/bin/python lab/run_decompose.py       # scomposizione lat/vert
+lab-venv/bin/python lab/decompose_report.py    # tabelle del report
+```
+Nessuno di questi comandi pubblica niente: il deploy resta una decisione
+esplicita e separata.

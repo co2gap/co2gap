@@ -37,7 +37,7 @@ KTS_TO_MS = 0.514444
 
 def _sound_speed_ms(alt_ft: float) -> float:
     try:
-        _, _, T = _aero.vatmos(alt_ft * 0.3048)
+        _, _, T = _aero.atmos(alt_ft * 0.3048)
         return math.sqrt(1.4 * 287.05287 * T)
     except Exception:
         return 295.0

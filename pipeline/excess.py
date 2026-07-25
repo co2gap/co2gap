@@ -29,7 +29,7 @@ STEP_S = 20.0
 def _sound_speed_ms(alt_ft: float) -> float:
     h_m = alt_ft * 0.3048
     try:
-        _, _, T = _aero.vatmos(h_m)
+        _, _, T = _aero.atmos(h_m)
         return math.sqrt(1.4 * 287.05287 * T)
     except Exception:
         return 295.0

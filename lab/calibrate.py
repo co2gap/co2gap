@@ -41,10 +41,14 @@ TOL = 0.10          # only correct types off by more than 10%
 MIN_N = 100
 MIN_N_SHOW = 8      # still report the observed median down to this n
 
-# Published typical CRUISE fuel flow (kg/h), whole-aircraft — industry figures
-# used as calibration anchors. Documented in the README; a firmer source
-# (EEA/EMEP, ICAO fuel tables) is a follow-up.
-PUB_CRUISE_FF = {
+ANCHORED = ROOT / "data/anchored_cruise_ff.json"
+
+# Fase 2a: PUB_CRUISE_FF now comes primarily from data/anchored_cruise_ff.json
+# (ICAO Carbon Emissions Calculator v13.1 Appendix C, see lab/anchor_refs.py
+# for the derivation) instead of the fase-1 industry-indicative guesses.
+# Kept as a fallback ONLY for types with no ICAO ICEC coverage (business
+# jets) or if the anchored-refs file hasn't been generated yet.
+_FALLBACK_PUB_CRUISE_FF = {
     "A319": 2250, "A320": 2525, "A20N": 2075, "A321": 3050, "A21N": 2450,
     "B738": 2500, "B38M": 2250, "B737": 2475, "B739": 2625, "B39M": 2375,
     "E170": 1450, "E75L": 1525, "E190": 1650, "E195": 1725, "E290": 1600,
@@ -52,6 +56,20 @@ PUB_CRUISE_FF = {
     "B77W": 7750, "B772": 6600, "A332": 5900, "A333": 6100, "A359": 6000,
     "CRJ9": 1525,
 }
+
+
+def load_pub_cruise_ff() -> dict:
+    ff = dict(_FALLBACK_PUB_CRUISE_FF)
+    source_note = {t: "fase-1 indicative (no ICAO coverage)" for t in ff}
+    if ANCHORED.exists():
+        anchored = json.loads(ANCHORED.read_text())
+        for t, entry in anchored["types"].items():
+            ff[t] = entry["cruise_ff_kgph"]
+            source_note[t] = f"ICAO ICEC v13.1 (eq. type {entry['icao_code']})"
+    return ff, source_note
+
+
+PUB_CRUISE_FF, PUB_SOURCE = load_pub_cruise_ff()
 
 
 def load_clean():
@@ -94,7 +112,8 @@ def main():
             else:
                 provisional.append((t, len(ffs), dev))
                 mark = f"  <-- provisional (n<{MIN_N}, NOT calibrated)"
-        print(f"{t:5} {len(ffs):>4} {obs:>10.0f} {pub:>9} {dev:>+6.0f} {factor:>7.3f}{mark}")
+        print(f"{t:5} {len(ffs):>4} {obs:>10.0f} {pub:>9} {dev:>+6.0f} {factor:>7.3f}{mark}"
+              f"   [{PUB_SOURCE.get(t, '?')}]")
 
     OUT.write_text(json.dumps(factors, indent=2, sort_keys=True))
     print(f"\nwrote {OUT} with {len(factors)} correction factor(s):")

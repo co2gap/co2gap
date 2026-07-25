@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""
+Fase 2a: run the lateral/vertical excess decomposition over accumulated days.
+
+Designed so the fase-2b rerun over the whole year is ONE COMMAND with no
+edits: it processes whatever days have BOTH a flights.parquet and an ERA5
+file, one day at a time (points.parquet is ~44 MB/day and never all loaded
+at once), and appends to a single tidy output parquet. Already-processed
+days are skipped unless --force, so it can be re-run as the ERA5 backfill
+and the Pi backfill fill in more days.
+
+    lab-venv/bin/python lab/run_decompose.py                 # all ready days
+    lab-venv/bin/python lab/run_decompose.py --days 2026-07-13 2026-07-19
+    lab-venv/bin/python lab/run_decompose.py --force         # recompute all
+
+Output: data/decomposition/<day>.parquet, one row per quality-gated flight.
+Aggregation and reporting live in lab/decompose_report.py.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "pipeline"))
+sys.path.insert(0, str(ROOT / "lab"))
+sys.path.insert(0, str(ROOT))
+
+from analysis import quality_gate, LOAD_FACTOR, RESERVE_KG   # noqa: E402
+from decompose import decompose_flight                        # noqa: E402
+from wind.era5 import WindField                               # noqa: E402
+
+FLIGHTS_DIR = ROOT / "data/flights"
+ERA5_DIR = ROOT / "data/era5"
+OUT_DIR = ROOT / "data/decomposition"
+
+OUT_COLS = ["day", "flight_id", "typecode", "origin_icao", "dest_icao",
+            "gc_km", "flown_km", "dist_ratio", "dist_ratio_enroute",
+            "flown_enroute_km", "dep_ts",
+            "excess_total_pct", "excess_lateral_pct", "excess_vertical_pct",
+            "ideal_gc_co2_kg", "hybrid_co2_kg", "co2_kg_v0",
+            "mean_wpar_gc_ms", "mean_wpar_track_ms", "cruise_alt_ft"]
+
+
+def ready_days() -> list[str]:
+    days = []
+    for d in sorted(FLIGHTS_DIR.glob("*")):
+        if (d / "flights.parquet").exists() and (d / "points.parquet").exists() \
+                and (ERA5_DIR / f"{d.name}.nc").exists():
+            days.append(d.name)
+    return days
+
+
+def process_day(day: str) -> int:
+    fl = pq.read_table(FLIGHTS_DIR / day / "flights.parquet").to_pandas()
+    q = quality_gate(fl)
+    if q.empty:
+        return 0
+    wf = WindField([ERA5_DIR / f"{day}.nc"])
+
+    keep = set(q.flight_id.tolist())
+    pts = pq.read_table(FLIGHTS_DIR / day / "points.parquet",
+                        columns=["flight_id", "lat", "lon"]).to_pandas()
+    pts = pts[pts.flight_id.isin(keep)]
+    # group once; the points table is already ordered by flight_id + time
+    grouped = {fid: (g.lat.to_numpy(np.float64), g.lon.to_numpy(np.float64))
+               for fid, g in pts.groupby("flight_id", sort=False)}
+    del pts
+
+    rows = []
+    for r in q.itertuples(index=False):
+        track = grouped.get(r.flight_id)
+        if track is None or len(track[0]) < 3:
+            continue
+        lat, lon = track
+        d = decompose_flight(r.typecode, float(r.co2_kg_v0), float(r.gc_km),
+                             float(r.flown_km), lat, lon, int(r.dep_ts), wf,
+                             load_factor=LOAD_FACTOR, reserve_kg=RESERVE_KG)
+        if d is None:
+            continue
+        rows.append({
+            "day": day, "flight_id": int(r.flight_id), "typecode": r.typecode,
+            "origin_icao": r.origin_icao, "dest_icao": r.dest_icao,
+            "gc_km": float(r.gc_km), "flown_km": float(r.flown_km),
+            "dep_ts": int(r.dep_ts), "co2_kg_v0": float(r.co2_kg_v0),
+            **{k: d[k] for k in (
+                "dist_ratio", "dist_ratio_enroute", "flown_enroute_km",
+                "excess_total_pct", "excess_lateral_pct",
+                "excess_vertical_pct", "ideal_gc_co2_kg", "hybrid_co2_kg",
+                "mean_wpar_gc_ms", "mean_wpar_track_ms", "cruise_alt_ft")},
+        })
+
+    if not rows:
+        return 0
+    df = pd.DataFrame(rows)[OUT_COLS]
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    pq.write_table(pa.Table.from_pandas(df, preserve_index=False),
+                   OUT_DIR / f"{day}.parquet")
+    return len(df)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--days", nargs="*", default=None)
+    ap.add_argument("--force", action="store_true")
+    args = ap.parse_args()
+
+    days = args.days if args.days else ready_days()
+    todo = [d for d in days
+            if args.force or not (OUT_DIR / f"{d}.parquet").exists()]
+    print(f"{len(days)} day(s) ready, {len(todo)} to process")
+
+    t0 = time.time()
+    total = 0
+    for i, day in enumerate(todo, 1):
+        t = time.time()
+        try:
+            n = process_day(day)
+        except Exception as e:
+            print(f"  {day}  FAILED: {e.__class__.__name__}: {e}", flush=True)
+            continue
+        total += n
+        el = time.time() - t0
+        eta = (len(todo) - i) * el / i
+        print(f"  {day}  {n:5d} flights  {time.time()-t:5.1f}s   "
+              f"[{i}/{len(todo)}]  ETA {eta/60:.1f} min", flush=True)
+
+    print(f"\ndone: {total:,} flights across {len(todo)} day(s) in "
+          f"{(time.time()-t0)/60:.1f} min -> {OUT_DIR}")
+
+
+if __name__ == "__main__":
+    main()
