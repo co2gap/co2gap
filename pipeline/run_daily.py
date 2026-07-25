@@ -142,7 +142,15 @@ def _iter_raw_members(part_paths, progress=None):
     stream = _MultiFileReader(part_paths)
     if progress is not None:
         progress[0] = stream          # expose the reader; n_bytes read later
-    with tarfile.open(fileobj=stream, mode="r|") as tar:
+    # ignore_zeros=True is REQUIRED, not a nicety. A tar stream normally ends
+    # at the first pair of zero blocks, and some adsb.lol dumps carry that
+    # pattern at the seam between split parts: the reader then stops there,
+    # silently, with no error, and the day is written with only its first
+    # part. Measured on 2026-05-04: 51.052 traces read vs 80.583 actually
+    # present -- 37% of the day dropped while reporting success.
+    # Verified safe on a healthy dump (2026-04-29): 67.673 traces either way,
+    # byte-for-byte the whole archive, and identical to what the Pi reports.
+    with tarfile.open(fileobj=stream, mode="r|", ignore_zeros=True) as tar:
         for member in tar:
             if not member.isfile():
                 continue
