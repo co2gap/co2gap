@@ -38,7 +38,8 @@ ROOT = Path(os.environ.get("ADSB_ROOT", "/mnt/wd_elements/adsb-co2"))
 sys.path.insert(0, str(ROOT / "ingest"))
 sys.path.insert(0, str(ROOT / "pipeline"))
 
-from source import BBox, _MultiFileReader, _decode_member   # noqa: E402
+from source import (BBox, _MultiFileReader, _decode_member,  # noqa: E402
+                    decode_failures)
 from trajectories import flights_from_trace, haversine_km    # noqa: E402
 from emissions import openap_model, estimate_fuel            # noqa: E402
 from flightproc import process_flight                        # noqa: E402
@@ -66,7 +67,14 @@ def _init(box, airports_csv):
 
 
 def _process_batch(raw_batch):
-    """Worker: decode a batch of raw trace members -> list of (meta, points)."""
+    """Worker: decode a batch of raw trace members.
+
+    Returns (list of (meta, points), n_undecodable). The counter travels back
+    with the results because the workers are separate processes: a corrupt
+    member is now skipped rather than fatal, and the only way to notice how
+    much data that costs is to add it up in the parent.
+    """
+    bad_before = decode_failures()
     out = []
     for raw in raw_batch:
         obj = _decode_member(raw)
@@ -110,7 +118,7 @@ def _process_batch(raw_batch):
                 "tas_mode": res.tas_mode, "pipeline_ver": PIPELINE_VER,
             }
             out.append((meta, pts))
-    return out
+    return out, decode_failures() - bad_before
 
 
 def _any_in_box(trace):
@@ -168,11 +176,15 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
     writer = DayWriter(OUT_DIR, day_iso)
     t0 = time.time()
     n_batches = n_traces_est = 0
+    n_undecodable = 0
 
     import multiprocessing as mp
     ctx = mp.get_context("fork")
 
-    def _consume(results):
+    def _consume(result):
+        nonlocal n_undecodable
+        results, n_bad = result
+        n_undecodable += n_bad
         for meta, pts in results:
             meta["day"] = day_iso
             writer.add(meta, pts)
@@ -217,6 +229,7 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
         "box": [BOX.lat_min, BOX.lat_max, BOX.lon_min, BOX.lon_max],
         "workers": workers,
         "n_members_scanned": n_traces_est,
+        "n_undecodable_members": n_undecodable,
         "n_flights": writer.n_flights,
         "points_rows": info["points_rows"],
         "elapsed_s": round(elapsed, 1),

@@ -32,6 +32,7 @@ import gzip
 import io
 import json
 import tarfile
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
@@ -70,17 +71,46 @@ class _MultiFileReader(io.RawIOBase):
         super().close()
 
 
+DECODE_ERRORS = (OSError, zlib.error, EOFError)
+# ^ gzip.decompress raises THREE unrelated families on corrupt input:
+#   * gzip.BadGzipFile (an OSError)  -> bad magic/header
+#   * zlib.error                     -> corrupt deflate stream
+#   * EOFError                       -> truncated member
+# zlib.error and EOFError are NOT subclasses of OSError, so catching OSError
+# alone (as this did until 2026-07-25) let a single bad member escape the
+# worker and kill the WHOLE day: 500+ s of work and ~7.000 flights lost
+# because one trace out of ~45.000 was damaged. Two days of the YTD backfill
+# died this way (2026-05-04, 2026-04-30).
+
+_decode_failures = 0
+
+
 def _decode_member(raw: bytes) -> dict | None:
-    """Decode one trace file. readsb stores them gzip-compressed."""
+    """Decode one trace file. readsb stores them gzip-compressed.
+
+    Returns None on a damaged member instead of raising: a corrupt trace is
+    one aircraft missing from one day, which is noise at our aggregation
+    level, while an exception costs the entire day. Failures are counted in
+    `_decode_failures` so the caller can report them — silently dropping bad
+    data without ever surfacing how much is the failure mode to avoid.
+    """
+    global _decode_failures
     if raw[:2] == b"\x1f\x8b":  # gzip magic
         try:
             raw = gzip.decompress(raw)
-        except OSError:
+        except DECODE_ERRORS:
+            _decode_failures += 1
             return None
     try:
         return json.loads(raw)
     except (ValueError, UnicodeDecodeError):
+        _decode_failures += 1
         return None
+
+
+def decode_failures() -> int:
+    """How many members failed to decode in this process so far."""
+    return _decode_failures
 
 
 class TraceSource:
