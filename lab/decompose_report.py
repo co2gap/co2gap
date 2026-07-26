@@ -84,8 +84,16 @@ def main():
     days = sorted(df.day.unique())
     banner(f"DECOMPOSIZIONE LATERALE / VERTICALE — {len(df):,} voli, "
            f"{len(days)} giorni ({days[0]} → {days[-1]})")
-    print("*** TUTTI I NUMERI SONO PROVVISORI: il campione è solo tarda "
-          "primavera/estate. ***")
+    # The provisional warning must describe the sample actually loaded, not the
+    # one this report was first written against: a banner that keeps saying
+    # "summer only" over a full-year run is the report lying about itself.
+    months = sorted({d[:7] for d in days})
+    if len(months) < 6:
+        print(f"*** NUMERI PROVVISORI: il campione copre solo {len(months)} "
+              f"mese/i ({', '.join(months)}), non un anno. ***")
+    else:
+        print(f"*** Campione: {len(months)} mesi ({months[0]} → {months[-1]}), "
+              f"{len(days)} giorni. Copertura invernale INCLUSA. ***")
 
     # ---- 1. headline ------------------------------------------------------
     banner("1. Scomposizione dell'excess (punti percentuali)")
@@ -167,9 +175,10 @@ def main():
     print()
     print("  Differenza residua che NON possiamo togliere: il KEA è calcolato")
     print("  sull'area di riferimento EUROCONTROL con i dati radar ETFMS, noi")
-    print("  su un box EU-Sud da ADS-B, su un sottoinsieme quality-gated e su")
-    print("  giorni estivi. Il confronto dice 'stesso ordine di grandezza,")
-    print("  costruito allo stesso modo', non 'riproduciamo il loro numero'.")
+    print("  da ADS-B su un sottoinsieme quality-gated, con un baseline e un")
+    print("  quality gate nostri. Il confronto dice 'stesso ordine di")
+    print("  grandezza, costruito allo stesso modo', non 'riproduciamo il")
+    print("  loro numero'.")
 
     print("\n  --- controllo: la metrica en-route è affidabile solo se la")
     print("      porzione en-route è una parte consistente del volo ---")
@@ -197,9 +206,9 @@ def main():
     m["kea_style"] = [kea_ratio(g.dropna(subset=["dist_ratio_enroute"]))
                       for _, g in df.groupby("month")]
     print(m.round(2).to_string())
-    print("\n  ATTENZIONE: mesi incompleti e tutti estivi. Non è il test di")
-    print("  stabilità della fase 2b, è solo un controllo che la macchina")
-    print("  produca numeri coerenti da un mese all'altro.")
+    print("\n  Questo NON è il test del criterio 2: qui si confrontano livelli")
+    print("  mensili, mentre il criterio chiede la persistenza della")
+    print("  CLASSIFICA per rotta (Spearman, lab/stability.py).")
 
     # ---- 5. where the lateral component is largest -----------------------
     banner(f"5. Rotte con la maggiore estensione EN-ROUTE (n>={MIN_N_ROUTE}) "
