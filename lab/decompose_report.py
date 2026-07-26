@@ -25,11 +25,15 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import os
+
 import pandas as pd
 import pyarrow.parquet as pq
 
 ROOT = Path(__file__).resolve().parents[1]
-DEC_DIR = ROOT / "data/decomposition"
+# Follows the environment for the same reason as run_decompose: a report built
+# from the wrong box's decomposition would look perfectly valid.
+DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
 
 BANDS = [150, 300, 500, 800, 1200, 2000, 20000]
 BAND_LABELS = ["150–300", "300–500", "500–800", "800–1200",

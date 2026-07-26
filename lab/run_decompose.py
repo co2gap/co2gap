@@ -20,6 +20,7 @@ Aggregation and reporting live in lab/decompose_report.py.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -38,9 +39,15 @@ from analysis import quality_gate, LOAD_FACTOR, RESERVE_KG   # noqa: E402
 from decompose import decompose_flight                        # noqa: E402
 from wind.era5 import WindField                               # noqa: E402
 
-FLIGHTS_DIR = ROOT / "data/flights"
-ERA5_DIR = ROOT / "data/era5"
-OUT_DIR = ROOT / "data/decomposition"
+# All three follow the environment, because the box is not a property of the
+# code: running the ECAC box against the default paths would read the SMALLER
+# box's flights and the SMALLER box's wind, and write into the same output
+# directory as a previous run — a heavy computation on the wrong dataset with no
+# error anywhere. Same failure mode already found in the daily pipeline and in
+# the ERA5 cache; guarded the same way.
+FLIGHTS_DIR = Path(os.environ.get("ADSB_FLIGHTS_DIR") or (ROOT / "data/flights"))
+ERA5_DIR = Path(os.environ.get("ERA5_DIR") or (ROOT / "data/era5"))
+OUT_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
 
 OUT_COLS = ["day", "flight_id", "typecode", "origin_icao", "dest_icao",
             "gc_km", "flown_km", "dist_ratio", "dist_ratio_enroute",
