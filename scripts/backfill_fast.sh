@@ -34,12 +34,13 @@ WORKERS="${WORKERS:-8}"
 FROM_DAY="${1:?uso: backfill_fast.sh FROM_DAY TO_DAY (ISO, si percorre a ritroso)}"
 TO_DAY="${2:?uso: backfill_fast.sh FROM_DAY TO_DAY (ISO, si percorre a ritroso)}"
 
+FLIGHTS_DIR="${ADSB_FLIGHTS_DIR:-$ROOT/data/flights}"
 LOG="$ROOT/logs/backfill.log"
 VERBOSE="$ROOT/logs/backfill_verbose.log"
 MISSING="$ROOT/data/backfill_missing.txt"
 GLOBAL_LOCK="$ROOT/.backfill.single.lock"
 
-mkdir -p "$ROOT/logs" "$ROOT/data/raw" "$ROOT/data/flights"
+mkdir -p "$ROOT/logs" "$ROOT/data/raw" "$FLIGHTS_DIR"
 touch "$MISSING"
 
 log() { echo "$(date '+%F %T') $*" | tee -a "$LOG"; }
@@ -62,7 +63,7 @@ raw_glob() { echo "$ROOT/data/raw/v${1//-/.}-planes-readsb-prod-0.tar."*; }
 drop_raw() { rm -f "$ROOT/data/raw/v${1//-/.}-planes-readsb-prod-0.tar."*; }
 
 is_valid_day() {
-    local f="$ROOT/data/flights/$1/flights.parquet"
+    local f="$FLIGHTS_DIR/$1/flights.parquet"
     [ -f "$f" ] || return 1
     "$VENV" - "$f" <<'PY' 2>/dev/null
 import sys
@@ -114,7 +115,8 @@ done
 t_start=$(date +%s)
 n_ok=0; n_fail=0; n_missing=0
 log "==== BACKFILL FAST $FROM_DAY -> $TO_DAY : ${#DAYS[@]} giorni da fare, \
-$n_already gia' presenti (workers=$WORKERS, prefetch attivo) ===="
+$n_already gia' presenti · box=${ADSB_BBOX:-default} · out=$FLIGHTS_DIR \
+(workers=$WORKERS, prefetch attivo) ===="
 [ ${#DAYS[@]} -eq 0 ] && { log "niente da fare"; exit 0; }
 
 for idx in "${!DAYS[@]}"; do
@@ -154,12 +156,12 @@ for idx in "${!DAYS[@]}"; do
 
     if WORKERS="$WORKERS" "$VENV" "$ROOT/pipeline/run_daily.py" --day "${iso//-/.}" \
             >>"$VERBOSE" 2>&1 && is_valid_day "$iso"; then
-        nf=$("$VENV" -c "import pyarrow.parquet as pq;print(pq.read_metadata('$ROOT/data/flights/$iso/flights.parquet').num_rows)" 2>/dev/null)
+        nf=$("$VENV" -c "import pyarrow.parquet as pq;print(pq.read_metadata('$FLIGHTS_DIR/$iso/flights.parquet').num_rows)" 2>/dev/null)
         log "$iso  OK    voli=${nf:-?}  $(( $(date +%s) - day_t0 ))s"
         n_ok=$((n_ok+1))
     else
         log "$iso  FALLITO (pipeline), $(( $(date +%s) - day_t0 ))s"
-        rm -rf "$ROOT/data/flights/$iso"
+        rm -rf "$FLIGHTS_DIR/$iso"
         n_fail=$((n_fail+1))
     fi
     drop_raw "$iso"

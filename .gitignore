@@ -3,7 +3,7 @@ data/raw/
 data/interim/
 data/flights/
 # ERA5 wind cache (Mac lab only)
-data/era5/
+data/era5*/
 # per-flight decomposition output (derived, regenerable, and per-flight rows
 # must never leave the lab — the published product is always aggregate)
 data/decomposition/
