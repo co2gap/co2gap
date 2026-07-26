@@ -145,9 +145,25 @@ def process_day(day: str) -> int:
         return 0
     df = pd.DataFrame(rows)[OUT_COLS]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    pq.write_table(pa.Table.from_pandas(df, preserve_index=False),
-                   OUT_DIR / f"{day}.parquet")
+    # Write to a temp name and rename: a run killed mid-write would otherwise
+    # leave a footer-less parquet under the final name, which the resume logic
+    # counts as done and never recomputes — the day disappears in silence.
+    # rename() is atomic within a filesystem, so the final name only ever
+    # exists complete.
+    tmp = OUT_DIR / f".{day}.parquet.tmp"
+    pq.write_table(pa.Table.from_pandas(df, preserve_index=False), tmp)
+    tmp.replace(OUT_DIR / f"{day}.parquet")
     return len(df)
+
+
+def output_is_valid(path: Path) -> bool:
+    """A day counts as done only if its parquet READS, not if it exists."""
+    if not path.exists():
+        return False
+    try:
+        return pq.read_metadata(path).num_rows > 0
+    except Exception:
+        return False
 
 
 def main():
@@ -158,7 +174,7 @@ def main():
 
     days = args.days if args.days else ready_days()
     todo = [d for d in days
-            if args.force or not (OUT_DIR / f"{d}.parquet").exists()]
+            if args.force or not output_is_valid(OUT_DIR / f"{d}.parquet")]
     print(f"{len(days)} day(s) ready, {len(todo)} to process")
 
     t0 = time.time()
