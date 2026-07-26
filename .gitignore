@@ -1,12 +1,17 @@
-# raw dumps and derived data — huge, never commit
+# raw dumps and derived data — huge, never commit.
+# The globs must cover every geographic box, not just the first one: these
+# started as data/flights and data/decomposition, and when the ECAC box added
+# data/flights_ecac and data/decomposition_ecac they fell straight through the
+# ignore rules. 15 GB of parquet and, far worse, PER-FLIGHT rows sat one
+# `git add -A` away from being committed.
 data/raw/
 data/interim/
-data/flights/
+data/flights*/
 # ERA5 wind cache (Mac lab only)
 data/era5*/
 # per-flight decomposition output (derived, regenerable, and per-flight rows
 # must never leave the lab — the published product is always aggregate)
-data/decomposition/
+data/decomposition*/
 venv/
 __pycache__/
 *.pyc
