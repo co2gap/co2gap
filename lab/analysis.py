@@ -36,15 +36,31 @@ RESERVE_KG = 2000.0
 
 
 def load_flights(days=None) -> tuple[pd.DataFrame, list]:
+    """
+    Load per-day flight tables. A file that EXISTS but cannot be read is skipped
+    and reported, never fatal: a single truncated parquet (a run killed
+    mid-write leaves one with no footer) used to abort a 30-minute analysis at
+    the first bad day. The skipped days are named so the caller can regenerate
+    them, and `loaded` reflects what was actually read — so the wind field and
+    every downstream count stay consistent with the data in hand.
+    """
     dirs = sorted(FLIGHTS_DIR.glob("*")) if not days else [FLIGHTS_DIR / d for d in days]
-    frames, loaded = [], []
+    frames, loaded, skipped = [], [], []
     for d in dirs:
         f = d / "flights.parquet"
-        if f.exists():
+        if not f.exists():
+            continue
+        try:
             frames.append(pq.read_table(f).to_pandas())
-            loaded.append(d.name)
+        except Exception as e:
+            skipped.append(f"{d.name} ({type(e).__name__})")
+            continue
+        loaded.append(d.name)
+    if skipped:
+        print(f"  ATTENZIONE: {len(skipped)} giorno/i illeggibile/i, saltato/i: "
+              f"{', '.join(skipped)}", file=sys.stderr)
     if not frames:
-        raise SystemExit(f"no flights.parquet under {FLIGHTS_DIR}")
+        raise SystemExit(f"nessun flights.parquet leggibile in {FLIGHTS_DIR}")
     return pd.concat(frames, ignore_index=True), loaded
 
 
