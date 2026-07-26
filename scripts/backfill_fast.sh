@@ -89,7 +89,7 @@ DL_DAY=""
 start_download() {
     local iso="$1"
     drop_raw "$iso"
-    bash "$ROOT/scripts/dl_day.sh" "${iso//-/.}" >>"$VERBOSE" 2>&1 &
+    bash "$ROOT/scripts/dl_day_fast.sh" "${iso//-/.}" >>"$VERBOSE" 2>&1 &
     DL_PID=$!
     DL_DAY="$iso"
 }
