@@ -46,11 +46,23 @@ from flightproc import process_flight                        # noqa: E402
 from airports import Airports                                # noqa: E402
 from store import DayWriter, PIPELINE_VER                    # noqa: E402
 
-# EU-South box: lat 35-52, lon -10..25 (Iberia, France, Italy, Alps, Balkans,
-# Greece, Malta, N-Africa coast).
-BOX = BBox(lat_min=35.0, lat_max=52.0, lon_min=-10.0, lon_max=25.0)
-OUT_DIR = ROOT / "data/flights"
-AIRPORTS_CSV = ROOT / "data/airports.csv"
+# Default box: EU-South, lat 35-52, lon -10..25 (Iberia, France, Italy, Alps,
+# Balkans, Greece, Malta, N-Africa coast). A wider box (full ECAC) is selected
+# with ADSB_BBOX="27,72,-32,45" as lat_min,lat_max,lon_min,lon_max.
+#
+# CHANGING THE BOX MUST ALSO CHANGE OUT_DIR. Parquet is written to
+# <OUT_DIR>/<YYYY-MM-DD>/ with no box in the path, so a second box aimed at the
+# same directory would silently overwrite the first and the aggregates would
+# then mix two different geographies with no error anywhere. Same failure mode
+# as the ERA5 cache; both are guarded by making the directory explicit.
+_bbox = os.environ.get("ADSB_BBOX")
+if _bbox:
+    _la0, _la1, _lo0, _lo1 = (float(x) for x in _bbox.split(","))
+    BOX = BBox(lat_min=_la0, lat_max=_la1, lon_min=_lo0, lon_max=_lo1)
+else:
+    BOX = BBox(lat_min=35.0, lat_max=52.0, lon_min=-10.0, lon_max=25.0)
+OUT_DIR = Path(os.environ.get("ADSB_FLIGHTS_DIR") or (ROOT / "data/flights"))
+AIRPORTS_CSV = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airports.csv"))
 LOAD_FACTOR = 0.82
 RESERVE_KG = 2000.0
 BATCH = 150                      # trace members per work unit
