@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import csv
 import html
+import os
 import sys
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -43,7 +44,10 @@ BAND_LABELS = ["150–300 km", "300–500 km", "500–800 km",
                "800–1200 km", "1200–2000 km", ">2000 km"]
 
 NAMES = {}
-with open(ROOT / "data/airports.csv", newline="") as f:
+# The ECAC box needs airports_ecac.csv: with the small-box file every airport
+# outside it would be rendered as a bare ICAO code instead of a name.
+with open(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airports.csv"),
+          newline="") as f:
     for r in csv.DictReader(f):
         NAMES[r["icao"]] = r["name"]
 

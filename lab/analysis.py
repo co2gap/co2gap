@@ -11,6 +11,7 @@ ABSOLUTE CO2 used for tonnage in the report.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -28,9 +29,13 @@ from excess_wind import ideal_co2_windaware        # noqa: E402
 from emissions import estimate_fuel                 # noqa: E402
 from wind.era5 import WindField                     # noqa: E402
 
-FLIGHTS_DIR = ROOT / "data/flights"
-ERA5_DIR = ROOT / "data/era5"
-CALIB = ROOT / "data/calibration.json"
+# Every directory is overridable so a second geographic box (ECAC) can be
+# analysed without touching the first box's data or output. Hardcoding these
+# is the recurring bug of this project: the run completes with no error and
+# silently answers about the WRONG dataset.
+FLIGHTS_DIR = Path(os.environ.get("ADSB_FLIGHTS_DIR") or (ROOT / "data/flights"))
+ERA5_DIR = Path(os.environ.get("ERA5_DIR") or (ROOT / "data/era5"))
+CALIB = Path(os.environ.get("ADSB_CALIB") or (ROOT / "data/calibration.json"))
 LOAD_FACTOR = 0.82
 RESERVE_KG = 2000.0
 

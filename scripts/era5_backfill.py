@@ -33,7 +33,10 @@ sys.path.insert(0, str(ROOT))
 
 from wind.era5 import download_day, ERA5_DIR, LEVELS, AREA  # noqa: E402
 
-FLIGHTS_DIR = ROOT / "data/flights"
+# Only used to prioritise days that already have a parquet, but it must follow
+# the box being worked on or the ordering optimisation silently targets the
+# other dataset's days.
+FLIGHTS_DIR = Path(os.environ.get("ADSB_FLIGHTS_DIR") or (ROOT / "data/flights"))
 
 DEFAULT_FROM = "2026-01-01"
 DEFAULT_TO = "2026-07-23"      # covers the instructed 07-21 plus the 2 extra

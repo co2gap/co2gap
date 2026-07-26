@@ -24,6 +24,7 @@ Flights with poor coverage are excluded from the fit (flown>=0.9*GC, coverage).
 from __future__ import annotations
 
 import json
+import os
 import statistics as st
 from collections import defaultdict
 from pathlib import Path
@@ -31,8 +32,11 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 ROOT = Path(__file__).resolve().parents[1]
-FLIGHTS_DIR = ROOT / "data/flights"
-OUT = ROOT / "data/calibration.json"
+# Overridable per box: fitting the factors on one box and then applying them to
+# another would be a silent mismatch — the run succeeds and reports numbers
+# calibrated on a sample that excludes half the geography being analysed.
+FLIGHTS_DIR = Path(os.environ.get("ADSB_FLIGHTS_DIR") or (ROOT / "data/flights"))
+OUT = Path(os.environ.get("ADSB_CALIB") or (ROOT / "data/calibration.json"))
 TOL = 0.10          # only correct types off by more than 10%
 # Emit a factor only from a well-sampled median. With n in the teens the median
 # is noisy and we would be fitting sampling noise into a "correction" — visible
