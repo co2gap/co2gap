@@ -50,6 +50,30 @@ touch "$MISSING"
 
 log() { echo "$(date '+%F %T') $*" | tee -a "$LOG"; }
 
+# ---- single instance -------------------------------------------------------
+# The per-day lock below (fd 9) serialises WORK, so two backfills would not
+# corrupt each other — they would just take turns, each re-downloading days the
+# other is about to redo. That is pure waste on a Pi with one disk and 3.7 GB
+# of RAM. The realistic way to end up with two is the @reboot line firing while
+# a manual run is already going, so refuse to start rather than rely on nobody
+# doing it.
+#
+# Note the lock is held on fd 8 for the whole process lifetime and released by
+# the kernel on exit, so a crash or a power cut cannot leave it stuck (unlike a
+# pid-file). A subshell inheriting fd 8 is fine: flock is per open-file-
+# description, and we only ever take it here.
+GLOBAL_LOCK="$ROOT/.backfill.single.lock"
+command -v flock >/dev/null || { log "flock non disponibile: non posso garantire l'istanza singola"; exit 3; }
+# NB: 8>> and not 8>. The '>' redirection truncates on OPEN, before flock is
+# even attempted, so a second instance would wipe the holder's pid and then
+# report "(PID )". Append mode opens without touching the contents.
+exec 8>>"$GLOBAL_LOCK"
+if ! flock -n 8; then
+    log "un altro backfill.sh e' gia' in esecuzione (PID $(cat "$GLOBAL_LOCK" 2>/dev/null || echo '?')) -> esco"
+    exit 0
+fi
+echo $$ > "$GLOBAL_LOCK"   # safe to truncate now: we hold the lock
+
 # A day is done only if the parquet is actually readable.
 is_valid_day() {
     local iso="$1" f="$ROOT/data/flights/$1/flights.parquet"
