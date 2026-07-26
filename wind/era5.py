@@ -22,10 +22,21 @@ import numpy as np
 
 # pressure levels from the surface to above airliner cruise (~45 kft).
 LEVELS = [1000, 925, 850, 700, 600, 500, 400, 300, 250, 200, 150]
-# EU-South box, ERA5 area order is [North, West, South, East]
-AREA = [52, -10, 35, 25]
-ERA5_DIR = Path(os.environ.get("ADSB_ROOT",
-                "/Users/fmavellia/adsb-co2-lab/adsb-co2")) / "data/era5"
+
+# ERA5 area order is [North, West, South, East]. Default = the EU-South box.
+# A wider box (e.g. full ECAC) is selected with ERA5_AREA="72,-32,27,45".
+_DEFAULT_AREA = [52, -10, 35, 25]
+AREA = ([float(x) for x in os.environ["ERA5_AREA"].split(",")]
+        if os.environ.get("ERA5_AREA") else _DEFAULT_AREA)
+
+# Cached files are named YYYY-MM-DD.nc with NO box in the name, so two different
+# boxes MUST NOT share a directory: the second would silently overwrite the
+# first and WindField would then interpolate the wrong geography without any
+# error. Override the directory whenever the area is overridden.
+ERA5_DIR = Path(os.environ.get("ERA5_DIR") or
+                (Path(os.environ.get("ADSB_ROOT",
+                                     "/Users/fmavellia/adsb-co2-lab/adsb-co2"))
+                 / "data/era5"))
 
 
 def alt_ft_to_hpa(alt_ft):
