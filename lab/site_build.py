@@ -473,16 +473,21 @@ measured by the floor in §2.</li>
 on purpose, to meet schedules: that is an economic choice, not an inefficiency,
 and it still ends up counted in the vertical component. It is one of the items
 making up the incompressible floor.</li>
-<li><b>The split between lateral and vertical is not unique.</b> We correct the
-route first and the profile second; the reverse order would attribute different
-weights, because the two interact — changing route changes the winds met and the
-convenient altitude. The total is robust; its division in two is a stated
-convention.</li>
-<li>The ideal trajectory's flight time is computed with the arithmetic mean of
-wind along the path, where the exact quantity would be the harmonic mean of
-ground speed. The approximation <b>slightly understates the baseline's fuel</b>,
-so it inflates the published gap by about half a percentage point: the error
-points in the direction that flatters us to correct.</li>
+<li><b>The split between lateral and vertical is a convention, but the result
+does not depend on it.</b> We correct the route first and the profile second,
+charging the extra kilometres at the <i>optimal</i> profile. The opposite
+convention charges them at the flight's <i>actual</i> efficiency, which moves
+weight towards the lateral component: across the fleet the split goes from
+7.2 / 14.0 to 9.4 / 11.6 points. <b>The vertical component still dominates</b>,
+including for the airport named in the findings (7.9 / 33.0 becomes
+12.2 / 28.3 on raw medians). The total is identical under both by construction.
+Anything resting on the <i>size</i> of the split should be read with this
+sensitivity in mind; the ordering does not change.</li>
+<li>The ideal trajectory's flight time uses the <b>harmonic mean of ground
+speed</b> along the path, which is the quantity that reproduces the correct
+flight time when wind varies. An earlier version used the arithmetic mean of
+wind, which understated the baseline's fuel and inflated the published gap by
+about 0.35%; the figures on this site are computed after that correction.</li>
 </ul>
 
 <h2>9. Privacy</h2>
@@ -615,6 +620,13 @@ def main():
     apb, apbr = best_ap.index[0], best_ap.iloc[0]
     top20 = g.sort_values("d", ascending=False).head(20)
     ap1_routes = sum(1 for a, b in top20.index if ap1 in (a, b))
+    # Base rate: a hub with hundreds of qualifying routes is over-represented in
+    # ANY tail, so the count above means nothing without the share it starts from.
+    ap1_all_routes = sum(1 for a, b in g.index if ap1 in (a, b))
+    ap1_share = 100.0 * ap1_all_routes / len(g) if len(g) else 0.0
+    ap2, ap2r = top_ap.index[1], top_ap.iloc[1]
+    ap3, ap3r = top_ap.index[2], top_ap.iloc[2]
+    ap_med = float(ga.d.median())
     # months in which the worst airport sits in the top 4
     mrank = []
     for mth, sm in both.assign(month=both.day.str[:7]).groupby("month"):
@@ -726,25 +738,38 @@ not avoidable waste.</b> The full comparison is in the methodology.
 and what remains unknown.</p>
 
 <div class=note>
-<p><b>1. One airport stands apart, and the gap is in the profile, not the
-route.</b><br>
-{ap1_name} has the largest gap in Europe among airports with substantial
-traffic: <b>{ap1_d:+.1f} points</b> across {ap1_n:,} movements. Almost all of it
-is vertical (<b>{ap1_v:+.1f}</b>) against {ap1_l:+.1f} lateral — its flights do
-not fly longer routes, they fly less efficient altitude and speed profiles. The
-pattern holds in all seven months, and {ap1_routes} of the twenty routes
-furthest from the norm have {ap1_name} at one end. Profiles of this shape are
-what early descents and terminal holding look like, which is consistent with a
-high-density airport. From ADS-B alone we see the profiles flown, not the noise
-abatement rules, sequencing constraints or capacity limits that may require
-them.</p>
+<p><b>1. Two airports sit above the rest, and their gap is in the profile
+rather than the route.</b><br>
+Flights to and from <b>{ap1_name}</b> ({ap1_d:+.1f} points across {ap1_n:,}
+movements) and <b>{esc(aname(ap2))}</b> ({ap2r.d:+.1f} across {int(ap2r.n):,})
+deviate from comparable flights more than those of any other airport with
+substantial traffic. The two are close to each other; the visible break is
+below them, with {esc(aname(ap3))} at {ap3r.d:+.1f} and a median across all
+{len(ga)} airports of {ap_med:+.1f}. A point is one percentage point of
+CO&#8322; relative to the ideal flight.<br>
+In both cases the deviation is not in the route — {ap1_name} flies routes of
+normal length ({ap1_l:+.1f} lateral) — but in how the flights climb, cruise and
+descend ({ap1_v:+.1f} vertical). The vertical component still dominates under
+the alternative decomposition convention described in the methodology, so it is
+not an artefact of that choice, and the pattern holds in all seven months.<br>
+{ap1_routes} of the twenty routes furthest from the norm have {ap1_name} at one
+end, against a base rate of {ap1_share:.0f}% of all ranked routes — a real
+concentration, though a hub with many routes is over-represented in any tail.
+Profiles of this shape are what dense terminal areas produce: early descents,
+level segments, sequencing. ADS-B shows the profiles flown, not the noise
+abatement rules, sequencing constraints or capacity limits that require them.
+<b>This describes what these flights fly. It does not measure what the airports,
+their airlines or their controllers could do differently.</b></p>
 </div>
 
 <div class=note>
 <p><b>2. Closed airspace has a cost, and it is large where it bites.</b><br>
-The most affected route on the continent is <b>{kal_a} ↔ {kal_b}</b>, flying
-<b>+{kal_pct:.0f}%</b> further en route across {kal_n:,} flights, because the
-straight line between the two airports crosses Kaliningrad. Baltic connections
+The clearest example is <b>{kal_a} ↔ {kal_b}</b>, flying <b>+{kal_pct:.0f}%</b>
+further en route because the straight line between the two airports crosses
+Kaliningrad. It runs {kal_n:,} flights over the period — below the {RANK_MIN_N}
+needed to enter the rankings, and quoted here as an illustration of the
+mechanism rather than as a placing. The detour is geometric: it does not depend
+on sample size. Baltic connections
 towards Turkey route around Belarus and Ukraine for the same reason. In total
 {n_closed} ranked routes have a direct path through closed airspace. None of
 this is recoverable while those closures hold — and the overflight ban binds
