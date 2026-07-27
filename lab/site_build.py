@@ -722,66 +722,52 @@ not avoidable waste.</b> The full comparison is in the methodology.
 </div>
 
 <h2>What the data shows</h2>
-<p class=hint>What can be seen, the most plausible operational explanation, and
-what these data do <b>not</b> allow us to conclude.</p>
+<p class=hint>Four things visible in the data, with what is known about why —
+and what remains unknown.</p>
 
 <div class=note>
-<p><b>1. One airport stands apart, and the gap is in the flight profile, not the
+<p><b>1. One airport stands apart, and the gap is in the profile, not the
 route.</b><br>
 {ap1_name} has the largest gap in Europe among airports with substantial
-traffic: <b>{ap1_d:+.1f} points</b> over {ap1_n:,} movements, of which
-<b>{ap1_v:+.1f} vertical</b> against just {ap1_l:+.1f} lateral. Its flights do
-not fly longer routes: they fly less efficient profiles. The pattern persists —
-it stays among Europe's four highest-gap airports in <b>all seven months</b> —
-and {ap1_routes} of the twenty routes furthest from the norm have {ap1_name} at
-one end.<br>
-<i>Plausible explanation</i>: descents started earlier than necessary and
-holding in the terminal area, consistent with a high-density airport and with
-what the technical literature describes for airports of this kind.<br>
-<i>What we cannot say</i>: that it is badly run. We do not know the local noise,
-sequencing or capacity constraints that may make those profiles mandatory.</p>
+traffic: <b>{ap1_d:+.1f} points</b> across {ap1_n:,} movements. Almost all of it
+is vertical (<b>{ap1_v:+.1f}</b>) against {ap1_l:+.1f} lateral — its flights do
+not fly longer routes, they fly less efficient altitude and speed profiles. The
+pattern holds in all seven months, and {ap1_routes} of the twenty routes
+furthest from the norm have {ap1_name} at one end. Profiles of this shape are
+what early descents and terminal holding look like, which is consistent with a
+high-density airport. From ADS-B alone we see the profiles flown, not the noise
+abatement rules, sequencing constraints or capacity limits that may require
+them.</p>
 </div>
 
 <div class=note>
-<p><b>2. Airspace closures have a cost that can be measured.</b><br>
-Routes whose direct path crosses closed airspace fly appreciably further. The
-most affected on the continent is <b>{kal_a} ↔ {kal_b}</b>, at
-<b>+{kal_pct:.0f}%</b> of en-route distance over {kal_n:,} flights, because the
-straight line between the two airports passes over Kaliningrad. The same applies to Baltic connections
-towards Turkey, which route around Belarus and Ukraine. In total
-{n_closed} ranked routes are in this situation.<br>
-<i>Explanation</i>: none needed. It is a geopolitical fact, not a choice made by
-anyone flying.<br>
-<i>What we cannot say</i>: that it is recoverable. It is not, while that
-airspace stays closed. And the overflight ban applies to European carriers but
-not to third-country ones, so the figure is an average between those who must
-divert and those who need not.</p>
+<p><b>2. Closed airspace has a cost, and it is large where it bites.</b><br>
+The most affected route on the continent is <b>{kal_a} ↔ {kal_b}</b>, flying
+<b>+{kal_pct:.0f}%</b> further en route across {kal_n:,} flights, because the
+straight line between the two airports crosses Kaliningrad. Baltic connections
+towards Turkey route around Belarus and Ukraine for the same reason. In total
+{n_closed} ranked routes have a direct path through closed airspace. None of
+this is recoverable while those closures hold — and the overflight ban binds
+European carriers but not third-country ones, so each figure is an average
+across operators that must divert and operators that need not.</p>
 </div>
 
 <div class=note>
-<p><b>3. Small, peripheral airports are the most efficient, by a wide margin.</b><br>
-At the opposite end of the ranking {apb_name} sits at <b>{apb_d:+.1f} points</b>,
-followed by other Nordic and island airports. The gap against congested hubs
-exceeds thirty points.<br>
-<i>Plausible explanation</i>: light traffic means continuous descents, direct
-clearances and no arrival queue.<br>
-<i>What we cannot say</i>: that hubs could behave the same way. A hub cannot
-operate like an airport with ten flights a day; the comparison measures a gap,
-not a target.</p>
+<p><b>3. The efficient end of the ranking is small and peripheral.</b><br>
+{apb_name} sits at <b>{apb_d:+.1f} points</b>, followed by other Nordic and
+island airports, more than thirty points away from the congested hubs. Light
+traffic buys continuous descents and direct clearances. It is a measure of how
+much congestion costs, not a target a hub could adopt.</p>
 </div>
 
 <div class=note>
-<p><b>4. Much of this gap is not compressible, and that is the part usually
-forgotten.</b><br>
-Public debate on aviation emissions routinely conflates the <i>total</i> gap
-from a theoretical optimum with <i>avoidable</i> waste. Both are measured here:
-of the {vert_fleet:.1f} points of vertical gap,
-<b>{vert_floor:.1f} remain even for a direct flight in an empty night sky</b> —
-the part of the baseline no airliner can reach — and only {vert_oper:.1f} are
-related to traffic, routing and profile.<br>
-<i>Why it matters</i>: it is the difference between saying "European aviation
-wastes" and saying "between comparable flights there is a spread of this size".
-The second is verifiable; the first is not.</p>
+<p><b>4. Most of this gap cannot be compressed — the part usually left out.</b><br>
+Of the {vert_fleet:.1f} points of vertical gap, <b>{vert_floor:.1f} remain for a
+flight going direct through an empty night sky</b>: that is the baseline staying
+out of reach, not inefficiency. Only {vert_oper:.1f} points move with traffic,
+routing and profile. The distinction is the difference between "European
+aviation wastes X" and "between comparable flights there is a spread of this
+size" — and only the second is something these data support.</p>
 </div>
 
 <h2>How much of this gap is compressible</h2>
