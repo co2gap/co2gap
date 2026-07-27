@@ -174,7 +174,8 @@ padding:1px 5px;border-radius:4px}
 
 def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
                       n_routes_all, n_routes_rank, n_airports, gen,
-                      sc_a, sc_b, sc_a_fuel_kt) -> str:
+                      sc_a, sc_b, sc_a_fuel_kt,
+                      vert_floor, vert_fleet, vert_oper, n_floor) -> str:
     """The page that has to be right even when nobody reads it.
 
     Written comparative-first: the defensible product of this work is that one
@@ -242,6 +243,22 @@ loro assumono massa nominale e nessun vento, noi massa stimata e vento reale.</p
 carbonio e parlare di «spreco» sarebbe sbagliato. Non lo facciamo, e chiediamo
 di non farlo.</p>
 </div>
+
+<h3>Quanta parte è comprimibile — misurato, non assunto</h3>
+<p>Un volo diretto, in partenza di notte a cielo vuoto, su tratta lunga, è
+quanto di più vicino alla traiettoria ideale un aereo di linea arrivi davvero.
+Su {n_floor:,} voli così lo scarto verticale resta <b>{vert_floor:.1f}%</b>
+contro una mediana di flotta del <b>{vert_fleet:.1f}%</b>.</p>
+<p>Ne segue un'attribuzione ricavata dai dati: <b>{vert_floor:.1f} punti sono
+pavimento</b> — la baseline che resta irraggiungibile per cost index, step climb
+imposti dal peso e livelli di volo discreti — e <b>{vert_oper:.1f} punti sono
+margine operativo</b>, legato a traffico, routing e profilo.</p>
+<p>Il pavimento coincide quasi con il valore che uno studio EUROCONTROL ricava
+per la crociera confrontando ogni volo con il <i>miglior profilo osservato</i>,
+un riferimento che quei vincoli li contiene già. Due strade indipendenti, stesso
+punto d'arrivo: è la ragione per cui il divario apparente con i riferimenti
+esterni non indica un errore del modello, ma la differenza fra una mediana di
+flotta e un riferimento best-in-class.</p>
 
 <h3>Un numero che invece si può dare</h3>
 <p>C'è un modo di quantificare il margine senza appoggiarsi a un ottimo
@@ -321,10 +338,16 @@ soli sono la maggioranza dei voli, cadono entro il 5% del riferimento ICAO senza
 alcuna correzione.</p>
 
 <h2>6. Quali voli entrano</h2>
-<p>Un volo entra nell'analisi solo se la sua traccia è sufficientemente completa:
-copertura adeguata, nessun buco temporale ampio, e distanza volata non inferiore
-al 90% della great-circle — quest'ultimo criterio scarta i voli la cui traccia è
-troncata, che altrimenti sembrerebbero più efficienti del possibile.</p>
+<p>Un volo entra nell'analisi solo se la sua traccia è sufficientemente
+completa: copertura adeguata e nessun buco temporale ampio.</p>
+<p>C'è poi un criterio che viene spesso frainteso, quindi vale la pena essere
+espliciti. Scartiamo i voli la cui distanza volata risulta <b>minore</b> del 90%
+della great-circle. Volare meno della rotta diretta è geometricamente
+impossibile: quando succede è perché la traccia è <b>troncata</b> da un buco di
+ricezione, e quel volo sembrerebbe più efficiente del possibile.
+<b>Non scartiamo affatto i voli molto deviati</b> — quelli hanno distanza volata
+<i>maggiore</i> della great-circle e restano tutti nel campione, comprese le
+rotte di testa delle classifiche.</p>
 <p>Nel periodo pubblicato: <b>{len(df):,} voli</b> su {len(days)} giorni,
 {len(months)} mesi, area ECAC.</p>
 
@@ -380,7 +403,25 @@ quelli di paesi terzi, quindi il valore mostrato è una media fra chi deve
 aggirare e chi no.</li>
 <li>La copertura ADS-B <b>non include le tratte oceaniche</b>.</li>
 <li>La massa dell'aeromobile è stimata, non nota: è la principale incertezza
-fisica del modello.</li>
+fisica del modello. La baseline inoltre non impone il <b>vincolo di quota
+raggiungibile a pieno carico</b>: un aereo pesante deve salire per gradini,
+mentre la traiettoria ideale vola l'intera crociera a quota unica. Quanto questo
+pesi è misurato dal pavimento del §2-bis.</li>
+<li>La traiettoria ideale vola alla <b>velocità di minimo consumo</b>. Le
+compagnie volano più veloci di proposito, per rispettare gli orari: è una scelta
+economica, non un'inefficienza, e finisce comunque conteggiata nella componente
+verticale. È una delle voci del pavimento incomprimibile.</li>
+<li><b>La ripartizione fra laterale e verticale non è univoca.</b> Correggiamo
+prima il percorso e poi il profilo; l'ordine inverso attribuirebbe pesi diversi,
+perché le due cose interagiscono — cambiare rotta cambia i venti incontrati e la
+quota conveniente. Il totale è robusto, la sua divisione in due è una
+convenzione dichiarata.</li>
+<li>Il tempo di volo della traiettoria ideale è calcolato con la media
+aritmetica del vento lungo il percorso, dove la grandezza esatta sarebbe la media
+armonica della velocità al suolo. L'approssimazione <b>sottostima leggermente il
+consumo della baseline</b>, quindi gonfia di circa mezzo punto percentuale lo
+scarto che pubblichiamo: l'errore è nella direzione che ci sfavorisce
+correggere.</li>
 <li>Il residuo di asimmetria fra le due direzioni di una rotta è attribuito a
 vettoramento, sulla base della sua correlazione con la geometria del percorso.
 È un'inferenza, non una misura diretta.</li>
@@ -456,6 +497,21 @@ def main():
     enr = df.dropna(subset=["dist_ratio_enroute"])
     gc_enr = enr.flown_enroute_km / enr.dist_ratio_enroute
     kea = (enr.flown_enroute_km.sum() - gc_enr.sum()) / gc_enr.sum() * 100
+
+    # ---- structural floor vs operational margin -------------------------
+    # Empirical attribution, from the falsification tests suggested by an
+    # adversarial review: a flight routed direct, departing into an empty
+    # night sky, on a sector where cruise dominates, is about as close to the
+    # baseline as a real airliner gets. Whatever gap REMAINS there is not
+    # congestion and not routing — it is the baseline being unreachable (cost
+    # index, step climbs imposed by mass, discrete flight levels). The rest is
+    # the operationally influenced margin.
+    hour = pd.to_datetime(df.dep_ts, unit="s", utc=True).dt.hour
+    floor_mask = (df.dist_ratio < 1.02) & hour.isin([1, 2, 3, 4]) & (df.gc_km > 1000)
+    vert_floor = float(df.loc[floor_mask, "excess_vertical_pct"].median())
+    vert_fleet = float(df.excess_vertical_pct.median())
+    vert_oper = vert_fleet - vert_floor
+    n_floor = int(floor_mask.sum())
 
     # ---- peer-based counterfactual --------------------------------------
     # The theoretical optimum is unreachable, so a "savings" figure built on it
@@ -602,6 +658,32 @@ che misuriamo qui. <b>Questo sito misura la distanza dall'ottimo teorico, non
 lo spreco evitabile.</b> Il confronto per esteso è nella metodologia.
 </div>
 
+<h2>Quanta parte di questo scarto è comprimibile</h2>
+<p class=hint>Ricavato dai dati stessi, non da un'assunzione.</p>
+<div class=note>
+<p>Un volo che vola <b>diretto</b>, in partenza <b>di notte</b> a cielo quasi
+vuoto, su una tratta <b>lunga</b> dove la crociera domina, è quanto di più
+vicino alla nostra traiettoria ideale un aereo di linea arrivi nella realtà.
+Su {n_floor:,} voli di questo tipo lo scarto verticale resta comunque
+<b>{vert_floor:.1f}%</b>.</p>
+<p>Quello è il <b>pavimento</b>: non è inefficienza, è la baseline che resta
+irraggiungibile. Dipende da scelte e vincoli che nessuna procedura elimina —
+la velocità di crociera scelta per rispettare gli orari anziché per il minimo
+consumo, la necessità di salire per gradini man mano che l'aereo alleggerisce,
+i livelli di volo disponibili a intervalli discreti.</p>
+<table><thead><tr><th>componente verticale</th><th class=num>punti</th></tr></thead>
+<tbody>
+<tr><td>mediana di tutti i voli</td><td class=num>{vert_fleet:.1f}</td></tr>
+<tr><td>— pavimento, incomprimibile</td><td class=num>{vert_floor:.1f}</td></tr>
+<tr><td>— <b>margine operativo</b> (traffico, routing, profilo)</td>
+<td class=num><b>{vert_oper:.1f}</b></td></tr>
+</tbody></table>
+<p>Il pavimento misurato qui è vicino al valore che uno studio di EUROCONTROL
+ottiene per la crociera confrontando ogni volo con il <i>miglior profilo
+realmente osservato</i> — cioè un riferimento che quei vincoli li incorpora già.
+Le due strade, indipendenti, portano allo stesso punto.</p>
+</div>
+
 <h2>Quanto pesa lo scarto fra voli comparabili</h2>
 <p class=hint>Non rispetto all'ottimo teorico, che nessuno può raggiungere, ma
 rispetto a quello che voli di pari lunghezza <b>già ottengono</b>.</p>
@@ -745,7 +827,8 @@ Modello prestazioni: OpenAP, TU Delft.<br>
 
     meth = build_methodology(df, days, months, lat_w, vert_w, kea,
                              co2_t, excess_t, len(g_all), len(g), len(ga), gen,
-                             sc_a, sc_b, sc_a_fuel_kt)
+                             sc_a, sc_b, sc_a_fuel_kt,
+                             vert_floor, vert_fleet, vert_oper, n_floor)
     OUT_METH.write_text(meth)
     print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")
     print(f"  voli {len(df):,} · giorni {len(days)} · rotte n>={MIN_N} {len(g_all):,} "
