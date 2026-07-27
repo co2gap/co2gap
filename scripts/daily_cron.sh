@@ -12,6 +12,11 @@ set -uo pipefail
 
 ROOT="${ADSB_ROOT:-/mnt/wd_elements/adsb-co2}"
 VENV="$ROOT/venv/bin/python"
+# Output directory must follow the box being accumulated. Hardcoding
+# data/flights here while run_daily.py writes to data/flights_ecac would make
+# the "already done" test look in the wrong directory and reprocess every day
+# forever.
+FLIGHTS_DIR="${ADSB_FLIGHTS_DIR:-$ROOT/data/flights}"
 WORKERS="${WORKERS:-3}"
 CATCHUP_DAYS="${CATCHUP_DAYS:-5}"
 MAX_PER_RUN="${MAX_PER_RUN:-2}"
@@ -44,7 +49,11 @@ for off in $(seq 1 "$CATCHUP_DAYS"); do
   [ "$processed" -ge "$MAX_PER_RUN" ] && break
   DAY=$(date -u -d "$off days ago" +%Y.%m.%d 2>/dev/null || date -u -v-"${off}"d +%Y.%m.%d)
   ISO=$(date -u -d "$off days ago" +%Y-%m-%d 2>/dev/null || date -u -v-"${off}"d +%Y-%m-%d)
-  if [ -f "$ROOT/data/flights/$ISO/flights.parquet" ]; then
+  # A day counts as done only if its parquet READS. Testing existence alone
+  # marks a run killed mid-write (footer-less parquet) as complete and the day
+  # is never retried again — exactly how 2026-03-27 was lost.
+  if "$VENV" -c "import sys,pyarrow.parquet as pq; sys.exit(0 if pq.read_metadata(sys.argv[1]).num_rows>0 else 1)" \
+       "$FLIGHTS_DIR/$ISO/flights.parquet" 2>/dev/null; then
     continue  # already done
   fi
   echo "$(date -Is) target $DAY (missing parquet)"
@@ -57,7 +66,7 @@ for off in $(seq 1 "$CATCHUP_DAYS"); do
     continue
   fi
   echo "$(date -Is) running pipeline for $DAY"
-  if WORKERS="$WORKERS" nice -n15 ionice -c3 "$VENV" "$ROOT/pipeline/run_daily.py" --day "$DAY"; then
+  if WORKERS="$WORKERS" nice -n15 ionice -c2 -n7 "$VENV" "$ROOT/pipeline/run_daily.py" --day "$DAY"; then
     echo "$(date -Is) pipeline OK for $DAY"
     processed=$((processed+1))
   else
