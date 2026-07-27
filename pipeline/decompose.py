@@ -173,7 +173,39 @@ def mean_wind_along_track(lat, lon, dep_ts, dur_s, cruise_alt_ft,
     u, v = windfield.uv(ts, mlat, mlon, alt)
     br = np.radians(brgs)
     wpar = u * np.sin(br) + v * np.cos(br)
-    return float(np.nanmean(wpar))
+    return _effective_wind_ms(wpar)
+
+
+# A representative cruise TAS, used only to weight the segments below. The
+# result is insensitive to it at the second decimal: it enters the correction
+# as (sigma_w/TAS)^2.
+_TAS_REF_MS = 230.0
+
+
+def _effective_wind_ms(wpar) -> float:
+    """Wind component that reproduces the correct FLIGHT TIME, not the correct
+    average wind.
+
+    The baseline is clocked as time = D / (TAS + w). Over a path where the wind
+    varies, the true time is the integral of dx/(TAS+w), so the value that must
+    be fed in is the one satisfying D/(TAS+w_eff) = sum(dx_i/(TAS+w_i)) — a
+    harmonic mean of ground speed, not an arithmetic mean of wind.
+
+    Using the arithmetic mean instead understates the baseline's time (Jensen),
+    hence understates its fuel, hence OVERSTATES the excess we publish. The bias
+    is second order, ~(sigma_w/TAS)^2, but it is systematic and it flatters us,
+    which is the worst direction for an error to point.
+    """
+    w = np.asarray(wpar, float)
+    w = w[np.isfinite(w)]
+    if w.size == 0:
+        return 0.0
+    gs = _TAS_REF_MS + w
+    # Segments are equal length by construction (_resample_track), so the
+    # distance-weighted harmonic mean is the plain harmonic mean of gs.
+    if np.any(gs <= 1.0):
+        return float(np.mean(w))       # degenerate wind, fall back
+    return float(w.size / np.sum(1.0 / gs) - _TAS_REF_MS)
 
 
 def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,

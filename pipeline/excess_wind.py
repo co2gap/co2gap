@@ -94,7 +94,19 @@ def mean_along_track_wind_ms(lat1, lon1, lat2, lon2, dep_ts, cruise_tas_kt,
     u, v = windfield.uv(np.array(ts), np.array(lats), np.array(lons), alt)
     br = np.radians(np.array(brgs))
     wpar = u * np.sin(br) + v * np.cos(br)   # track unit vec = (sin b, cos b)
-    return float(np.nanmean(wpar))
+    # The baseline is clocked as time = D/(TAS+w), so the value fed in must be
+    # the one that reproduces the correct TIME over a varying wind: a harmonic
+    # mean of ground speed, not an arithmetic mean of wind. The arithmetic mean
+    # understates the baseline's time (Jensen), understates its fuel, and so
+    # OVERSTATES the excess — an error pointing in the flattering direction.
+    w = wpar[np.isfinite(wpar)]
+    if w.size == 0:
+        return 0.0
+    tas_ms = (cruise_tas_kt or 450.0) * KTS_TO_MS
+    gs = tas_ms + w
+    if np.any(gs <= 1.0):
+        return float(np.mean(w))
+    return float(w.size / np.sum(1.0 / gs) - tas_ms)
 
 
 MAX_CRUISE_CAS_KT = 310.0   # structural/operational cap; keeps low-level cruise honest
