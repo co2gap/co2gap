@@ -507,9 +507,11 @@ limitations stated, not an authored study.</p>
 receiver and I care about this. <b>The code was developed with AI tooling</b>
 (Claude, by Anthropic) — the analytical decisions it implements are documented
 on this page precisely so they can be checked rather than taken on trust.</p>
-<p>If a figure looks wrong to you, or if you represent an airport or airline
-named here and want to reply, write to me: the correction will be published. It
-is why this work is public rather than private.</p>
+<p><b>Right of reply.</b> If a figure looks wrong to you, or if you represent
+an airport, an airline or an air navigation service provider named here, write
+to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections are
+published on this site, and a reply you send will be published alongside the
+figure it concerns. It is why this work is public rather than private.</p>
 </div>
 
 <p class=foot>
@@ -948,8 +950,10 @@ why the limitations are stated as prominently as the results.<br><br>
 I am not an aviation professional or a climate scientist; I run an ADS-B
 receiver and I care about this. The code was developed with AI tooling
 (Claude), and the analytical choices behind it are written down so that people
-who know the field can check them. If you find a mistake, write to me and the
-correction gets published.
+who know the field can check them.<br><br>
+<b>Found a mistake, or named here and want to reply?</b>
+<a href="mailto:hello@co2gap.org">hello@co2gap.org</a> — corrections and replies
+are published on this site.
 </div>
 
 <p class=foot>
