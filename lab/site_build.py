@@ -498,12 +498,15 @@ identifiable aircraft.</p>
 
 <h2>10. Who made this, and how to report an error</h2>
 <div class=note>
-<p><b>I am not an aviation professional or a climate scientist.</b> I run an
-ADS-B receiver and I care about this. What you find here is a <i>tool</i> with
-its limitations stated, not an authored study.</p>
-<p><b>The pipeline was built with AI assistance</b> (Claude, by Anthropic).
-Method and code are open precisely so that people who know the field can check
-them.</p>
+<p><b>Everything here is reproducible.</b> The trajectory data is public, the
+performance model is open source, and the code that turns one into the other is
+published: any figure on this site can be recomputed and any choice made along
+the way can be inspected. What you find here is a <i>tool</i> with its
+limitations stated, not an authored study.</p>
+<p>I am not an aviation professional or a climate scientist; I run an ADS-B
+receiver and I care about this. <b>The code was developed with AI tooling</b>
+(Claude, by Anthropic) — the analytical decisions it implements are documented
+on this page precisely so they can be checked rather than taken on trust.</p>
 <p>If a figure looks wrong to you, or if you represent an airport or airline
 named here and want to reply, write to me: the correction will be published. It
 is why this work is public rather than private.</p>
@@ -938,11 +941,15 @@ comparisons →</a></b>
 </div>
 
 <div class=note>
-<b>Who made this.</b> I am not an aviation professional or a climate scientist.
-I run an ADS-B receiver and I care about this. The pipeline was built with AI
-assistance (Claude), and the method and code are open precisely so that people
-who know the field can check them and point out mistakes. If you find one, write
-to me: that is why this is public.
+<b>About this project.</b> Every figure here can be recomputed from scratch: the
+data is public, the method is documented in full and the code is open. This is
+an independent open-data project, not the output of an institution — which is
+why the limitations are stated as prominently as the results.<br><br>
+I am not an aviation professional or a climate scientist; I run an ADS-B
+receiver and I care about this. The code was developed with AI tooling
+(Claude), and the analytical choices behind it are written down so that people
+who know the field can check them. If you find a mistake, write to me and the
+correction gets published.
 </div>
 
 <p class=foot>
