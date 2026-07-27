@@ -173,7 +173,8 @@ padding:1px 5px;border-radius:4px}
 
 
 def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
-                      n_routes_all, n_routes_rank, n_airports, gen) -> str:
+                      n_routes_all, n_routes_rank, n_airports, gen,
+                      sc_a, sc_b, sc_a_fuel_kt) -> str:
     """The page that has to be right even when nobody reads it.
 
     Written comparative-first: the defensible product of this work is that one
@@ -241,6 +242,28 @@ loro assumono massa nominale e nessun vento, noi massa stimata e vento reale.</p
 carbonio e parlare di «spreco» sarebbe sbagliato. Non lo facciamo, e chiediamo
 di non farlo.</p>
 </div>
+
+<h3>Un numero che invece si può dare</h3>
+<p>C'è un modo di quantificare il margine senza appoggiarsi a un ottimo
+irraggiungibile: confrontare ogni volo non con la perfezione, ma con <b>quello
+che voli di pari lunghezza già ottengono</b>. Quel livello è raggiungibile per
+definizione, perché metà dei voli comparabili lo raggiunge.</p>
+<ul>
+<li>Se i voli sopra la mediana dei comparabili volassero come quella mediana:
+<b>{sc_a:.1f} Mt di CO₂ all'anno</b> ({sc_a_fuel_kt:,.0f} kt di carburante).</li>
+<li>Portando al 75° percentile <b>solo il quartile peggiore</b>, ipotesi molto
+più prudente: <b>{sc_b:.1f} Mt all'anno</b>.</li>
+</ul>
+<p>EUROCONTROL stima indipendentemente in <b>1,1 Mt di CO₂ all'anno</b> il
+recuperabile in area ECAC con le sole procedure di salita e discesa continue: lo
+scenario prudente qui sopra vi si avvicina molto, pur essendo costruito con un
+metodo del tutto diverso.</p>
+<p><b>Resta aritmetica controfattuale.</b> Assume che il livello mediano sia
+raggiungibile ovunque, e non lo è: parte della dispersione è dovuta a vincoli
+strutturali — spazi aerei chiusi, orografia, congestione — che nessuna procedura
+elimina. Il numero misura <i>quanto vale la dispersione osservata fra voli
+comparabili</i>, non quanto sia realizzabile. È il limite superiore di un
+margine, non un obiettivo.</p>
 
 <h2>3. Perché allora il confronto fra rotte resta valido</h2>
 <p>Perché <b>un riferimento irraggiungibile si cancella nel confronto</b>. Due
@@ -434,6 +457,20 @@ def main():
     gc_enr = enr.flown_enroute_km / enr.dist_ratio_enroute
     kea = (enr.flown_enroute_km.sum() - gc_enr.sum()) / gc_enr.sum() * 100
 
+    # ---- peer-based counterfactual --------------------------------------
+    # The theoretical optimum is unreachable, so a "savings" figure built on it
+    # would be wrong. This one is built on what comparable flights ALREADY
+    # achieve: the median of same-length flights. Only flights ABOVE it count —
+    # you cannot bank the surplus of the ones already below.
+    ideal_cal = df.co2_ideal_kg.to_numpy()
+    above = np.clip(df.d_tot.to_numpy(), 0, None) / 100.0 * ideal_cal
+    q75 = float(np.quantile(df.d_tot, 0.75))
+    worst_q = np.where(df.d_tot > q75, (df.d_tot - q75) / 100.0 * ideal_cal, 0.0)
+    yr = 365 / len(df.day.unique())
+    sc_a = above.sum() / 1e9 * yr          # Mt CO2/anno
+    sc_b = worst_q.sum() / 1e9 * yr
+    sc_a_fuel_kt = above.sum() / 3.16 / 1e6 * yr
+
     # ---- routes ---------------------------------------------------------
     df["pair"] = [tuple(sorted(x)) for x in zip(df.origin_icao, df.dest_icao)]
     g = df.groupby("pair").agg(
@@ -565,6 +602,25 @@ che misuriamo qui. <b>Questo sito misura la distanza dall'ottimo teorico, non
 lo spreco evitabile.</b> Il confronto per esteso è nella metodologia.
 </div>
 
+<h2>Quanto pesa lo scarto fra voli comparabili</h2>
+<p class=hint>Non rispetto all'ottimo teorico, che nessuno può raggiungere, ma
+rispetto a quello che voli di pari lunghezza <b>già ottengono</b>.</p>
+<div class=note>
+<p>Se i voli che stanno <b>sopra</b> la mediana dei comparabili volassero come
+quella mediana, la CO₂ evitata sarebbe <b>{sc_a:.1f} Mt all'anno</b>
+({sc_a_fuel_kt:,.0f} kt di carburante) sul traffico che osserviamo. Portando al
+livello del 75° percentile <b>solo il quartile peggiore</b> — l'ipotesi più
+prudente — si arriva a <b>{sc_b:.1f} Mt all'anno</b>.</p>
+<p>Per confronto, <b>EUROCONTROL stima in 1,1 Mt di CO₂ all'anno</b> il
+recuperabile in area ECAC con le sole procedure di salita e discesa continue.
+Due metodi indipendenti, stesso ordine di grandezza.</p>
+<p><b>È aritmetica controfattuale, non una previsione.</b> Assume che il livello
+mediano sia raggiungibile ovunque, e non lo è: alcune rotte stanno sopra la
+mediana per vincoli strutturali — spazi aerei chiusi, orografia, congestione —
+che nessuna procedura elimina. Misura quanto vale la <i>dispersione osservata</i>
+fra voli comparabili, non quanto sia realizzabile.</p>
+</div>
+
 <h2>Confronto con l'indicatore di EUROCONTROL</h2>
 <p class=hint>Stessa costruzione del KEA: rapporto fra somme, sola porzione
 en-route oltre 40 NM dagli aeroporti.</p>
@@ -688,7 +744,8 @@ Modello prestazioni: OpenAP, TU Delft.<br>
     print(f"scritto {OUT}  ({len(html_doc)/1024:.0f} KB)")
 
     meth = build_methodology(df, days, months, lat_w, vert_w, kea,
-                             co2_t, excess_t, len(g_all), len(g), len(ga), gen)
+                             co2_t, excess_t, len(g_all), len(g), len(ga), gen,
+                             sc_a, sc_b, sc_a_fuel_kt)
     OUT_METH.write_text(meth)
     print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")
     print(f"  voli {len(df):,} · giorni {len(days)} · rotte n>={MIN_N} {len(g_all):,} "
