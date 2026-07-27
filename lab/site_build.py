@@ -63,6 +63,9 @@ MIN_N = 10
 # magnitude criterion in the phase-2b report.
 RANK_MIN_N = 100
 MIN_N_AIRPORT = 200
+# Minimum flights in a (distance band x aircraft type) cell for that cell to be
+# used as the norm; below it the distance-only norm is used instead.
+MIN_N_CELL = 200
 
 # Fine distance bins for the norm. The raw excess correlates about -0.74 with
 # distance, so a raw ranking sorts by shortness, not by inefficiency; every
@@ -101,11 +104,22 @@ def load() -> pd.DataFrame:
     df["co2_hybrid_kg"] = df.hybrid_co2_kg.to_numpy() * k
     df["excess_kg"] = df.co2_real_kg - df.co2_ideal_kg
     df["bin"] = pd.cut(df.gc_km, BINS).astype(str)
+    # The norm is per distance AND aircraft type. Distance alone leaves a real
+    # confounder: an A320 and a B767 on the same sector are not comparable, so
+    # part of what a distance-only norm charges to the route is really the type
+    # flying it. Since the question here is routing and profile efficiency and
+    # not fleet choice, the type has to be normalised out.
+    # Cells thinner than this fall back to the distance-only norm, so a rare
+    # type is never ranked against a handful of its own flights.
+    cell = df["bin"] + "|" + df.typecode
+    enough = cell.map(cell.value_counts()) >= MIN_N_CELL
     for src, dst in (("excess_total_pct", "d_tot"),
                      ("excess_lateral_pct", "d_lat"),
                      ("excess_vertical_pct", "d_vert")):
-        med = df.groupby("bin")[src].median()
-        df[dst] = df[src].to_numpy() - df["bin"].map(med).to_numpy()
+        med_bin = df["bin"].map(df.groupby("bin")[src].median()).to_numpy()
+        med_cell = cell.map(df[enough].groupby(cell[enough])[src].median()).to_numpy()
+        ref = np.where(enough.to_numpy() & np.isfinite(med_cell), med_cell, med_bin)
+        df[dst] = df[src].to_numpy() - ref
     return df
 
 
@@ -294,6 +308,12 @@ L'ottimo teorico serve solo come unità di misura condivisa.</p>
 <b>−0,74</b> con la lunghezza della tratta, quindi una classifica grezza
 ordinerebbe le rotte per brevità e non per inefficienza. Dopo la
 normalizzazione la correlazione residua con la distanza è circa <b>+0,08</b>.</p>
+<p>Il confronto è fatto anche <b>a parità di tipo di aeromobile</b>. Un A320 e un
+B767 sulla stessa tratta non sono comparabili, e senza questa seconda
+normalizzazione una parte di ciò che il metodo attribuisce alla rotta sarebbe in
+realtà il velivolo che la serve: la domanda qui è l'efficienza di percorso e
+profilo, non la scelta di flotta. Dove una combinazione distanza–tipo ha meno di
+200 voli si ricade sulla sola distanza.</p>
 
 <h2>4. Dati e strumenti</h2>
 <ul>
@@ -719,7 +739,7 @@ criteri nostri.
 <p class=hint>Lo scarto grezzo cresce al diminuire della distanza, quindi una
 classifica grezza ordinerebbe per brevità e non per inefficienza. Tutte le
 classifiche qui sotto usano lo scarto dalla <b>mediana dei voli di pari
-lunghezza</b>.</p>
+lunghezza e di pari tipo di aeromobile</b>.</p>
 <div class=scroll><table><thead><tr><th>Fascia</th><th class=num>voli</th>
 <th class=num>scarto mediano</th></tr></thead><tbody>
 {bandrows}
