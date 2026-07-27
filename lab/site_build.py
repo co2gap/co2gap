@@ -38,6 +38,19 @@ DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"
 CALIB = Path(os.environ.get("ADSB_CALIB") or (ROOT / "data/calibration.json"))
 AIRPORTS = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airports.csv"))
 OUT = Path(os.environ.get("ADSB_SITE_OUT") or (ROOT / "site/index.html"))
+OUT_METH = OUT.parent / "metodologia.html"
+
+# Results produced by other steps of the pipeline and quoted on the methodology
+# page. They are constants here because they come from runs this script does not
+# perform; each is reproducible with the command named beside it.
+GATE = {"gennaio": (8.6, 5.1, 1798), "febbraio": (9.9, 5.2, 1781),
+        "luglio": (8.5, 4.6, 2458)}          # lab/gate.py
+STAB = {"pairs": 21, "median": 0.867, "worst": 0.789,
+        "worst_pair": "feb→lug", "consec": 0.924}   # lab/stability.py
+# Verified against primary sources on 2026-07-27, see reports/.
+BENCH = {"cco_cdo_kg": 39, "cco_cdo_pct": 1.1,
+         "pasutto_pct": 4.6, "pasutto_kg": 60, "pasutto_avg_pct": 7.5,
+         "pasutto_avg_kg": 85, "kea_published": 3.0}
 
 # Never aggregate below this. The published product is always aggregate: no row
 # of this page may describe an individual flight or aircraft.
@@ -123,6 +136,264 @@ def gc_crosses_closed(a, b, coords, n=40) -> list:
     lon = np.degrees(np.arctan2(y, x))
     return [name for name, (s, nn, w, e) in CLOSED.items()
             if ((lat >= s) & (lat <= nn) & (lon >= w) & (lon <= e)).any()]
+
+
+STYLE = """
+:root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
+--pos:#ff8a6b;--neg:#5fd0a8;--hi:#5ac8fa;--warn:#f0b429}
+@media(prefers-color-scheme:light){:root{--bg:#fbfcfd;--card:#fff;--fg:#16212b;
+--mut:#5b6b78;--line:#e2e8ee;--pos:#c2410c;--neg:#0f766e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:36px 20px 90px}
+h1{font-size:1.7rem;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:1.12rem;margin:40px 0 8px;letter-spacing:-.01em}
+h3{font-size:.98rem;margin:24px 0 6px;color:var(--fg)}
+.sub{color:var(--mut);margin:0 0 22px}
+p{margin:12px 0}
+ul{margin:12px 0;padding-left:22px}
+li{margin:6px 0}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.88rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:500;font-size:.75rem;text-transform:uppercase;
+letter-spacing:.05em}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--hi);
+border-radius:8px;padding:14px 18px;color:var(--mut);font-size:.9rem;margin:18px 0}
+.note.warn{border-left-color:var(--warn)}
+.note b{color:var(--fg)}
+.foot{color:var(--mut);font-size:.8rem;margin-top:44px;border-top:1px solid var(--line);
+padding-top:16px}
+a{color:var(--hi)}
+code{font-family:ui-monospace,monospace;font-size:.85em;background:var(--card);
+padding:1px 5px;border-radius:4px}
+"""
+
+
+def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
+                      n_routes_all, n_routes_rank, n_airports, gen) -> str:
+    """The page that has to be right even when nobody reads it.
+
+    Written comparative-first: the defensible product of this work is that one
+    route deviates more than comparable ones, not that European aviation wastes
+    N megatonnes. The absolute figure is context and is labelled as such.
+    """
+    gate_rows = "\n".join(
+        f"<tr><td>{m}</td><td class=num>{r:,}</td><td class=num>{wf:.1f}</td>"
+        f"<td class=num><b>{wa:.1f}</b></td></tr>"
+        for m, (wf, wa, r) in GATE.items())
+    # Calibrated, like every absolute mass on this site and in the phase-2b
+    # report: percentages are calibration-invariant, kilograms are not, and the
+    # two artefacts must not quote different figures for the same quantity.
+    per_flight_vert = (df.co2_real_kg.sum() - df.co2_hybrid_kg.sum()) / 3.16 / len(df)
+    return f"""<!doctype html>
+<html lang=it><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Metodologia — co2gap</title>
+<style>{STYLE}</style></head><body><div class=wrap>
+
+<p><a href="index.html">← torna ai dati</a></p>
+<h1>Metodologia</h1>
+<p class=sub>Come sono calcolati i numeri di questo sito, che cosa significano
+e — soprattutto — che cosa <b>non</b> significano.
+Aggiornato al {esc(gen)}.</p>
+
+<h2>1. La domanda a cui rispondiamo</h2>
+<p>Per ogni volo confrontiamo il CO₂ realmente emesso con quello di un volo
+<b>ideale</b>: stesso tipo di aeromobile, percorso diretto great-circle, quota e
+velocità più efficienti per quella distanza, e <b>lo stesso vento reale</b>.</p>
+<p>La differenza è divisa in due parti che sommate danno il totale:</p>
+<ul>
+<li><b>laterale</b> — il costo di aver volato più chilometri del necessario;</li>
+<li><b>verticale</b> — il costo di aver volato lo <i>stesso</i> percorso con un
+profilo di quota e velocità meno efficiente.</li>
+</ul>
+<p>La separazione si ottiene con una baseline intermedia: traccia al suolo
+<i>reale</i>, ma profilo di quota e velocità <i>ottimo</i>. Le due componenti
+sono additive per costruzione, perché condividono il denominatore.</p>
+
+<h2>2. Che cosa NON stiamo misurando</h2>
+<div class="note warn">
+<p><b>Non stiamo misurando carburante sprecato e recuperabile.</b> Il volo ideale
+è un limite teorico che nessun volo reale può raggiungere: separazione fra
+aeromobili, struttura delle rotte, spazi aerei vincolati, sequenziamento in
+avvicinamento e meteo lo rendono irraggiungibile per ragioni che non sono
+inefficienza.</p>
+<p>Le stime di inefficienza <i>evitabile</i> pubblicate dagli enti del settore
+sono molto più piccole delle nostre, ed è corretto che lo siano:</p>
+<table><thead><tr><th>misura</th><th class=num>per volo</th></tr></thead><tbody>
+<tr><td>EUROCONTROL — livellamenti in salita e discesa, recuperabili con
+procedure CCO/CDO</td><td class=num>~{BENCH['cco_cdo_kg']} kg</td></tr>
+<tr><td>Pasutto et al. (EUROCONTROL, 2021) — crociera, rispetto al miglior
+profilo realmente volato</td><td class=num>{BENCH['pasutto_kg']}–{BENCH['pasutto_avg_kg']} kg</td></tr>
+<tr><td><b>questo sito</b> — scarto dall'ottimo teorico, intero profilo</td>
+<td class=num><b>~{per_flight_vert:.0f} kg</b></td></tr>
+</tbody></table>
+<p>Sullo stesso perimetro di distanze usato da Pasutto (200–1500 NM) il loro
+{BENCH['pasutto_pct']}% mediano di sola crociera si confronta con il nostro 13,1%
+di profilo intero: un fattore <b>2,8</b>, spiegato da tre differenze dichiarate —
+il loro riferimento è il <i>miglior profilo osservato</i>, il nostro un ottimo
+fisico; loro coprono la sola crociera, noi anche salita, discesa e velocità;
+loro assumono massa nominale e nessun vento, noi massa stimata e vento reale.</p>
+<p><b>Conseguenza pratica:</b> moltiplicare il nostro totale per un prezzo del
+carbonio e parlare di «spreco» sarebbe sbagliato. Non lo facciamo, e chiediamo
+di non farlo.</p>
+</div>
+
+<h2>3. Perché allora il confronto fra rotte resta valido</h2>
+<p>Perché <b>un riferimento irraggiungibile si cancella nel confronto</b>. Due
+aeroporti misurati rispetto allo <i>stesso</i> ottimo impossibile restano
+confrontabili fra loro: la distanza che li separa non dipende
+dall'irraggiungibilità, che è comune a entrambi.</p>
+<p>Per questo tutte le classifiche del sito non usano il valore assoluto ma il
+<b>Δ norma</b>: lo scarto dalla mediana europea dei voli di <i>pari lunghezza</i>.
+L'ottimo teorico serve solo come unità di misura condivisa.</p>
+<p>Questa correzione è necessaria, non cosmetica: lo scarto grezzo correla circa
+<b>−0,74</b> con la lunghezza della tratta, quindi una classifica grezza
+ordinerebbe le rotte per brevità e non per inefficienza. Dopo la
+normalizzazione la correlazione residua con la distanza è circa <b>+0,08</b>.</p>
+
+<h2>4. Dati e strumenti</h2>
+<ul>
+<li><b>Traiettorie</b>: dump giornalieri pubblici di
+<a href="https://adsb.lol">adsb.lol</a>, licenza ODbL. Ogni volo è ricostruito
+dai punti ADS-B trasmessi dagli aeromobili stessi.</li>
+<li><b>Vento</b>: rianalisi <b>ERA5</b> (Copernicus/ECMWF), 11 livelli di
+pressione, risoluzione oraria.</li>
+<li><b>Consumi</b>: <a href="https://openap.dev">OpenAP</a> (TU Delft), modello
+aperto di prestazioni aeronautiche.</li>
+<li><b>Ancoraggio</b>: i consumi di crociera per tipo sono ancorati alla
+<b>ICAO Carbon Emissions Calculator Methodology v13.1</b>, Appendice C.</li>
+</ul>
+
+<h3>Il vento è il punto che rende confrontabili le due direzioni</h3>
+<p>Il consumo reale è già corretto per il vento, perché deriva dalla velocità
+all'aria misurata. Il volo ideale no: se lo si cronometra senza vento, la stessa
+rotta risulta artificialmente efficiente in un verso e inefficiente nell'altro.
+Il volo ideale viene quindi cronometrato alla velocità al suolo corretta con il
+vento ERA5 lungo il percorso, e l'asimmetria si annulla fra i due versi.</p>
+
+<h3>Due scelte di baseline che cambiano il risultato</h3>
+<ul>
+<li>La quota di crociera ottima è quella della distanza <b>great-circle</b>, non
+di quella realmente volata: altrimenti una deviazione si guadagnerebbe di
+nascosto un livello di crociera migliore, e la componente laterale si
+sgonfierebbe.</li>
+<li>Il vento lungo la traccia reale è pesato sulla <b>distanza</b>, non sul
+tempo: la traccia è campionata nel tempo, quindi è fitta dove l'aereo è lento, e
+una media temporale sovrappeserebbe le aree terminali.</li>
+</ul>
+
+<h2>5. Calibrazione</h2>
+<p>I consumi di OpenAP sono confrontati per tipo con i valori derivati da ICAO, e
+corretti con un fattore per i tipi che deviano oltre il 10% con almeno 100 voli
+osservati. Il fattore moltiplica sia il volo reale sia il suo ideale, quindi
+<b>si semplifica nelle percentuali</b>: incide sulle tonnellate, non sugli scarti
+percentuali.</p>
+<p>La verifica che conta non è sui tipi calibrati — per quelli il controllo è
+tautologico — ma su quelli <b>non</b> calibrati: A320, A321, B738 e A319, che da
+soli sono la maggioranza dei voli, cadono entro il 5% del riferimento ICAO senza
+alcuna correzione.</p>
+
+<h2>6. Quali voli entrano</h2>
+<p>Un volo entra nell'analisi solo se la sua traccia è sufficientemente completa:
+copertura adeguata, nessun buco temporale ampio, e distanza volata non inferiore
+al 90% della great-circle — quest'ultimo criterio scarta i voli la cui traccia è
+troncata, che altrimenti sembrerebbero più efficienti del possibile.</p>
+<p>Nel periodo pubblicato: <b>{len(df):,} voli</b> su {len(days)} giorni,
+{len(months)} mesi, area ECAC.</p>
+
+<h2>7. Validazioni</h2>
+
+<h3>Il vento è modellato correttamente?</h3>
+<p>Se non lo fosse, la stessa rotta risulterebbe diversa nei due versi. Misuriamo
+quindi lo scarto fra andata e ritorno su ogni rotta con almeno 10 voli per
+direzione. Con il vento modellato la mediana di quello scarto crolla, e resta
+<b>stabile in stagioni diverse</b> — che è il test vero, perché d'inverno le
+correnti a getto sono molto più forti.</p>
+<div class=scroll><table><thead><tr><th>mese</th><th class=num>rotte</th>
+<th class=num>senza vento</th><th class=num>con vento</th></tr></thead><tbody>
+{gate_rows}
+</tbody></table></div>
+
+<h3>Il segnale è strutturale o è meteo?</h3>
+<p>Se le classifiche fossero rumore, si rimescolerebbero ogni mese. Confrontando
+la classifica delle rotte fra tutte le <b>{STAB['pairs']} coppie di mesi</b>
+disponibili, la correlazione di rango resta alta ovunque: mediana
+<b>{STAB['median']:.3f}</b>, peggiore <b>{STAB['worst']:.3f}</b>
+({STAB['worst_pair']}), fra mesi consecutivi {STAB['consec']:.3f}.</p>
+<p>Il dettaglio più informativo è che la correlazione <b>decade in ordine</b> con
+la distanza temporale fra i mesi. È la firma di un segnale strutturale con una
+deriva stagionale modesta: il rumore darebbe correlazioni basse ovunque, un
+artefatto le darebbe uniformemente alte.</p>
+
+<h3>I numeri reggono un confronto esterno?</h3>
+<p>Aggregando le nostre traiettorie <b>come EUROCONTROL aggrega il proprio
+indicatore KEA</b> — rapporto fra somme, sola porzione en-route oltre 40 NM dagli
+aeroporti — otteniamo <b>+{kea:.2f}%</b> contro il <b>~{BENCH['kea_published']:.0f}%</b>
+pubblicato. Stesso ordine di grandezza e stessa costruzione.</p>
+<p>Restano differenze che non possiamo eliminare: loro usano dati radar
+sull'area di riferimento EUROCONTROL, noi ADS-B su un sottoinsieme filtrato per
+qualità, con baseline e criteri nostri. Il confronto dice «coerente», non
+«identico».</p>
+
+<h2>8. Limiti dichiarati</h2>
+<ul>
+<li>Misuriamo lo scarto dall'ottimo <b>teorico</b>, non l'inefficienza evitabile
+(§2).</li>
+<li><b>Solo le code delle classifiche sono affidabili.</b> Metà delle rotte sta
+entro pochi punti dalla norma, cioè dentro l'incertezza del metodo: fra la 900ª e
+la 1000ª posizione l'ordine non significa nulla. Le classifiche mostrano solo
+rotte con almeno {RANK_MIN_N} voli.</li>
+<li>Il periodo è il <b>solo 2026, da gennaio a luglio</b>: nessun confronto anno
+su anno, e dicembre non è coperto.</li>
+<li><b>Otto giorni mancano</b>: quattro perché assenti alla fonte, quattro per la
+latenza dei dati meteo.</li>
+<li>Le rotte contrassegnate ⚑ <b>non possono</b> volare il percorso diretto
+perché lo spazio aereo è chiuso. Il divieto riguarda però i vettori europei e non
+quelli di paesi terzi, quindi il valore mostrato è una media fra chi deve
+aggirare e chi no.</li>
+<li>La copertura ADS-B <b>non include le tratte oceaniche</b>.</li>
+<li>La massa dell'aeromobile è stimata, non nota: è la principale incertezza
+fisica del modello.</li>
+<li>Il residuo di asimmetria fra le due direzioni di una rotta è attribuito a
+vettoramento, sulla base della sua correlazione con la geometria del percorso.
+È un'inferenza, non una misura diretta.</li>
+</ul>
+
+<h2>9. Privacy</h2>
+<p>Ogni riga pubblicata aggrega <b>almeno {MIN_N} voli</b>. Non pubblichiamo, e
+non pubblicheremo, dati riferiti a un singolo volo, aeromobile o operatore. Le
+classifiche riguardano rotte e aeroporti, mai persone o velivoli identificabili.</p>
+
+<h2>10. Chi ha fatto questo, e come segnalare un errore</h2>
+<div class=note>
+<p><b>Non sono un professionista dell'aviazione né un climatologo.</b> Gestisco un
+ricevitore ADS-B e la cosa mi sta a cuore. Quello che trovate qui è uno
+<i>strumento</i> con i suoi limiti dichiarati, non uno studio d'autore.</p>
+<p><b>La pipeline è stata sviluppata con l'assistenza di un'AI</b> (Claude
+di Anthropic). Metodo e codice sono aperti proprio perché chi conosce il campo
+possa verificarli.</p>
+<p>Se un numero vi sembra sbagliato, o se rappresentate un aeroporto o una
+compagnia citata e volete replicare, scrivetemi: la correzione verrà pubblicata.
+È il motivo per cui questo lavoro è pubblico invece che privato.</p>
+</div>
+
+<p class=foot>
+Dati traiettoria © contributori <a href="https://adsb.lol">adsb.lol</a>, licenza
+<a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — i dati derivati
+qui pubblicati sono distribuiti alle stesse condizioni, come la licenza richiede.
+Vento: ERA5, Copernicus Climate Change Service.
+Riferimenti carburante: ICAO CEC Methodology v13.1.
+Modello prestazioni: OpenAP, TU Delft.<br>
+{len(df):,} voli · {len(days)} giorni · {n_routes_all:,} rotte pubblicabili ·
+{n_routes_rank:,} in classifica · {n_airports:,} aeroporti · generato {esc(gen)}.
+</p>
+
+</div></body></html>
+"""
 
 
 def main():
@@ -387,7 +658,9 @@ non quelli di paesi terzi, quindi il valore mostrato è una media fra chi deve
 aggirare e chi no.
 (6) Nessun dato riferito a un singolo volo o aeromobile viene pubblicato: ogni
 riga aggrega almeno {MIN_N} voli.
-(7) La copertura ADS-B non include le tratte oceaniche.
+(7) La copertura ADS-B non include le tratte oceaniche.<br><br>
+<b><a href="metodologia.html">Metodologia completa, validazioni e confronti
+esterni →</a></b>
 </div>
 
 <div class=note>
@@ -413,6 +686,11 @@ Modello prestazioni: OpenAP, TU Delft.<br>
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(html_doc)
     print(f"scritto {OUT}  ({len(html_doc)/1024:.0f} KB)")
+
+    meth = build_methodology(df, days, months, lat_w, vert_w, kea,
+                             co2_t, excess_t, len(g_all), len(g), len(ga), gen)
+    OUT_METH.write_text(meth)
+    print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")
     print(f"  voli {len(df):,} · giorni {len(days)} · rotte n>={MIN_N} {len(g_all):,} "
           f"· in classifica n>={RANK_MIN_N} {len(g):,} · aeroporti {len(ga):,}")
     print(f"  CO2 {co2_t/1e6:.2f} Mt · excess {excess_t/1e6:.2f} Mt "
