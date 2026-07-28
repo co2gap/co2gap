@@ -1,0 +1,58 @@
+cff-version: 1.2.0
+# This describes a piece of SOFTWARE, deliberately — not a study and not a
+# paper. The tool is the citable artefact; the conclusions on the site are
+# outputs of running it, and anyone can re-run it. See the methodology page for
+# why the project is positioned this way.
+type: software
+title: "co2gap — an open pipeline for measuring CO2 and flight inefficiency from ADS-B trajectories"
+abstract: >-
+  A pipeline that reconstructs flight trajectories from open ADS-B archives and
+  computes, for each flight, the CO2 actually emitted against that of an ideal
+  trajectory: same aircraft type, direct great-circle route, fuel-optimal
+  altitude and speed profile for the distance, and the same real wind from ERA5.
+  The difference is decomposed into an additive lateral component (excess
+  distance flown) and a vertical component (altitude and speed profile).
+  Emissions are computed with OpenAP, with per-type correction factors anchored
+  to the ICAO Carbon Emissions Calculator methodology. Results are aggregated by
+  route and airport only, never per flight, aircraft or operator. Validated
+  against the EUROCONTROL horizontal en-route flight efficiency indicator (KEA).
+authors:
+  - family-names: Mavellia
+    given-names: Ferdinando
+    # orcid: "https://orcid.org/0000-0000-0000-0000"   # add if one is created
+version: "1.0.0"
+date-released: "2026-01-01"   # ← set to the actual release date before tagging
+license: MIT
+repository-code: "https://github.com/REPLACE-ME/co2gap"
+url: "https://co2gap.org"
+keywords:
+  - ADS-B
+  - aviation emissions
+  - CO2
+  - flight efficiency
+  - air traffic management
+  - OpenAP
+  - open data
+references:
+  - type: software
+    title: "OpenAP: An open-source aircraft performance model"
+    authors:
+      - family-names: Sun
+        given-names: Junzi
+    url: "https://openap.dev"
+    notes: "Aircraft performance and fuel flow model used for all emissions computation."
+  - type: database
+    title: "adsb.lol historical globe archive"
+    notes: >-
+      Flight trajectories, Open Database Licence (ODbL) v1.0.
+      https://www.adsb.lol/docs/open-data/historical/
+  - type: database
+    title: "ERA5 hourly data on pressure levels"
+    notes: >-
+      Copernicus Climate Change Service (C3S) Climate Data Store.
+      Wind fields used for the wind-aware baseline.
+  - type: report
+    title: "ICAO Carbon Emissions Calculator Methodology, version 13.1"
+    notes: >-
+      Appendix C fuel consumption table, used to anchor per-type reference
+      cruise fuel flows.

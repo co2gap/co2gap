@@ -17,3 +17,11 @@ __pycache__/
 *.pyc
 *.log
 refs/
+# Unsent draft correspondence. Publishing the advance-notice letters AFTER they
+# are sent is good for transparency; publishing the drafts before is not.
+# Remove this line deliberately, per file, once a letter has actually gone out.
+outreach/
+# Internal working notes: Italian, home hardware details, incident RCAs.
+# The public artefact is the methodology page, not the lab notebook.
+reports/
+.DS_Store

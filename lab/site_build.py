@@ -632,14 +632,43 @@ def main():
     ap2, ap2r = top_ap.index[1], top_ap.iloc[1]
     ap3, ap3r = top_ap.index[2], top_ap.iloc[2]
     ap_med = float(ga.d.median())
-    # months in which the worst airport sits in the top 4
-    mrank = []
+    # Monthly behaviour of the two leaders.
+    #
+    # The rank alone is misleading and nearly cost us a wrong claim: the second
+    # airport moves between 1st and 12th across the months, which reads as an
+    # unstable signal. It is not — it is an unstable RANK. At the top of this
+    # table ten places are separated by a handful of points, so the ordinal
+    # position carries far less information than its movement suggests. What is
+    # stable is the distance from the median, which is what we report.
+    mrank, m2rank, m2pctile, m2margin, m2val, head_span = [], [], [], [], [], []
     for mth, sm in both.assign(month=both.day.str[:7]).groupby("month"):
         tm = (sm.groupby("ap").agg(n=("d_tot", "size"), d=("d_tot", "median"))
               .query("n >= 300").sort_values("d", ascending=False))
-        if ap1 in tm.index:
-            mrank.append(list(tm.index).index(ap1) + 1)
+        if not len(tm):
+            continue
+        idx, vals = list(tm.index), tm.d.values
+        mmed = float(np.median(vals))
+        if len(vals) >= 10:
+            head_span.append(float(vals[0] - vals[9]))
+        if ap1 in idx:
+            mrank.append(idx.index(ap1) + 1)
+        if ap2 in idx:
+            r2 = idx.index(ap2) + 1
+            m2rank.append(r2)
+            m2pctile.append(100.0 * r2 / len(idx))
+            m2margin.append(float(tm.loc[ap2, "d"]) - mmed)
+            m2val.append(float(tm.loc[ap2, "d"]))
     ap1_worst_rank = max(mrank) if mrank else 0
+    ap2_worst_rank = max(m2rank) if m2rank else 0
+    ap2_best_rank = min(m2rank) if m2rank else 0
+    ap2_worst_pctile = max(m2pctile) if m2pctile else 0.0
+    ap2_min_margin = min(m2margin) if m2margin else 0.0
+    ap2_hi, ap2_lo = (max(m2val), min(m2val)) if m2val else (0.0, 0.0)
+    # Points separating 1st place from 10th, in the month where the head of the
+    # table is most compressed — the honest measure of how little an individual
+    # position at the top means.
+    head_span_min = min(head_span) if head_span else 0.0
+    n_months_above = sum(1 for m in m2margin if m > 0)
     # the single most detoured route whose great circle crosses closed airspace
     # Routes across closed airspace are thin by nature — the Baltic pairs run a
     # few dozen flights over the period — so they get their own floor rather
@@ -743,20 +772,30 @@ not avoidable waste.</b> The full comparison is in the methodology.
 and what remains unknown.</p>
 
 <div class=note>
-<p><b>1. Two airports sit above the rest, and their gap is in the profile
-rather than the route.</b><br>
+<p><b>1. A group of congested hubs sits well above the norm, and their gap is
+in the profile rather than the route.</b><br>
 Flights to and from <b>{ap1_name}</b> ({ap1_d:+.1f} points across {ap1_n:,}
 movements) and <b>{esc(aname(ap2))}</b> ({ap2r.d:+.1f} across {int(ap2r.n):,})
 deviate from comparable flights more than those of any other airport with
-substantial traffic. The two are close to each other; the visible break is
-below them, with {esc(aname(ap3))} at {ap3r.d:+.1f} and a median across all
-{len(ga)} airports of {ap_med:+.1f}. A point is one percentage point of
-CO&#8322; relative to the ideal flight.<br>
+substantial traffic, followed by {esc(aname(ap3))} at {ap3r.d:+.1f}, against a
+median across all {len(ga)} airports of {ap_med:+.1f}. A point is one percentage
+point of CO&#8322; relative to the ideal flight.<br>
+<b>These are not places in a league table.</b> At the head of the ranking ten
+positions can be separated by as little as {head_span_min:.1f} points within a
+single month, so an individual position there is not resolvable — the same
+caution the methodology applies to the middle of the ranking applies to its top.
+What is stable is the distance from the norm: across the {len(m2margin)} months
+{esc(aname(ap2))} never leaves the top {ap2_worst_pctile:.0f}% of airports and
+stays at least {ap2_min_margin:.1f} points above the median, even while its
+nominal position moves between {ap2_best_rank} and {ap2_worst_rank}. Its
+magnitude is seasonal ({ap2_hi:+.1f} in the strongest month, {ap2_lo:+.1f} in
+the weakest); {ap1_name} is steadier, never falling below rank
+{ap1_worst_rank}.<br>
 In both cases the deviation is not in the route — {ap1_name} flies routes of
 normal length ({ap1_l:+.1f} lateral) — but in how the flights climb, cruise and
 descend ({ap1_v:+.1f} vertical). The vertical component still dominates under
 the alternative decomposition convention described in the methodology, so it is
-not an artefact of that choice, and the pattern holds in all seven months.<br>
+not an artefact of that choice.<br>
 {ap1_routes} of the twenty routes furthest from the norm have {ap1_name} at one
 end, against a base rate of {ap1_share:.0f}% of all ranked routes — a real
 concentration, though a hub with many routes is over-represented in any tail.

@@ -1,180 +1,173 @@
-# adsb-co2 — Osservatorio CO₂ / inefficienza aviazione (EU-Sud)
+# co2gap
 
-Calcola le emissioni **CO₂ reali** dei voli a partire dalle traiettorie ADS-B
-(modello fisico **OpenAP**, TU Delft) e in particolare l'**excess CO₂**: la
-differenza fra le emissioni della traiettoria effettivamente volata e quelle
-dell'ottimo *great-circle* **wind-aware**. L'excess quantifica l'inefficienza da
-routing / livelli di volo / holding / congestione, al netto del vento.
+**An open pipeline that measures CO₂ and flight inefficiency in Europe from
+ADS-B trajectories.**
 
-**Tutto è aggregato per aeroporto / rotta. Mai per individuo o singolo velivolo
-identificabile** (vincolo GDPR: nessun tracciamento di persone). Il dataset
-durevole non contiene identificatori di aeromobile.
+For every flight it computes the CO₂ actually emitted and compares it with an
+*ideal* flight: same aircraft type, direct great-circle route, the most
+fuel-efficient altitude and speed profile for that distance, and **the same real
+wind**. The difference splits into two additive parts — a **lateral** component
+(having flown more kilometres) and a **vertical** one (having flown the same
+route on a less efficient altitude and speed profile).
 
-Stato: **fase 1** — excess wind-aware + calibrazione per-tipo + accumulo
-giornaliero. Report fase 0: `reports/fase0.md`.
+Everything is aggregated by route and airport. Nothing is published per flight,
+per aircraft or per operator.
 
-## Fonte dati e licenza
+Site: **[co2gap.org](https://co2gap.org)** · Methodology: `site/methodology.html`
 
-Traiettorie storiche da **adsb.lol**, dump giornalieri pubblici:
+---
 
-> Traiettorie: **© adsb.lol contributors**, **Open Database License (ODbL) v1.0**.
-> Fonte: https://www.adsb.lol/docs/open-data/historical/
+## What it measures — and what it does not
 
-Questo progetto è un *Produced Work* ai sensi di ODbL: in caso di pubblicazione
-va mantenuta l'attribuzione ad adsb.lol e indicata la licenza ODbL del database.
+**It measures the distance from a theoretical optimum. It does not measure
+recoverable fuel.** The ideal great-circle flight at a perfect profile is a limit
+no real flight can reach: separation, route structure, constrained airspace and
+arrival queues put it out of reach. Published estimates of what is actually
+recoverable are far smaller — EUROCONTROL puts roughly 39 kg per flight on
+continuous climb and descent procedures, against roughly 520 kg of total gap
+measured here.
 
-Aeroporti: **OurAirports** (dominio pubblico, CC0), pre-filtrati al box in
-`data/airports.csv`. Vento: **ERA5 / ERA5T** (Copernicus CDS), reanalisi ~0,25°.
-Modello emissioni: **OpenAP** (https://openap.dev), open source.
+The distinction matters enough that the site states it above the fold, and this
+repository would be misused if that framing were dropped.
 
-**Non si usano dati OpenSky** (termini diversi; scelta per tenere aperta la via
-commerciale su fonte ODbL).
+The data also cannot see *why* a profile was flown: noise abatement rules,
+sequencing constraints, capacity limits and terrain are invisible to ADS-B. The
+output describes **what flights fly**, never what an airport, an airline or a
+controller could have done differently.
 
-## Architettura a due macchine
+## Results over the published period
 
-```
-PI (sensecapAI, .90)  =  PRODUZIONE          MAC (MacBook Air M1)  =  LABORATORIO
-  cron 02:00 accumulo                          excess wind-aware (ERA5)
-  parse dump globale -> box EU-Sud             calibrazione per-tipo
-  parquet per-volo su WD (per sempre)          report statici
-  NIENTE cdsapi/xarray                         git clone del repo del Pi
-        |  git push (updateInstead)                    ^  rsync SOLO parquet
-        +----------------- repo condiviso --------------+  (mai i dump grezzi)
-```
+ECAC area, 2026-01-01 → 2026-07-20, **197 days, 1,833,127 flights**:
 
-- Il **Pi** fa il lavoro costoso e irripetibile (parse del dump globale ~4,3 GB)
-  e scrive il **dataset durevole** (traiettoria + fuel v0 + qualità). L'excess
-  **non** si calcola qui: si ricalcola sul Mac quando il baseline migliora,
-  **senza rifare il parsing**.
-- Il **Mac** (~5–10× più veloce) fa il lavoro iterativo (vento, calibrazione).
-  Riceve solo i parquet processati (piccoli) via `rsync`; **mai** i dump grezzi.
-- Codice+config validati sul Mac tornano in produzione con un `git pull` sul Pi.
+| | |
+|---|---|
+| CO₂ emitted | **25.44 Mt** |
+| Gap against the theoretical optimum | **4.57 Mt** (22.1%) |
+| — lateral (routing) | 7.51% |
+| — vertical (profile) | 14.55% |
+| Routes with n≥10 | 5,520 (2,788 ranked at n≥100) |
+| Airports with n≥2,000 movements | 152 |
 
-## Pipeline (moduli)
+Of the 14.0 points of vertical gap, **5.5 remain for a flight going direct
+through an empty night sky** — a floor that is not inefficiency but the baseline
+staying out of reach. Only the remaining 8.5 move with traffic, routing and
+profile.
 
-```
-ingest/     source.py        astrazione fonte dati (oggi adsb.lol day dump)
-pipeline/   trajectories.py  segmentazione traiettorie per volo + pulizia
-            flightproc.py    traiettoria assottigliata + metriche di qualità
-            emissions.py     fuel/CO2 via OpenAP (integratore VETTORIALE)
-            excess.py        baseline nominale wind-free (fase 0, riferimento)
-            excess_wind.py   baseline nominale WIND-AWARE (fase 1)  [Mac]
-            airports.py      risoluzione aeroporto più vicino
-            store.py         writer parquet (row-group incrementali, GDPR-clean)
-            run_daily.py     orchestratore di produzione (multiprocessing)
-wind/       era5.py          download ERA5 (CDS) + campo di vento 4-D  [Mac]
-lab/        gate.py          gate del vento (crollo del dir_spread)
-            calibrate.py     derivazione fattori di calibrazione per-tipo
-scripts/    dl_day.sh        download parametrico di un giorno
-            daily_cron.sh    job notturno (lock/log/retry/rotazione)
-            backfill.sh      backfill di giorni specifici
-data/       raw/ (dump, ruotati)  flights/<giorno>/{points,flights}.parquet
-            era5/ (vento, Mac)    airports.csv  calibration.json
-```
+## External validation
 
-Il layer `ingest/source.py` è l'unico punto che conosce la fonte: per passare a
-un'altra sorgente (es. Wingbits) basta implementare `iter_traces()` con la
-stessa forma, il resto non cambia.
+The lateral component is directly comparable to EUROCONTROL's horizontal
+en-route flight efficiency indicator (KEA). Computed on the same definition —
+excluding the terminal areas within 40 NM of each airport — this pipeline
+obtains **+2.26%** against the roughly 3% EUROCONTROL publishes. That agreement
+is the main external check on the method, and it was not tuned for.
 
-## Metodo — CO₂ reale ed excess
+Two further checks: the wind correction holds identically across seasons
+(directional spread 5.1 / 5.2 / 4.6 in January, February and July), and the
+route ranking is stable month over month (Spearman ρ median 0.87, worst pair
+0.79 across all 21 month pairs).
 
-- **CO₂ reale**: `FuelFlow.enroute(mass, TAS, alt, vs)` integrato sulla
-  traiettoria. TAS da IAS (compressibile, **indipendente dal vento**), fallback
-  a GS. Massa stimata iterativamente (OEW + payload@load-factor + riserva +
-  trip-fuel, chiuso a punto fisso). CO₂ = fuel × 3,16. Integratore
-  **vettoriale** (una chiamata array per iterazione, ~100× vs loop per-step;
-  accordo <0,01% con il riferimento scalare).
-- **Excess wind-aware**: il baseline è un volo nominale sul great-circle O→D
-  alla quota/Mach ottimi del tipo, **con il tempo di crociera calcolato a ground
-  speed = TAS + vento along-track** (ERA5, al livello di crociera, all'ora del
-  volo). Il fuel reale riflette già il vento *attraverso la durata effettiva*;
-  dando al nominale lo stesso termine, il vento **si cancella** e resta la sola
-  inefficienza (percorso extra, quote non ottime, holding).
-  `excess% = (CO₂_reale − CO₂_ideale_windaware) / CO₂_ideale_windaware × 100`.
-
-## Qualità dei dati (scarti)
-
-Un volo entra nell'analisi solo se: O/D noti (aeroporto entro 8 km), `flown ≥
-0,9·GC` (buchi di copertura non hanno tagliato distanza), `coverage_frac ≥ 0,85`,
-`GC ≥ 150 km`. Le metriche (`max_gap_s`, `hole_time_s`, `coverage_frac`) sono nel
-parquet per volo.
-
-## Scomposizione laterale / verticale dell'excess (fase 2a)
-
-L'excess misurato contro un ottimo great-circle mette insieme due cose molto
-diverse: aver volato **più lontano** del necessario, e aver volato **male in
-verticale** il percorso assegnato (quota di crociera non ottima, discese
-anticipate, attese). Solo la prima è confrontabile con le metriche pubblicate.
-`pipeline/decompose.py` introduce una **baseline intermedia**:
+## How it works
 
 ```
-ideal_gc = profilo ottimo sulla distanza GREAT-CIRCLE
-hybrid   = profilo ottimo sulla GROUND TRACK REALE
-real     = volo effettivo
-
-excess_laterale  = (hybrid   − ideal_gc) / ideal_gc × 100
-excess_verticale = (real     − hybrid  ) / ideal_gc × 100
-excess_totale    = (real     − ideal_gc) / ideal_gc × 100  = laterale + verticale
+ingest/     source.py        data-source abstraction (adsb.lol daily dumps)
+pipeline/   trajectories.py  per-flight trajectory segmentation and cleaning
+            flightproc.py    thinned trajectory + quality metrics
+            emissions.py     fuel/CO2 via OpenAP (vectorised integrator)
+            excess_wind.py   wind-aware great-circle baseline
+            decompose.py     lateral / vertical decomposition
+            run_daily.py     production orchestrator (multiprocessing)
+wind/       era5.py          ERA5 download (CDS) + 4-D wind field
+lab/        calibrate.py     per-type correction factors
+            anchor_refs.py   ICAO reference cruise fuel flows
+            gate.py          wind-correction validation gate
+            stability.py     month-over-month rank stability
+            site_build.py    static site generation
 ```
 
-Le due componenti sono **additive per costruzione** (stesso denominatore).
-Due scelte deliberate: la quota di crociera dell'`hybrid` è quella ottima per
-la distanza *great-circle* (così la componente laterale isola una sola cosa,
-la distanza in più), mentre il **vento** dell'`hybrid` è campionato lungo la
-**traccia reale** (una deviazione fatta per prendere vento in coda deve
-risultare "laterale ma economica").
+Emissions come from **[OpenAP](https://openap.dev)** (TU Delft). Aircraft mass is
+estimated iteratively; true airspeed is derived from reported IAS, so it is
+independent of wind — the wind enters the comparison only through flight
+*duration*, which is why giving the ideal baseline the same along-track wind
+makes it cancel between the two.
 
-Oltre al fuel si produce la metrica puramente geometrica **omogenea al KEA di
-EUROCONTROL**: `dist_ratio_enroute`, cioè il rapporto distanza volata /
-great-circle calcolato **escludendo le aree terminali** (punti entro 40 NM dai
-due aeroporti, esattamente la definizione en-route del KEA). Il rapporto
-gate-to-gate è riportato accanto ma **non** è confrontabile col KEA, perché
-include SID/STAR e vettoramento che il KEA esclude per definizione.
+Per-type correction factors are anchored to the **ICAO Carbon Emissions
+Calculator methodology v13.1**, Appendix C. They are needed because OpenAP ships
+calibrated fuel models for 14 typecodes and falls back to a generic model for
+everything else; types with a calibrated model land within ~5% of the ICAO
+reference with no correction at all, across more than 270,000 flights. This is
+documented in an open question to the OpenAP maintainers rather than worked
+around silently.
 
-## Calibrazione per-tipo e ancoraggio delle fonti
+## Known limitations
 
-Il modello OpenAP ha bias sistematici per alcuni tipi (neo Airbus bassi,
-alcuni Embraer alti). Si correggono con un **fattore scalare per tipo**
-ancorato al fuel flow di crociera pubblicato, applicato **a valle** (il
-`co2_kg_v0` nel parquet resta grezzo e model-indipendente). Fattori in
-`data/calibration.json`, derivati da `lab/calibrate.py`.
+- The baseline is a **theoretical optimum**, not an achievable target (above).
+- Individual positions at the top of the airport ranking are **not resolvable**:
+  ten places can sit within 3.1 points in a given month. The defensible claim is
+  that a group of congested hubs sits above the norm, not an ordering within it.
+- **Closed airspace** makes some routes structurally longer — Kaliningrad,
+  Belarus, Ukraine. 208 ranked routes have a direct path through closed
+  airspace; they are flagged individually, and the detour is not recoverable
+  while those closures hold.
+- The vertical component does **not** separate cruise from climb and descent.
+- Four days are missing from the source (2026-05-05/06/07 and 2026-06-11).
+- No oceanic coverage: the scope is deliberately ECAC, where ADS-B coverage is
+  dense and an external benchmark (KEA) exists.
 
-**Fase 2a — i riferimenti sono ora citabili.** Le cifre industriali indicative
-usate in fase 1 sono state sostituite con valori derivati dalla
-**ICAO Carbon Emissions Calculator (ICEC) Methodology v13.1 (agosto 2024),
-Appendice C "ICAO Fuel Consumption Table"**
-(<https://icec.icao.int/Documents/Methodology%20ICAO%20Carbon%20Emissions%20Calculator_v13_Final.pdf>).
-La tabella ICAO dà il **carburante totale di tratta** (kg) a distanze fisse,
-non un consumo orario di crociera: `lab/anchor_refs.py` ricava il kg/h
-prendendo la **pendenza** della curva sul segmento **1500–2000 NM** (regime
-dominato dalla crociera) e moltiplicandola per la TAS di crociera del tipo.
-La derivazione è esplicita e riproducibile, ed è documentata come *conversione*
-— non come misura indipendente. Tabella completa in `data/icao_fuel_table.json`
-(dati grezzi ICAO, versionati) e `data/anchored_cruise_ff.json` (derivati).
-I business jet (C550, GLF6) non sono coperti dall'ICEC e restano non ancorati.
+## Data sources and licensing
 
-## Esecuzione
+**Code: MIT** (see `LICENSE`). **Data: not MIT** — see `DATA-LICENCE.md`, which
+matters more than it sounds: the published site is a *Produced Work* under ODbL
+and needs only attribution, but redistributing an aggregated dataset would make
+it a Derivative Database and bind it to share-alike.
 
-Produzione (Pi, dentro il venv):
+- Trajectories: **© adsb.lol contributors**, [ODbL v1.0](https://opendatacommons.org/licenses/odbl/1-0/)
+- Wind: **ERA5**, Copernicus Climate Change Service (C3S)
+- Airports: **OurAirports** (CC0)
+- Performance model: **[OpenAP](https://openap.dev)**, TU Delft
+- Reference fuel: **ICAO** Carbon Emissions Calculator methodology v13.1
+
+## Privacy
+
+No published row aggregates fewer than **10 flights**, and nothing is published
+per flight, per aircraft registration or per operator. This is a project rule
+rather than a licence requirement: it is what keeps an aggregate observatory from
+becoming a tool for tracking individual movements.
+
+## Reproducing
+
+Production (per-day accumulation):
+
+```bash
+WORKERS=3 python pipeline/run_daily.py --day 2026.07.19
 ```
-WORKERS=4 nice -n15 ionice -c3 venv/bin/python pipeline/run_daily.py --day 2026.07.19
-```
-Cron notturno: `scripts/daily_cron.sh` (installato in crontab alle 02:00).
 
-Laboratorio (Mac) — **catena completa in un comando**, idempotente e
-riprendibile (è lo stesso comando che rifà la fase 2b sull'anno intero):
-```
+Analysis chain — idempotent and resumable, and **no step publishes anything**:
+
+```bash
 scripts/run_phase2.sh
 ```
-Singoli passi, se servono:
+
+Site generation:
+
+```bash
+ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
+ADSB_CALIB=$PWD/data/calibration_ecac.json \
+ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
+ADSB_SITE_OUT=$PWD/site/index.html \
+python lab/site_build.py
 ```
-./sync_parquet.sh                              # rsync parquet dal Pi
-lab-venv/bin/python scripts/era5_backfill.py   # ERA5 per tutti i giorni
-lab-venv/bin/python lab/gate.py                # gate del vento
-lab-venv/bin/python lab/anchor_refs.py         # riferimenti ICAO -> kg/h
-lab-venv/bin/python lab/calibrate.py           # fattori di calibrazione
-lab-venv/bin/python lab/run_decompose.py       # scomposizione lat/vert
-lab-venv/bin/python lab/decompose_report.py    # tabelle del report
-```
-Nessuno di questi comandi pubblica niente: il deploy resta una decisione
-esplicita e separata.
+
+Per-flight intermediate data stays out of this repository by design.
+
+## About this project, plainly
+
+I am not an aviation professional, an air traffic controller or a climate
+scientist. I keep an ADS-B receiver at home, and this started as a personal
+project because the subject matters to me.
+
+**The pipeline was built with AI assistance (Claude).** The method and the code
+are open precisely so that people who do know the field can check them — and if
+you find an error, that is the point of publishing it this way. Corrections and
+right-of-reply responses are published next to the figure they concern.
+
+Contact: **hello@co2gap.org**

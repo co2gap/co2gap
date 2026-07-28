@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Methodology — co2gap</title>
+<style>
+:root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
+--pos:#ff8a6b;--neg:#5fd0a8;--hi:#5ac8fa;--warn:#f0b429}
+@media(prefers-color-scheme:light){:root{--bg:#fbfcfd;--card:#fff;--fg:#16212b;
+--mut:#5b6b78;--line:#e2e8ee;--pos:#c2410c;--neg:#0f766e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:36px 20px 90px}
+h1{font-size:1.7rem;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:1.12rem;margin:40px 0 8px;letter-spacing:-.01em}
+h3{font-size:.98rem;margin:24px 0 6px;color:var(--fg)}
+.sub{color:var(--mut);margin:0 0 22px}
+p{margin:12px 0}
+ul{margin:12px 0;padding-left:22px}
+li{margin:6px 0}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.88rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:500;font-size:.75rem;text-transform:uppercase;
+letter-spacing:.05em}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--hi);
+border-radius:8px;padding:14px 18px;color:var(--mut);font-size:.9rem;margin:18px 0}
+.note.warn{border-left-color:var(--warn)}
+.note b{color:var(--fg)}
+.foot{color:var(--mut);font-size:.8rem;margin-top:44px;border-top:1px solid var(--line);
+padding-top:16px}
+a{color:var(--hi)}
+code{font-family:ui-monospace,monospace;font-size:.85em;background:var(--card);
+padding:1px 5px;border-radius:4px}
+</style></head><body><div class=wrap>
+
+<p><a href="index.html">← back to the data</a></p>
+<h1>Methodology</h1>
+<p class=sub>How the figures on this site are computed, what they mean and —
+above all — what they do <b>not</b> mean. Updated 2026-07-28 21:02 UTC.</p>
+
+<h2>1. The question being answered</h2>
+<p>For every flight we compare the CO&#8322; actually emitted with that of an
+<b>ideal</b> flight: same aircraft type, direct great-circle route, the most
+efficient altitude and speed for that distance, and <b>the same real wind</b>.</p>
+<p>The difference is split into two parts that add up to the total:</p>
+<ul>
+<li><b>lateral</b> — the cost of having flown more kilometres than necessary;</li>
+<li><b>vertical</b> — the cost of having flown the <i>same</i> route on a less
+efficient altitude and speed profile.</li>
+</ul>
+<p>The separation comes from an intermediate baseline: the <i>real</i> ground
+track, but an <i>optimal</i> altitude and speed profile. The two components are
+additive by construction, because they share a denominator.</p>
+
+<h2>2. What is NOT being measured</h2>
+<div class="note warn">
+<p><b>This is not wasted, recoverable fuel.</b> The ideal flight is a
+theoretical limit no real flight can reach: separation between aircraft, route
+structure, constrained airspace, arrival sequencing and weather put it out of
+reach for reasons that are not inefficiency.</p>
+<p>Estimates of <i>avoidable</i> inefficiency published by bodies in the field
+are much smaller than ours, and rightly so:</p>
+<table><thead><tr><th>measure</th><th class=num>per flight</th></tr></thead><tbody>
+<tr><td>EUROCONTROL — level-offs in climb and descent, recoverable through
+CCO/CDO procedures</td><td class=num>~39 kg</td></tr>
+<tr><td>Pasutto et al. (EUROCONTROL, 2021) — cruise, against the best profile
+actually flown</td><td class=num>60–85 kg</td></tr>
+<tr><td><b>this site</b> — gap from the theoretical optimum, whole profile</td>
+<td class=num><b>~521 kg</b></td></tr>
+</tbody></table>
+<p>Over the same distance range Pasutto uses (200–1500 NM), their
+4.6% median for cruise alone compares with our 13.1% for the
+whole profile: a factor of <b>2.8</b>, explained by three stated differences —
+their reference is the <i>best observed profile</i>, ours a physical optimum;
+they cover cruise only, we also cover climb, descent and speed; they assume
+nominal mass and no wind, we use estimated mass and real wind.</p>
+<p><b>Practical consequence:</b> multiplying our total by a carbon price and
+calling it "waste" would be wrong. We do not do it, and we ask that it not be
+done.</p>
+</div>
+
+<h3>How much is compressible — measured, not assumed</h3>
+<p>A flight going direct, departing at night into an empty sky, on a long
+sector, is about as close to the ideal trajectory as an airliner actually gets.
+Across 3,120 such flights the vertical gap still stands at
+<b>5.5%</b>, against a fleet median of <b>14.0%</b>.</p>
+<p>That yields an attribution derived from the data: <b>5.5 points
+are floor</b> — the baseline remaining out of reach because of cost index, step
+climbs imposed by weight and discrete flight levels — and
+<b>8.5 points are operational margin</b>, related to traffic,
+routing and profile.</p>
+<p>The floor nearly coincides with the value a EUROCONTROL study obtains for
+cruise by comparing each flight with the <i>best observed profile</i>, a
+reference that already contains those constraints. Two independent routes, the
+same destination: which is why the apparent gap against external references does
+not indicate a model error, but the difference between a fleet median and a
+best-in-class reference.</p>
+
+<h3>A number that can be given</h3>
+<p>There is a way to quantify the margin without leaning on an unreachable
+optimum: compare each flight not with perfection but with <b>what flights of the
+same length already achieve</b>. That level is reachable by definition, because
+half of comparable flights reach it.</p>
+<ul>
+<li>If flights above the median of comparable ones flew like that median:
+<b>2.2 Mt of CO&#8322; a year</b> (707 kt of fuel).</li>
+<li>Bringing only the worst quartile to the 75th percentile, a far more cautious
+assumption: <b>1.0 Mt a year</b>.</li>
+</ul>
+<p>EUROCONTROL independently estimates <b>1.1 Mt of CO&#8322; a year</b> as
+recoverable in the ECAC area through continuous climb and descent procedures
+alone: the cautious scenario above comes close to it, while being built by an
+entirely different method.</p>
+<p><b>It remains counterfactual arithmetic.</b> It assumes the median level is
+reachable everywhere, and it is not: part of the spread is due to structural
+constraints — closed airspace, terrain, congestion — that no procedure removes.
+The figure measures <i>what the observed spread between comparable flights is
+worth</i>, not what is achievable. It is the upper bound of a margin, not a
+target.</p>
+
+<h2>3. Why the comparison between routes still holds</h2>
+<p>Because <b>an unreachable reference cancels out in a comparison</b>. Two
+airports measured against the <i>same</i> impossible optimum remain comparable
+with each other: the distance between them does not depend on the
+unreachability, which is common to both.</p>
+<p>That is why none of the rankings on this site use the absolute value; they
+use the <b>Δ norm</b>: the deviation from the European median of flights of
+<i>the same length and the same aircraft type</i>. The theoretical optimum only
+serves as a shared unit of measurement.</p>
+<p>This correction is necessary, not cosmetic: the raw gap correlates about
+<b>−0.74</b> with sector length, so a raw ranking would order routes by
+shortness rather than by inefficiency. After normalisation the residual
+correlation with distance is about <b>+0.08</b>.</p>
+<p>The comparison is also made <b>at equal aircraft type</b>. An A320 and a B767
+on the same sector are not comparable, and without this second normalisation
+part of what the method charges to the route would really be the aircraft
+serving it: the question here is route and profile efficiency, not fleet choice.
+Where a distance–type combination has fewer than 200 flights, the distance-only
+norm is used instead.</p>
+
+<h2>4. Data and tools</h2>
+<ul>
+<li><b>Trajectories</b>: public daily dumps from
+<a href="https://adsb.lol">adsb.lol</a>, ODbL licence. Every flight is
+reconstructed from the ADS-B messages broadcast by the aircraft themselves.</li>
+<li><b>Wind</b>: <b>ERA5</b> reanalysis (Copernicus/ECMWF), 11 pressure levels,
+hourly resolution.</li>
+<li><b>Fuel burn</b>: <a href="https://openap.dev">OpenAP</a> (TU Delft), an open
+aircraft performance model.</li>
+<li><b>Anchoring</b>: cruise fuel flows per type are anchored to the <b>ICAO
+Carbon Emissions Calculator Methodology v13.1</b>, Appendix C.</li>
+</ul>
+
+<h3>Wind is what makes the two directions comparable</h3>
+<p>Actual fuel burn is already wind-correct, because it derives from measured
+airspeed. The ideal flight is not: timed without wind, the same route comes out
+artificially efficient one way and inefficient the other. The ideal flight is
+therefore timed at the ground speed corrected with ERA5 wind along the path, and
+the asymmetry between the two directions cancels.</p>
+
+<h3>Two baseline choices that change the result</h3>
+<ul>
+<li>The optimal cruise altitude is the one for the <b>great-circle</b> distance,
+not for the distance actually flown: otherwise a detour would quietly earn
+itself a better cruise level and the lateral component would deflate.</li>
+<li>The wind along the real track is weighted by <b>distance</b>, not by time:
+the track is time-sampled, so it is dense where the aircraft is slow, and a
+time-weighted average would over-weight the terminal areas.</li>
+</ul>
+
+<h2>5. Calibration</h2>
+<p>OpenAP fuel flows are compared per type against values derived from ICAO, and
+corrected with a factor for types deviating by more than 10% with at least 100
+observed flights. The factor multiplies both the real flight and its ideal, so
+it <b>cancels in the percentages</b>: it affects tonnages, not percentage
+gaps.</p>
+<p>The check that matters is not on calibrated types — for those it is
+tautological — but on the <b>uncalibrated</b> ones: A320, A321, B738 and A319,
+which alone are the majority of flights, land within 5% of the ICAO reference
+with no correction at all.</p>
+
+<h2>6. Which flights are included</h2>
+<p>A flight enters the analysis only if its track is sufficiently complete:
+adequate coverage and no large time gaps.</p>
+<p>There is then a criterion that is often misread, so it is worth being
+explicit. We discard flights whose flown distance comes out <b>smaller</b> than
+90% of the great circle. Flying less than the direct route is geometrically
+impossible: when it happens it is because the track is <b>truncated</b> by a
+reception gap, and that flight would look more efficient than possible.
+<b>We do not discard heavily diverted flights</b> — those have flown distance
+<i>greater</i> than the great circle and all remain in the sample, including the
+routes at the top of the rankings.</p>
+<p>Over the published period: <b>1,833,127 flights</b> across 197 days
+and 7 months, ECAC area.</p>
+
+<h2>7. Validations</h2>
+
+<h3>Is the wind modelled correctly?</h3>
+<p>If it were not, the same route would come out different in the two
+directions. We therefore measure the spread between outbound and return on every
+route with at least 10 flights per direction. With wind modelled, the median of
+that spread collapses, and it stays <b>stable across seasons</b> — which is the
+real test, because winter jet streams are far stronger.</p>
+<div class=scroll><table><thead><tr><th>month</th><th class=num>routes</th>
+<th class=num>without wind</th><th class=num>with wind</th></tr></thead><tbody>
+<tr><td>January</td><td class=num>1,798</td><td class=num>8.6</td><td class=num><b>5.1</b></td></tr>
+<tr><td>February</td><td class=num>1,781</td><td class=num>9.9</td><td class=num><b>5.2</b></td></tr>
+<tr><td>July</td><td class=num>2,458</td><td class=num>8.5</td><td class=num><b>4.6</b></td></tr>
+</tbody></table></div>
+
+<h3>Is the signal structural, or is it weather?</h3>
+<p>If the rankings were noise, they would reshuffle every month. Comparing the
+route ranking across all <b>21 available month pairs</b>, rank
+correlation stays high throughout: median <b>0.867</b>, worst
+<b>0.789</b> (Feb→Jul), consecutive months
+0.924.</p>
+<p>The more informative detail is that the correlation <b>decays in order</b>
+with the time distance between months. That is the signature of a structural
+signal with modest seasonal drift: noise would give low correlations everywhere,
+an artefact would give uniformly high ones.</p>
+
+<h3>Do the numbers survive an external comparison?</h3>
+<p>Aggregating our trajectories <b>the way EUROCONTROL aggregates its own KEA
+indicator</b> — a ratio of sums, over the en-route portion beyond 40 NM from the
+airports — we obtain <b>+2.26%</b> against the
+<b>~3%</b> published. Same order of magnitude and
+same construction.</p>
+<p>Differences remain that we cannot remove: they use radar data over the
+EUROCONTROL reference area, we use ADS-B over a quality-filtered subset, with
+our own baseline and criteria. The comparison says "consistent", not
+"identical".</p>
+
+<h2>8. Stated limitations</h2>
+<ul>
+<li>We measure the gap from a <b>theoretical</b> optimum, not avoidable
+inefficiency (§2).</li>
+<li><b>Only the tails of the rankings are reliable.</b> Half the routes sit
+within a few points of the norm, inside the uncertainty of the method: between
+900th and 1000th place the ordering means nothing. Rankings show only routes
+with at least 100 flights.</li>
+<li>The period is <b>2026 only, January to July</b>: no year-on-year comparison,
+and December is not covered.</li>
+<li><b>Eight days are missing</b>: four absent at the source, four because of
+weather data latency.</li>
+<li>Routes flagged ⚑ <b>cannot</b> fly the direct path because the airspace is
+closed. The ban applies to European carriers and not to third-country ones, so
+the figure shown is an average between those who must divert and those who need
+not.</li>
+<li>ADS-B coverage <b>does not include oceanic sectors</b>.</li>
+<li>Aircraft mass is estimated, not known: it is the main physical uncertainty
+in the model. The baseline also does not impose the <b>altitude reachable at
+full load</b>: a heavy aircraft must climb in steps, whereas the ideal
+trajectory flies the whole cruise at a single level. How much this weighs is
+measured by the floor in §2.</li>
+<li>The ideal trajectory flies at <b>minimum-fuel speed</b>. Airlines fly faster
+on purpose, to meet schedules: that is an economic choice, not an inefficiency,
+and it still ends up counted in the vertical component. It is one of the items
+making up the incompressible floor.</li>
+<li><b>The split between lateral and vertical is a convention, but the result
+does not depend on it.</b> We correct the route first and the profile second,
+charging the extra kilometres at the <i>optimal</i> profile. The opposite
+convention charges them at the flight's <i>actual</i> efficiency, which moves
+weight towards the lateral component: across the fleet the split goes from
+7.2 / 14.0 to 9.4 / 11.6 points. <b>The vertical component still dominates</b>,
+including for the airport named in the findings (7.9 / 33.0 becomes
+12.2 / 28.3 on raw medians). The total is identical under both by construction.
+Anything resting on the <i>size</i> of the split should be read with this
+sensitivity in mind; the ordering does not change.</li>
+<li>The ideal trajectory's flight time uses the <b>harmonic mean of ground
+speed</b> along the path, which is the quantity that reproduces the correct
+flight time when wind varies. An earlier version used the arithmetic mean of
+wind, which understated the baseline's fuel and inflated the published gap by
+about 0.35%; the figures on this site are computed after that correction.</li>
+</ul>
+
+<h2>9. Privacy</h2>
+<p>Every published row aggregates <b>at least 10 flights</b>. We do not
+publish, and will not publish, data about an individual flight, aircraft or
+operator. The rankings concern routes and airports, never people or
+identifiable aircraft.</p>
+
+<h2>10. Who made this, and how to report an error</h2>
+<div class=note>
+<p><b>Everything here is reproducible.</b> The trajectory data is public, the
+performance model is open source, and the code that turns one into the other is
+published: any figure on this site can be recomputed and any choice made along
+the way can be inspected. What you find here is a <i>tool</i> with its
+limitations stated, not an authored study.</p>
+<p>I am not an aviation professional or a climate scientist; I run an ADS-B
+receiver and I care about this. <b>The code was developed with AI tooling</b>
+(Claude, by Anthropic) — the analytical decisions it implements are documented
+on this page precisely so they can be checked rather than taken on trust.</p>
+<p><b>Right of reply.</b> If a figure looks wrong to you, or if you represent
+an airport, an airline or an air navigation service provider named here, write
+to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections are
+published on this site, and a reply you send will be published alongside the
+figure it concerns. It is why this work is public rather than private.</p>
+</div>
+
+<p class=foot>
+Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
+data published here is distributed under the same terms, as the licence requires.
+Wind: ERA5, Copernicus Climate Change Service.
+Fuel references: ICAO CEC Methodology v13.1.
+Performance model: OpenAP, TU Delft.<br>
+1,833,127 flights · 197 days · 5,520 publishable routes ·
+2,788 ranked · 152 airports · generated 2026-07-28 21:02 UTC.
+</p>
+
+</div></body></html>

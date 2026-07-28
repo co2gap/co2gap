@@ -1,0 +1,48 @@
+MIT License
+
+Copyright (c) 2026 Francesco Mavellia
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---------------------------------------------------------------------------
+NOTE — this licence covers the SOURCE CODE only.
+
+The data this code processes carries separate terms, and they are not MIT:
+
+  * Flight trajectories: © adsb.lol contributors, Open Database Licence
+    (ODbL) v1.0 — https://www.adsb.lol/docs/open-data/historical/
+    The published site and reports are a "Produced Work" under ODbL, which
+    requires attribution to adsb.lol and identification of the ODbL licence
+    of the source database. Redistributing a derivative DATABASE (for
+    example, the aggregated per-route tables as a downloadable dataset)
+    would additionally require that database to be released under ODbL.
+
+  * Airports: OurAirports, public domain (CC0).
+
+  * Wind: ERA5 / ERA5T, Copernicus Climate Change Service (C3S) — subject
+    to the Copernicus licence, which requires attribution.
+
+  * Aircraft performance model: OpenAP (TU Delft), open source, cited in
+    the methodology.
+
+  * ICAO Carbon Emissions Calculator methodology v13.1, used to anchor the
+    per-type reference fuel flows; the derived values in
+    data/anchored_cruise_ff.json are a conversion of published ICAO figures.
+
+See DATA-LICENCE.md for what each of these permits in practice.

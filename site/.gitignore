@@ -1,3 +1,15 @@
-site/index_ecac.html
-site/index.html
-site/metodologia.html
+# Intentionally empty.
+#
+# This file used to ignore index.html, index_ecac.html and metodologia.html back
+# when the site was scratch output. It is now the deploy artefact: Cloudflare
+# Pages serves this directory straight from the GitHub repo, so the generated
+# HTML has to be committed. Ignoring it here means Pages publishes an empty site.
+#
+# Regenerate with (the env vars are not optional — without them site_build.py
+# silently reads the small box and nobody notices):
+#
+#   ADSB_ROOT=$PWD ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
+#   ADSB_CALIB=$PWD/data/calibration_ecac.json \
+#   ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
+#   ADSB_SITE_OUT=$PWD/site/index.html \
+#   lab-venv/bin/python lab/site_build.py
