@@ -164,8 +164,15 @@ class AdsbLolDaySource(TraceSource):
 
     def iter_traces(self) -> Iterator[dict]:
         stream = _MultiFileReader(self.part_paths)
-        # r|  == streaming mode, no seeking, constant memory
-        with tarfile.open(fileobj=stream, mode="r|") as tar:
+        # r|  == streaming mode, no seeking, constant memory.
+        # ignore_zeros=True for the same reason as in pipeline/run_daily.py,
+        # where the full rationale is written out: some adsb.lol dumps carry a
+        # pair of zero blocks at the seam between split parts, and without this
+        # the reader stops there silently — no error, day written from its first
+        # part alone. Measured once at 37% of a day dropped while reporting
+        # success. This reader is the documented extension point for a future
+        # data source, so it must not be the one carrying the bug.
+        with tarfile.open(fileobj=stream, mode="r|", ignore_zeros=True) as tar:
             for member in tar:
                 if not member.isfile():
                     continue
