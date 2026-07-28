@@ -25,3 +25,6 @@ outreach/
 # The public artefact is the methodology page, not the lab notebook.
 reports/
 .DS_Store
+# Operational runbook: launch sequence, DNS steps, and the status of
+# correspondence not yet sent. Internal, same reasoning as outreach/.
+DEPLOY.md
