@@ -40,6 +40,20 @@ AIRPORTS = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airports.cs
 OUT = Path(os.environ.get("ADSB_SITE_OUT") or (ROOT / "site/index.html"))
 OUT_METH = OUT.parent / "methodology.html"
 
+# Release identity. A figure on this site is only citable if the reader can say
+# WHICH version produced it, so the release name, the methodology version and the
+# covered period are printed on both pages and must be bumped together with the
+# Zenodo release. "generated" (a timestamp) is not a version: regenerating the
+# page without new data must not look like a new release.
+RELEASE = "2026-09-01"
+METHOD_VERSION = "1.0"
+# Releases are twice a year, in March and September. March carries the full
+# preceding calendar year and is the reference release; September carries the
+# first half. The cadence is deliberately slower than the data: month-to-month
+# rank correlation is 0.92 (lab/stability.py), so a quarterly republication of a
+# structurally stable signal would present noise as news.
+NEXT_RELEASE = "March 2027"
+
 # Results produced by other steps of the pipeline and quoted on the methodology
 # page. They are constants here because they come from runs this script does not
 # perform; each is reproducible with the command named beside it.
@@ -171,7 +185,7 @@ h2{font-size:1.12rem;margin:40px 0 8px;letter-spacing:-.01em}
 h3{font-size:.98rem;margin:24px 0 6px;color:var(--fg)}
 .sub{color:var(--mut);margin:0 0 22px}
 p{margin:12px 0}
-ul{margin:12px 0;padding-left:22px}
+ul,ol{margin:12px 0;padding-left:22px}
 li{margin:6px 0}
 .scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.88rem}
@@ -255,7 +269,8 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
 <p><a href="index.html">← back to the data</a></p>
 <h1>Methodology</h1>
 <p class=sub>How the figures on this site are computed, what they mean and —
-above all — what they do <b>not</b> mean. Updated {esc(gen)}.</p>
+above all — what they do <b>not</b> mean.<br>
+<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · generated {esc(gen)}.</p>
 
 <h2>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -514,6 +529,59 @@ published on this site, and a reply you send will be published alongside the
 figure it concerns. It is why this work is public rather than private.</p>
 </div>
 
+<h2 id=independence>11. Independence</h2>
+<p>This site names airports and air navigation service providers. Some of them
+may one day ask for the detail behind their own figures, and that would put the
+measurement and the interest of the measured party in the same hands. The rules
+below exist so that the arrangement can be checked rather than trusted, and they
+apply from the first release, while the number of such arrangements is zero.</p>
+<ol>
+<li><b>The public figure is never a deliverable.</b> What could be provided to an
+organisation is analysis <i>of</i> a published figure — never a change <i>to</i>
+it, and never its removal or postponement.</li>
+<li><b>No advance access, embargo or preview for anyone.</b> Organisations named
+here were written to before the first publication: all of them, on the same
+terms, with no ability to alter what was published. Notice is given because
+being named deserves warning, never as a commercial courtesy.</li>
+<li><b>Right of reply is free and unconditional</b>, published in full and on
+identical terms whether or not there is any other relationship.</li>
+<li><b>Any commercial relationship with a named organisation is disclosed next
+to that organisation's figure</b>, for as long as the figure is published.</li>
+<li><b>No grades, tiers or composite scores are sold or published.</b> What this
+project produces is measured quantities with their uncertainty; a score would
+compress exactly the caveats that section 8 says must travel with the number.</li>
+</ol>
+<p>If you operate an airport, an ANSP or an airline and want the detail behind
+these figures for your own traffic — by hour of day, by origin, by aircraft type,
+month by month — write to
+<a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. That detail exists in the
+pipeline but is not published, because a page that showed every cut of the data
+would state far more than the sample in each cut can support.</p>
+
+<h2 id=licence>12. Licence and reuse</h2>
+<p>Three different things on this site carry three different licences, and the
+distinction matters if you intend to republish.</p>
+<ul>
+<li><b>The figures, tables and charts on these pages</b> are a <i>Produced Work</i>
+in the sense of ODbL: reuse them freely, including commercially, with attribution
+to this site and to
+<a href="https://adsb.lol">adsb.lol</a> contributors. Share-alike is not
+triggered.</li>
+<li><b>A dataset extracted or reconstructed from these pages</b> — a table of
+routes or airports with their figures, redistributed as data — is a
+<i>Derivative Database</i>. ODbL requires it to be published under
+<a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> as well. This is the
+upstream licence's requirement, not an additional condition imposed here.</li>
+<li><b>The text of these pages</b> is
+<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; the
+<a href="https://github.com/Pengo-fmm/co2gap">pipeline source code</a> is
+Apache-2.0. The project name and domain are not covered by either.</li>
+</ul>
+<p>Wind data: ERA5, Copernicus Climate Change Service. Fuel references: ICAO CEC
+Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release
+is archived with a DOI so that a figure can be cited against the version that
+produced it.</p>
+
 <p class=foot>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
@@ -521,6 +589,8 @@ data published here is distributed under the same terms, as the licence requires
 Wind: ERA5, Copernicus Climate Change Service.
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.<br>
+<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · next update
+{NEXT_RELEASE}.<br>
 {len(df):,} flights · {len(days)} days · {n_routes_all:,} publishable routes ·
 {n_routes_rank:,} ranked · {n_airports:,} airports · generated {esc(gen)}.
 </p>
@@ -736,7 +806,9 @@ def main():
 from the ADS-B trajectory of every flight, with a great-circle baseline
 <b>corrected for wind</b> and split into a <b>lateral</b> component (the route)
 and a <b>vertical</b> one (the profile).
-ECAC area · {esc(days[0])} → {esc(days[-1])} · {len(days)} days · generated {esc(gen)}.</p>
+ECAC area · {esc(days[0])} → {esc(days[-1])} · {len(days)} days.<br>
+<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · next update {NEXT_RELEASE} ·
+generated {esc(gen)}.</p>
 
 <div class=stats>
   <div class=stat><div class=v>{len(df):,}</div><div class=l>flights analysed</div></div>
@@ -992,7 +1064,12 @@ receiver and I care about this. The code was developed with AI tooling
 who know the field can check them.<br><br>
 <b>Found a mistake, or named here and want to reply?</b>
 <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> — corrections and replies
-are published on this site.
+are published on this site, in full and unconditionally.<br><br>
+<b>Operate an airport, an ANSP or an airline?</b> The detail behind these figures
+for your own traffic — by hour, by origin, by aircraft type, month by month —
+exists in the pipeline and is not published here. Same address. The rules that
+keep that separate from what appears on this page are written down under
+<a href="methodology.html#independence">independence</a>.
 </div>
 
 <p class=foot>
@@ -1001,8 +1078,11 @@ under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the deri
 data published here is distributed under the same terms.
 Wind: ERA5, Copernicus Climate Change Service.
 Fuel references: ICAO CEC Methodology v13.1.
-Performance model: OpenAP, TU Delft.<br>
-{len(df):,} flights · {len(days)} days · {len(months)} months · generated {esc(gen)}.
+Performance model: OpenAP, TU Delft.
+Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; reusing
+these figures as a <i>dataset</i> triggers ODbL share-alike —
+<a href="methodology.html#licence">what that means</a>.<br>
+{len(df):,} flights · {len(days)} days · {len(months)} months.
 </p>
 
 </div></body></html>

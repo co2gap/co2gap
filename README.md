@@ -115,10 +115,19 @@ around silently.
 
 ## Data sources and licensing
 
-**Code: MIT** (see `LICENSE`). **Data: not MIT** — see `DATA-LICENCE.md`, which
-matters more than it sounds: the published site is a *Produced Work* under ODbL
-and needs only attribution, but redistributing an aggregated dataset would make
-it a Derivative Database and bind it to share-alike.
+**Code: Apache-2.0** (see `LICENSE` and `NOTICE`). **Data: not Apache-2.0** —
+see `DATA-LICENCE.md`, which matters more than it sounds: the published site is
+a *Produced Work* under ODbL and needs only attribution, but redistributing an
+aggregated dataset would make it a Derivative Database and bind it to
+share-alike. Site text, tables and figures are additionally offered under
+**CC BY 4.0**.
+
+The name *co2gap* and the domain are not covered by the code licence: Apache-2.0
+§6 grants no trademark rights. Reuse the code freely; do not present a derived
+service as this one.
+
+Independence, right of reply and the rules that would govern any paid work are
+in `INDEPENDENCE.md`.
 
 - Trajectories: **© adsb.lol contributors**, [ODbL v1.0](https://opendatacommons.org/licenses/odbl/1-0/)
 - Wind: **ERA5**, Copernicus Climate Change Service (C3S)

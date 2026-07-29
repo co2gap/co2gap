@@ -1,0 +1,34 @@
+co2gap — CO2 and flight inefficiency observatory for Europe
+Copyright 2026 Ferdinando Mavellia
+
+This product includes software developed for the co2gap project
+(https://co2gap.org — https://github.com/Pengo-fmm/co2gap).
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+--------------------------------------------------------------------------------
+The Apache-2.0 licence above covers the SOURCE CODE only.
+
+Data and published outputs are governed separately — see DATA-LICENCE.md:
+
+  * Flight trajectories are © adsb.lol contributors, Open Database Licence
+    (ODbL) v1.0. Any aggregated dataset derived from them is a Derivative
+    Database and would carry ODbL share-alike obligations.
+  * Website text, tables and figures are CC BY 4.0.
+  * Wind data: ERA5, Copernicus Climate Change Service (C3S).
+  * Airport reference data: OurAirports (CC0).
+  * Aircraft performance model: OpenAP (TU Delft), LGPL-3.0 — used as an
+    unmodified library dependency, not redistributed here.
+
+The name "co2gap", the domain co2gap.org and the project's presentation are not
+licensed under Apache-2.0. Section 6 of that licence grants no trademark rights.
+The code may be reused freely; identifying a derived service as co2gap may not.

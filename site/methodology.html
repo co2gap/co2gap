@@ -16,7 +16,7 @@ h2{font-size:1.12rem;margin:40px 0 8px;letter-spacing:-.01em}
 h3{font-size:.98rem;margin:24px 0 6px;color:var(--fg)}
 .sub{color:var(--mut);margin:0 0 22px}
 p{margin:12px 0}
-ul{margin:12px 0;padding-left:22px}
+ul,ol{margin:12px 0;padding-left:22px}
 li{margin:6px 0}
 .scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.88rem}
@@ -38,7 +38,8 @@ padding:1px 5px;border-radius:4px}
 <p><a href="index.html">← back to the data</a></p>
 <h1>Methodology</h1>
 <p class=sub>How the figures on this site are computed, what they mean and —
-above all — what they do <b>not</b> mean. Updated 2026-07-28 21:02 UTC.</p>
+above all — what they do <b>not</b> mean.<br>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-07-29 20:08 UTC.</p>
 
 <h2>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -299,6 +300,59 @@ published on this site, and a reply you send will be published alongside the
 figure it concerns. It is why this work is public rather than private.</p>
 </div>
 
+<h2 id=independence>11. Independence</h2>
+<p>This site names airports and air navigation service providers. Some of them
+may one day ask for the detail behind their own figures, and that would put the
+measurement and the interest of the measured party in the same hands. The rules
+below exist so that the arrangement can be checked rather than trusted, and they
+apply from the first release, while the number of such arrangements is zero.</p>
+<ol>
+<li><b>The public figure is never a deliverable.</b> What could be provided to an
+organisation is analysis <i>of</i> a published figure — never a change <i>to</i>
+it, and never its removal or postponement.</li>
+<li><b>No advance access, embargo or preview for anyone.</b> Organisations named
+here were written to before the first publication: all of them, on the same
+terms, with no ability to alter what was published. Notice is given because
+being named deserves warning, never as a commercial courtesy.</li>
+<li><b>Right of reply is free and unconditional</b>, published in full and on
+identical terms whether or not there is any other relationship.</li>
+<li><b>Any commercial relationship with a named organisation is disclosed next
+to that organisation's figure</b>, for as long as the figure is published.</li>
+<li><b>No grades, tiers or composite scores are sold or published.</b> What this
+project produces is measured quantities with their uncertainty; a score would
+compress exactly the caveats that section 8 says must travel with the number.</li>
+</ol>
+<p>If you operate an airport, an ANSP or an airline and want the detail behind
+these figures for your own traffic — by hour of day, by origin, by aircraft type,
+month by month — write to
+<a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. That detail exists in the
+pipeline but is not published, because a page that showed every cut of the data
+would state far more than the sample in each cut can support.</p>
+
+<h2 id=licence>12. Licence and reuse</h2>
+<p>Three different things on this site carry three different licences, and the
+distinction matters if you intend to republish.</p>
+<ul>
+<li><b>The figures, tables and charts on these pages</b> are a <i>Produced Work</i>
+in the sense of ODbL: reuse them freely, including commercially, with attribution
+to this site and to
+<a href="https://adsb.lol">adsb.lol</a> contributors. Share-alike is not
+triggered.</li>
+<li><b>A dataset extracted or reconstructed from these pages</b> — a table of
+routes or airports with their figures, redistributed as data — is a
+<i>Derivative Database</i>. ODbL requires it to be published under
+<a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> as well. This is the
+upstream licence's requirement, not an additional condition imposed here.</li>
+<li><b>The text of these pages</b> is
+<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; the
+<a href="https://github.com/Pengo-fmm/co2gap">pipeline source code</a> is
+Apache-2.0. The project name and domain are not covered by either.</li>
+</ul>
+<p>Wind data: ERA5, Copernicus Climate Change Service. Fuel references: ICAO CEC
+Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release
+is archived with a DOI so that a figure can be cited against the version that
+produced it.</p>
+
 <p class=foot>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
@@ -306,8 +360,10 @@ data published here is distributed under the same terms, as the licence requires
 Wind: ERA5, Copernicus Climate Change Service.
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.<br>
+<b>Release 2026-09-01</b> · methodology v1.0 · next update
+March 2027.<br>
 1,833,127 flights · 197 days · 5,520 publishable routes ·
-2,788 ranked · 152 airports · generated 2026-07-28 21:02 UTC.
+2,788 ranked · 152 airports · generated 2026-07-29 20:08 UTC.
 </p>
 
 </div></body></html>

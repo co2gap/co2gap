@@ -21,8 +21,8 @@ authors:
     given-names: Ferdinando
     # orcid: "https://orcid.org/0000-0000-0000-0000"   # add if one is created
 version: "1.0.0"
-date-released: "2026-01-01"   # ← set to the actual release date before tagging
-license: MIT
+date-released: "2026-09-01"
+license: Apache-2.0
 repository-code: "https://github.com/Pengo-fmm/co2gap"
 url: "https://co2gap.org"
 keywords:
