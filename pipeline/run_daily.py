@@ -110,6 +110,7 @@ def _process_batch(raw_batch):
             meta = {
                 "day": None,  # filled in main
                 "typecode": fl.typecode,
+                "operator": fl.operator,
                 "model": model,
                 "dep_ts": int(fl.t_start),
                 "arr_ts": int(fl.t_end),

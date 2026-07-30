@@ -15,6 +15,7 @@ Everything here is aggregate/flight-level. No per-person anything.
 from __future__ import annotations
 
 import math
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -29,6 +30,47 @@ MAX_DURATION_S = 6 * 3600
 MIN_POINTS = 30
 MAX_GROUNDSPEED_KT = 700.0   # airliner sanity ceiling for outlier rejection
 MAX_IMPLIED_SPEED_KT = 1400.0  # consecutive-point teleport rejection
+
+
+_ALPHA = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+
+def icao_operator(callsign: Optional[str]) -> Optional[str]:
+    """ICAO airline designator from a callsign, or None if it isn't one.
+
+    We keep the *operator*, not the registration, because for this project they
+    are not interchangeable: the registration says whose asset the airframe is,
+    while the callsign says who actually operated that flight. Under wet lease
+    and ACMI the two differ, and an efficiency metric is about the operator.
+
+    A commercial callsign is three letters (the designator) followed by a flight
+    identifier that begins with a digit: RYR1234, DLH2AB. An aircraft with no
+    operator broadcasts its registration instead — DEABC, GABCD, N12345 — so
+    requiring the fourth character to be a digit rejects every registration
+    format while accepting the ICAO flight-identifier grammar.
+
+    Deliberately fails closed: anything it cannot parse returns None rather than
+    a plausible-looking wrong airline. A missing operator is recoverable, a
+    silently wrong one contaminates every aggregate built on top of it.
+    """
+    if not callsign:
+        return None
+    cs = callsign.strip().upper()
+    if len(cs) < 4 or not cs[3].isdigit():
+        return None
+    if any(c not in _ALPHA for c in cs[:3]):
+        return None
+    return cs[:3]
+
+
+def _dominant(counter: Counter) -> Optional[str]:
+    """Most frequent callsign of a leg.
+
+    Not the first one: the field can still carry the previous flight's value
+    across a leg boundary, and readsb sometimes emits a partial callsign while
+    the identity message is still being assembled.
+    """
+    return counter.most_common(1)[0][0] if counter else None
 
 
 def _alt_to_ft(a) -> Optional[float]:
@@ -59,6 +101,7 @@ class Flight:
     typecode: str
     reg: Optional[str]
     points: list = field(default_factory=list)
+    operator: Optional[str] = None   # ICAO airline designator, None if not a commercial callsign
 
     @property
     def t_start(self) -> float:
@@ -99,26 +142,37 @@ def _raw_points(trace_dict: dict) -> list:
         vs = row[7] if len(row) > 7 else None
         ias = row[12] if len(row) > 12 else None
         flags = row[6] if len(row) > 6 else 0
-        out.append((base + dt, lat, lon, alt, gs, ias, vs, flags))
+        # index 8 is readsb's Mode S object, present on ~25% of points; the rest
+        # of it (selected altitude, TAS, on-board wind) is not read here yet.
+        det = row[8] if len(row) > 8 and isinstance(row[8], dict) else None
+        cs = det.get("flight") if det else None
+        out.append((base + dt, lat, lon, alt, gs, ias, vs, flags, cs))
     out.sort(key=lambda r: r[0])
     return out
 
 
 def split_legs(trace_dict: dict) -> list:
-    """Split a day-long trace into legs using readsb 'new leg' flag + time gaps."""
+    """Split a day-long trace into legs using readsb 'new leg' flag + time gaps.
+
+    Returns (points, callsign) per leg. The callsign is collected per leg and
+    not per aircraft: one airframe flies several sectors a day under different
+    flight numbers, and under wet lease possibly for different operators.
+    """
     rows = _raw_points(trace_dict)
-    legs, cur = [], []
+    legs, cur, cur_cs = [], [], Counter()
     prev_t = None
-    for (t, lat, lon, alt, gs, ias, vs, flags) in rows:
+    for (t, lat, lon, alt, gs, ias, vs, flags, cs) in rows:
         new_leg = bool(int(flags or 0) & 2)
         gap = prev_t is not None and (t - prev_t) > LEG_GAP_S
         if cur and (new_leg or gap):
-            legs.append(cur)
-            cur = []
+            legs.append((cur, _dominant(cur_cs)))
+            cur, cur_cs = [], Counter()
         cur.append(Point(t, lat, lon, alt, gs, ias, vs))
+        if cs:
+            cur_cs[cs.strip()] += 1
         prev_t = t
     if cur:
-        legs.append(cur)
+        legs.append((cur, _dominant(cur_cs)))
     return legs
 
 
@@ -147,11 +201,12 @@ def flights_from_trace(trace_dict: dict, bbox: BBox) -> list:
     icao = trace_dict.get("icao", "")
     reg = trace_dict.get("r")
     out = []
-    for leg in split_legs(trace_dict):
+    for leg, callsign in split_legs(trace_dict):
         pts = _clean(leg)
         if len(pts) < MIN_POINTS:
             continue
-        f = Flight(icao=icao, typecode=typecode, reg=reg, points=pts)
+        f = Flight(icao=icao, typecode=typecode, reg=reg, points=pts,
+                   operator=icao_operator(callsign))
         if is_complete_in_box(f, bbox):
             out.append(f)
     return out
