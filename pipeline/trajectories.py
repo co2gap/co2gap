@@ -237,8 +237,10 @@ def mcp_summary(points) -> dict:
     # over the whole flight gives a median of 13 and a max of 24, which is not a
     # count of clearances at all: in climb and descent the crew winds the
     # selector and every intermediate value is captured. Restricted to level
-    # flight the figure means what it should — the cruise levels actually held,
-    # i.e. how many step climbs the flight was given.
+    # flight the figure means what it should: the distinct levels actually held.
+    # Measured median 4, max 10. Note this counts level-offs in DESCENT too, not
+    # only cruise step climbs — which is a feature here, since descent level-offs
+    # are precisely the CDO inefficiency EUROCONTROL quantifies.
     held = {round(p.mcp / 100.0) * 100.0 for p in v
             if p.vs_rep is not None and abs(p.vs_rep) < 300.0}
     return {"mcp_n_pts": len(v),
