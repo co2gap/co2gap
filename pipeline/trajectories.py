@@ -93,6 +93,7 @@ class Point:
     gs: Optional[float]    # knots
     ias: Optional[float]   # knots (trace index 12), often present
     vs_rep: Optional[float]  # reported vertical rate fpm (index 7)
+    mcp: Optional[float] = None  # autopilot selected altitude ft, Mode S, ~57% of aircraft
 
 
 @dataclass
@@ -146,7 +147,8 @@ def _raw_points(trace_dict: dict) -> list:
         # of it (selected altitude, TAS, on-board wind) is not read here yet.
         det = row[8] if len(row) > 8 and isinstance(row[8], dict) else None
         cs = det.get("flight") if det else None
-        out.append((base + dt, lat, lon, alt, gs, ias, vs, flags, cs))
+        mcp = det.get("nav_altitude_mcp") if det else None
+        out.append((base + dt, lat, lon, alt, gs, ias, vs, flags, cs, mcp))
     out.sort(key=lambda r: r[0])
     return out
 
@@ -161,13 +163,13 @@ def split_legs(trace_dict: dict) -> list:
     rows = _raw_points(trace_dict)
     legs, cur, cur_cs = [], [], Counter()
     prev_t = None
-    for (t, lat, lon, alt, gs, ias, vs, flags, cs) in rows:
+    for (t, lat, lon, alt, gs, ias, vs, flags, cs, mcp) in rows:
         new_leg = bool(int(flags or 0) & 2)
         gap = prev_t is not None and (t - prev_t) > LEG_GAP_S
         if cur and (new_leg or gap):
             legs.append((cur, _dominant(cur_cs)))
             cur, cur_cs = [], Counter()
-        cur.append(Point(t, lat, lon, alt, gs, ias, vs))
+        cur.append(Point(t, lat, lon, alt, gs, ias, vs, mcp))
         if cs:
             cur_cs[cs.strip()] += 1
         prev_t = t
@@ -210,6 +212,31 @@ def flights_from_trace(trace_dict: dict, bbox: BBox) -> list:
         if is_complete_in_box(f, bbox):
             out.append(f)
     return out
+
+
+def mcp_summary(points) -> dict:
+    """Autopilot selected altitude, summarised per flight.
+
+    `nav_altitude_mcp` is the level dialled into the autopilot, which in normal
+    operation is the level ATC has cleared. It matters here because the vertical
+    part of the excess turns out to live in climb and descent rather than in the
+    cruise level, and this is the only field in the data that says what the
+    aircraft was CLEARED to rather than what it did.
+
+    Deliberately reported as counts and levels, not as an attribution. Reading a
+    gap between selected and actual altitude as "held down by ATC" needs
+    validation this does not attempt: during a normal climb the selected level is
+    above the current one for perfectly ordinary reasons.
+    """
+    v = [p.mcp for p in points if p.mcp is not None and p.mcp > 0]
+    if not v:
+        return {"mcp_n_pts": 0, "mcp_n_levels": 0,
+                "mcp_first_ft": None, "mcp_max_ft": None}
+    lv = [round(x / 100.0) * 100.0 for x in v]      # to flight levels
+    return {"mcp_n_pts": len(v),
+            "mcp_n_levels": len(set(lv)),           # how many distinct clearances
+            "mcp_first_ft": lv[0],                  # first level seen: initial clearance
+            "mcp_max_ft": max(lv)}
 
 
 def is_complete_in_box(f: Flight, bbox: BBox) -> bool:

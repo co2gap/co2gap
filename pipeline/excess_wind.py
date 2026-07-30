@@ -174,12 +174,22 @@ def build_nominal_windaware(typecode, gc_km, mean_wpar_ms) -> Flight | None:
     return _build_profile(typecode, gc_km, alt, mean_wpar_ms)
 
 
-def _build_profile(typecode, gc_km, cruise_alt, mean_wpar_ms) -> Flight | None:
+def _build_profile(typecode, gc_km, cruise_alt, mean_wpar_ms,
+                   cruise_tas_kt=None) -> Flight | None:
+    """Synthetic profile at `cruise_alt`.
+
+    `cruise_tas_kt` overrides the type's optimal cruise speed. It exists so a
+    caller can hold the altitude at one value and vary only the speed (or the
+    reverse), which is what separates the altitude and speed parts of the
+    vertical term. Left None, the speed is the optimal one for that altitude
+    and the profile is the fully optimal baseline as before.
+    """
     model = openap_model(typecode)
     if model is None:
         return None
     ac = _get_ac(model)
-    cruise_tas_kt = _cruise_tas_kt(ac, cruise_alt)
+    if cruise_tas_kt is None:
+        cruise_tas_kt = _cruise_tas_kt(ac, cruise_alt)
     cruise_tas_ms = cruise_tas_kt * KTS_TO_MS
     gs_cruise_ms = max(cruise_tas_ms + mean_wpar_ms, 50.0)  # guard absurd headwind
 

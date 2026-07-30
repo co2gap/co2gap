@@ -54,7 +54,10 @@ OUT_COLS = ["day", "flight_id", "typecode", "origin_icao", "dest_icao",
             "flown_enroute_km", "dep_ts",
             "excess_total_pct", "excess_lateral_pct", "excess_vertical_pct",
             "ideal_gc_co2_kg", "hybrid_co2_kg", "co2_kg_v0",
-            "mean_wpar_gc_ms", "mean_wpar_track_ms", "cruise_alt_ft"]
+            "mean_wpar_gc_ms", "mean_wpar_track_ms", "cruise_alt_ft",
+            "excess_vert_alt_pct", "excess_vert_speed_pct",
+            "excess_vert_residual_pct",
+            "real_cruise_alt_ft", "real_cruise_tas_kt"]
 
 
 def era5_is_complete(path: Path) -> bool:
@@ -110,11 +113,16 @@ def process_day(day: str) -> int:
     wf = WindField([ERA5_DIR / f"{day}.nc"])
 
     keep = set(q.flight_id.tolist())
+    # alt/ias/vs are read too: they carry the flight's real vertical and speed
+    # profile, which is what lets the vertical term be split into its two parts
     pts = pq.read_table(FLIGHTS_DIR / day / "points.parquet",
-                        columns=["flight_id", "lat", "lon"]).to_pandas()
+                        columns=["flight_id", "lat", "lon",
+                                 "alt_ft", "ias_kt", "vs_fpm"]).to_pandas()
     pts = pts[pts.flight_id.isin(keep)]
     # group once; the points table is already ordered by flight_id + time
-    grouped = {fid: (g.lat.to_numpy(np.float64), g.lon.to_numpy(np.float64))
+    grouped = {fid: (g.lat.to_numpy(np.float64), g.lon.to_numpy(np.float64),
+                     g.alt_ft.to_numpy(np.float64), g.ias_kt.to_numpy(np.float64),
+                     g.vs_fpm.to_numpy(np.float64))
                for fid, g in pts.groupby("flight_id", sort=False)}
     del pts
 
@@ -123,10 +131,11 @@ def process_day(day: str) -> int:
         track = grouped.get(r.flight_id)
         if track is None or len(track[0]) < 3:
             continue
-        lat, lon = track
+        lat, lon, alt_ft, ias_kt, vs_fpm = track
         d = decompose_flight(r.typecode, float(r.co2_kg_v0), float(r.gc_km),
                              float(r.flown_km), lat, lon, int(r.dep_ts), wf,
-                             load_factor=LOAD_FACTOR, reserve_kg=RESERVE_KG)
+                             load_factor=LOAD_FACTOR, reserve_kg=RESERVE_KG,
+                             alt_ft=alt_ft, ias_kt=ias_kt, vs_fpm=vs_fpm)
         if d is None:
             continue
         rows.append({
@@ -138,7 +147,10 @@ def process_day(day: str) -> int:
                 "dist_ratio", "dist_ratio_enroute", "flown_enroute_km",
                 "excess_total_pct", "excess_lateral_pct",
                 "excess_vertical_pct", "ideal_gc_co2_kg", "hybrid_co2_kg",
-                "mean_wpar_gc_ms", "mean_wpar_track_ms", "cruise_alt_ft")},
+                "mean_wpar_gc_ms", "mean_wpar_track_ms", "cruise_alt_ft",
+                "excess_vert_alt_pct", "excess_vert_speed_pct",
+                "excess_vert_residual_pct",
+                "real_cruise_alt_ft", "real_cruise_tas_kt")},
         })
 
     if not rows:

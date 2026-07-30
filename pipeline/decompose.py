@@ -23,8 +23,39 @@ Method — an INTERMEDIATE baseline between reality and the GC optimum:
 
     excess_lateral  = (hybrid - ideal_gc) / ideal_gc * 100
     excess_vertical = (real   - hybrid  ) / ideal_gc * 100
+
     excess_total    = (real   - ideal_gc) / ideal_gc * 100
                     = excess_lateral + excess_vertical      (exactly additive)
+
+The vertical term is then opened up further, because on its own it is the
+largest and least explained part of the result: it cannot be acted on, and
+it has no external benchmark. Two more baselines on the same real ground
+track each move ONE factor away from the hybrid:
+
+    C = real cruise altitude, optimal speed for that altitude
+    D = optimal cruise altitude, real cruise Mach
+
+    excess_vert_alt      = (C - hybrid) / ideal_gc * 100
+    excess_vert_speed    = (D - hybrid) / ideal_gc * 100
+    excess_vert_residual = excess_vertical - alt - speed
+
+They are deliberately NOT chained into "first altitude, then speed". In a
+chain the final step is always synthetic -> real, and that step silently
+absorbs everything the baselines do not model: climb and descent shape,
+step climbs, level-offs, holding, and plain model residual. Which factor
+ends up carrying that depends on the order — measured on a real day, the
+two orders disagreed by ~5 points on a vertical term of ~11 — and a column
+called "speed" would be holding things that are not speed.
+
+So the two named parts are clean single-factor effects against a common
+reference, and everything else is put in a residual that is named rather
+than hidden. The residual is genuinely large; that is a fact about how
+much of the vertical term is neither cruise level nor cruise Mach, not a
+defect of the split.
+
+D carries the real cruise MACH, not the real TAS: crews hold a Mach in
+cruise, so imposing a TAS measured at FL280 onto FL380 would price a
+profile nobody would ever fly.
 
 Both components use the SAME denominator (ideal_gc), which is what makes
 them additive and lets them be read as "percentage points of the total".
@@ -70,8 +101,8 @@ import math
 import numpy as np
 
 from excess_wind import (_build_profile, _cruise_tas_kt, optimal_cruise_alt_ft,
-                         mean_along_track_wind_ms)
-from emissions import estimate_fuel, openap_model, _get_ac
+                         mean_along_track_wind_ms, _sound_speed_ms)
+from emissions import estimate_fuel, openap_model, _get_ac, _ias_to_tas_ms
 
 KTS_TO_MS = 0.514444
 EARTH_R_KM = 6371.0088
@@ -208,9 +239,44 @@ def _effective_wind_ms(wpar) -> float:
     return float(w.size / np.sum(1.0 / gs) - _TAS_REF_MS)
 
 
+MIN_CRUISE_PTS = 10
+CRUISE_ALT_FRAC = 0.85       # "upper part of the flight"
+CRUISE_VS_FPM = 300.0        # level enough to count as cruise
+
+
+def _cruise_state(alt_ft, ias_kt, vs_fpm):
+    """Real cruise altitude (ft) and airspeed (kt), or None where unavailable.
+
+    Cruise is the level portion of the upper flight: within 15% of the maximum
+    altitude and under 300 fpm. The MEDIAN is used, not the mean, because on a
+    step climb the mean sits between two levels at an altitude that was never
+    actually flown, while the median gives the level held for most of the time.
+    """
+    if alt_ft is None or ias_kt is None or vs_fpm is None:
+        return None, None
+    alt = np.asarray(alt_ft, dtype=np.float64)
+    if alt.size == 0:
+        return None, None
+    mx = np.nanmax(alt)
+    if not np.isfinite(mx) or mx <= 0:
+        return None, None
+    vs = np.nan_to_num(np.asarray(vs_fpm, dtype=np.float64), nan=0.0)
+    m = (alt >= CRUISE_ALT_FRAC * mx) & (np.abs(vs) < CRUISE_VS_FPM)
+    if int(m.sum()) < MIN_CRUISE_PTS:
+        return None, None
+    a = float(np.nanmedian(alt[m]))
+    ias = np.asarray(ias_kt, dtype=np.float64)[m]
+    ias = ias[np.isfinite(ias)]
+    if ias.size < MIN_CRUISE_PTS:
+        return a, None
+    # same IAS->TAS path the real fuel figure uses, so the two are comparable
+    return a, _ias_to_tas_ms(float(np.median(ias)), a) / KTS_TO_MS
+
+
 def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
                      lat, lon, dep_ts, windfield,
-                     load_factor=0.82, reserve_kg=2000.0) -> dict | None:
+                     load_factor=0.82, reserve_kg=2000.0,
+                     alt_ft=None, ias_kt=None, vs_fpm=None) -> dict | None:
     """
     Split one flight's excess into lateral and vertical/speed components.
 
@@ -252,8 +318,59 @@ def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
 
     ideal = r_gc.co2_kg
     hybrid = r_tr.co2_kg
+
+    # --- splitting the vertical term into altitude and speed ---------------
+    # Two more baselines on the SAME real ground track, each moving one factor
+    # from optimal to real:
+    #   C = real cruise altitude, optimal speed for that altitude
+    #   D = optimal altitude,     real cruise speed
+    # Both are measured against the SAME reference (the hybrid), each moving one
+    # factor on its own. They are deliberately not chained: in a chain the last
+    # step is always synthetic -> real, and that step absorbs everything the
+    # baselines do not model — climb and descent shape, step climbs, level-offs,
+    # holding, model residual. Chaining therefore makes the split depend on
+    # which factor is left to act as the dump (measured: the two orders
+    # disagreed by ~5 points on a vertical term of ~11), and it would let a
+    # figure called "speed" carry things that are not speed.
+    #
+    # So we publish two clean single-factor effects plus an explicit remainder:
+    #     vertical = altitude + speed + residual
+    # The residual is real and often large. It holds the altitude-speed
+    # interaction and every vertical inefficiency that is not a cruise level or
+    # a cruise Mach. Naming it is the honest alternative to hiding it inside one
+    # of the other two.
+    v_alt = v_spd = v_resid = float("nan")
+    real_alt, real_tas = _cruise_state(alt_ft, ias_kt, vs_fpm)
+    if real_alt is not None and real_tas is not None and real_tas > 50.0:
+        wpar_c = mean_wind_along_track(lat, lon, dep_ts, dur_s, real_alt, windfield)
+        nom_c = _build_profile(typecode, flown_km, real_alt, wpar_c)
+        # D carries the real speed to the optimal altitude, and what it carries
+        # is the real cruise MACH, not the real TAS. Crews hold a Mach number in
+        # cruise, so a TAS taken from FL280 and imposed at FL380 is a speed
+        # nobody would fly, and pricing that infeasible profile inflates the
+        # speed side of the split.
+        mach_real = real_tas * KTS_TO_MS / _sound_speed_ms(real_alt)
+        tas_d = mach_real * _sound_speed_ms(cruise_alt) / KTS_TO_MS
+        nom_d = _build_profile(typecode, flown_km, cruise_alt, wpar_tr,
+                               cruise_tas_kt=tas_d)
+        if nom_c is not None and nom_d is not None:
+            r_c = estimate_fuel(nom_c, load_factor=load_factor,
+                                reserve_kg=reserve_kg, tas_mode="gs")
+            r_d = estimate_fuel(nom_d, load_factor=load_factor,
+                                reserve_kg=reserve_kg, tas_mode="gs")
+            if r_c.ok and r_c.co2_kg > 0 and r_d.ok and r_d.co2_kg > 0:
+                vertical = (real_co2_kg - hybrid) / ideal * 100.0
+                v_alt = (r_c.co2_kg - hybrid) / ideal * 100.0   # cruise level alone
+                v_spd = (r_d.co2_kg - hybrid) / ideal * 100.0   # cruise Mach alone
+                v_resid = vertical - v_alt - v_spd
+
     ratio_er, flown_er = enroute_dist_ratio(lat, lon)
     return {
+        "excess_vert_alt_pct": v_alt,
+        "excess_vert_speed_pct": v_spd,
+        "excess_vert_residual_pct": v_resid,
+        "real_cruise_alt_ft": real_alt if real_alt is not None else float("nan"),
+        "real_cruise_tas_kt": real_tas if real_tas is not None else float("nan"),
         "ideal_gc_co2_kg": ideal,
         "hybrid_co2_kg": hybrid,
         "excess_total_pct": (real_co2_kg - ideal) / ideal * 100.0,

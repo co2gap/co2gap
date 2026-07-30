@@ -40,7 +40,7 @@ sys.path.insert(0, str(ROOT / "pipeline"))
 
 from source import (BBox, _MultiFileReader, _decode_member,  # noqa: E402
                     decode_failures)
-from trajectories import flights_from_trace, haversine_km    # noqa: E402
+from trajectories import flights_from_trace, haversine_km, mcp_summary  # noqa: E402
 from emissions import openap_model, estimate_fuel            # noqa: E402
 from flightproc import process_flight                        # noqa: E402
 from airports import Airports                                # noqa: E402
@@ -130,6 +130,7 @@ def _process_batch(raw_batch):
                 "init_mass_kg": res.init_mass_kg,
                 "load_factor": LOAD_FACTOR, "reserve_kg": RESERVE_KG,
                 "tas_mode": res.tas_mode, "pipeline_ver": PIPELINE_VER,
+                **mcp_summary(fl.points),
             }
             out.append((meta, pts))
     return out, decode_failures() - bad_before
