@@ -228,13 +228,21 @@ def mcp_summary(points) -> dict:
     validation this does not attempt: during a normal climb the selected level is
     above the current one for perfectly ordinary reasons.
     """
-    v = [p.mcp for p in points if p.mcp is not None and p.mcp > 0]
+    v = [p for p in points if p.mcp is not None and p.mcp > 0]
     if not v:
         return {"mcp_n_pts": 0, "mcp_n_levels": 0,
                 "mcp_first_ft": None, "mcp_max_ft": None}
-    lv = [round(x / 100.0) * 100.0 for x in v]      # to flight levels
+    lv = [round(p.mcp / 100.0) * 100.0 for p in v]
+    # Distinct levels are counted only where the aircraft is LEVEL. Counting them
+    # over the whole flight gives a median of 13 and a max of 24, which is not a
+    # count of clearances at all: in climb and descent the crew winds the
+    # selector and every intermediate value is captured. Restricted to level
+    # flight the figure means what it should — the cruise levels actually held,
+    # i.e. how many step climbs the flight was given.
+    held = {round(p.mcp / 100.0) * 100.0 for p in v
+            if p.vs_rep is not None and abs(p.vs_rep) < 300.0}
     return {"mcp_n_pts": len(v),
-            "mcp_n_levels": len(set(lv)),           # how many distinct clearances
+            "mcp_n_levels": len(held),
             "mcp_first_ft": lv[0],                  # first level seen: initial clearance
             "mcp_max_ft": max(lv)}
 
