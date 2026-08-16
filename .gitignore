@@ -28,3 +28,6 @@ reports/
 # Operational runbook: launch sequence, DNS steps, and the status of
 # correspondence not yet sent. Internal, same reasoning as outreach/.
 DEPLOY.md
+
+# Per-airport data bundles: derived data, regenerable, and large.
+exports/
