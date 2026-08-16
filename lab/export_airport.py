@@ -178,6 +178,21 @@ def main() -> int:
             "norm_source", "norm_total_pct", "d_tot", "d_lat", "d_vert"]
     out = a[cols].sort_values(["day", "dep_utc"]).reset_index(drop=True)
 
+    # Rounded to the precision the quantities actually carry. The raw frame
+    # writes CO2 as 29313.90234375 and an excess as 21.343610193320483, which
+    # claims an accuracy the model does not have — OpenAP is good to a few
+    # percent — and states it fifteen digits deep. Rounding is the honest form
+    # and it also cuts the CSV by more than half, which is what makes the file
+    # small enough to send as an ordinary attachment.
+    for c, nd in (("gc_km", 2), ("flown_km", 2), ("dist_ratio", 5),
+                  ("dist_ratio_enroute", 5), ("mean_wpar_gc_ms", 2),
+                  ("mean_wpar_track_ms", 2), ("excess_total_pct", 3),
+                  ("excess_lateral_pct", 3), ("excess_vertical_pct", 3),
+                  ("norm_total_pct", 3), ("d_tot", 3), ("d_lat", 3), ("d_vert", 3)):
+        out[c] = out[c].round(nd)
+    for c in ("cruise_alt_ft", "co2_real_kg", "co2_ideal_kg", "co2_hybrid_kg"):
+        out[c] = out[c].round(0).astype("int64")
+
     d = OUT_ROOT / icao
     d.mkdir(parents=True, exist_ok=True)
     out.to_parquet(d / f"{icao}_flights.parquet", index=False)
