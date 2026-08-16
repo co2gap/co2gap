@@ -25,6 +25,7 @@ import glob
 import html
 import json
 import os
+import shutil
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +40,43 @@ CALIB = Path(os.environ.get("ADSB_CALIB") or (ROOT / "data/calibration.json"))
 AIRPORTS = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airports.csv"))
 OUT = Path(os.environ.get("ADSB_SITE_OUT") or (ROOT / "site/index.html"))
 OUT_METH = OUT.parent / "methodology.html"
+COVERAGE = Path(os.environ.get("ADSB_COVERAGE_JSON") or (ROOT / "data/coverage.json"))
+
+
+def coverage_note(days) -> str:
+    """The days inside the published period whose source data is incomplete.
+
+    Generated from lab/coverage_audit.py rather than written by hand, so that it
+    cannot drift away from the data the way a typed sentence would. A day is
+    listed only when whole hours are missing from the source dump — a defect
+    that passes every check in the pipeline, because the file downloads
+    cleanly, reads to the last byte and parses.
+    """
+    if not COVERAGE.exists():
+        return ""
+    try:
+        cov = json.loads(COVERAGE.read_text())
+    except Exception:
+        return ""
+    lo, hi = days[0], days[-1]
+    inside = [d for d in cov.get("days", [])
+              if d.get("status") == "incomplete" and lo <= d["day"] <= hi]
+    if not inside:
+        return ("<li>Every day in the period was checked for whole hours missing "
+                "from the source data; <b>none were found</b>.</li>")
+    lost = sum(d.get("flights_missing_estimate", 0) for d in inside)
+    shutil.copyfile(COVERAGE, OUT.parent / "coverage.json")   # so the link resolves
+    n = len(inside)
+    subject = "One day" if n == 1 else f"{n} days"
+    verb = "is" if n == 1 else "are"
+    items = "; ".join(
+        f"{esc(d['day'])} (hours {', '.join(f'{h:02d}' for h in d['missing_hours_utc'])} UTC)"
+        for d in inside)
+    return (f"<li><b>{subject} in the period {verb} incomplete at the source</b>, "
+            f"with whole hours absent from the dump: {items}. An estimated "
+            f"{lost:,} flights are missing as a result. Such days are kept and "
+            f"labelled rather than removed, and the complete record is published "
+            f'as <a href="coverage.json">coverage.json</a>.</li>')
 
 # Release identity. A figure on this site is only citable if the reader can say
 # WHICH version produced it, so the release name, the methodology version and the
@@ -474,6 +512,7 @@ with at least {RANK_MIN_N} flights.</li>
 and December is not covered.</li>
 <li><b>Eight days are missing</b>: four absent at the source, four because of
 weather data latency.</li>
+{coverage_note(days)}
 <li>Routes flagged ⚑ <b>cannot</b> fly the direct path because the airspace is
 closed. The ban applies to European carriers and not to third-country ones, so
 the figure shown is an average between those who must divert and those who need

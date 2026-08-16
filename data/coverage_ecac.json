@@ -1,0 +1,1029 @@
+{
+ "generated": "2026-08-16T16:14:04Z",
+ "first_day": "2026-01-01",
+ "last_day": "2026-07-24",
+ "days_present": 201,
+ "days_absent": [
+  "2026-05-05",
+  "2026-05-06",
+  "2026-05-07",
+  "2026-06-11"
+ ],
+ "days_absent_never_published": [],
+ "days_incomplete": [
+  "2026-03-07"
+ ],
+ "criterion": "a day is marked incomplete when one or more whole hours have zero departures while the same hour over the surrounding 15 days normally carries at least 200. Only whole missing hours are marked; no other test is applied.",
+ "days": [
+  {
+   "day": "2026-01-01",
+   "status": "complete",
+   "flights": 8803
+  },
+  {
+   "day": "2026-01-02",
+   "status": "complete",
+   "flights": 10251
+  },
+  {
+   "day": "2026-01-03",
+   "status": "complete",
+   "flights": 8725
+  },
+  {
+   "day": "2026-01-04",
+   "status": "complete",
+   "flights": 9598
+  },
+  {
+   "day": "2026-01-05",
+   "status": "complete",
+   "flights": 9211
+  },
+  {
+   "day": "2026-01-06",
+   "status": "complete",
+   "flights": 7225
+  },
+  {
+   "day": "2026-01-07",
+   "status": "complete",
+   "flights": 6805
+  },
+  {
+   "day": "2026-01-08",
+   "status": "complete",
+   "flights": 8152
+  },
+  {
+   "day": "2026-01-09",
+   "status": "complete",
+   "flights": 8824
+  },
+  {
+   "day": "2026-01-10",
+   "status": "complete",
+   "flights": 7172
+  },
+  {
+   "day": "2026-01-11",
+   "status": "complete",
+   "flights": 8773
+  },
+  {
+   "day": "2026-01-12",
+   "status": "complete",
+   "flights": 8869
+  },
+  {
+   "day": "2026-01-13",
+   "status": "complete",
+   "flights": 6553
+  },
+  {
+   "day": "2026-01-14",
+   "status": "complete",
+   "flights": 7222
+  },
+  {
+   "day": "2026-01-15",
+   "status": "complete",
+   "flights": 8175
+  },
+  {
+   "day": "2026-01-16",
+   "status": "complete",
+   "flights": 9443
+  },
+  {
+   "day": "2026-01-17",
+   "status": "complete",
+   "flights": 7232
+  },
+  {
+   "day": "2026-01-18",
+   "status": "complete",
+   "flights": 9098
+  },
+  {
+   "day": "2026-01-19",
+   "status": "complete",
+   "flights": 9359
+  },
+  {
+   "day": "2026-01-20",
+   "status": "complete",
+   "flights": 7140
+  },
+  {
+   "day": "2026-01-21",
+   "status": "complete",
+   "flights": 7308
+  },
+  {
+   "day": "2026-01-22",
+   "status": "complete",
+   "flights": 8354
+  },
+  {
+   "day": "2026-01-23",
+   "status": "complete",
+   "flights": 7955
+  },
+  {
+   "day": "2026-01-24",
+   "status": "complete",
+   "flights": 7058
+  },
+  {
+   "day": "2026-01-25",
+   "status": "complete",
+   "flights": 8799
+  },
+  {
+   "day": "2026-01-26",
+   "status": "complete",
+   "flights": 8811
+  },
+  {
+   "day": "2026-01-27",
+   "status": "complete",
+   "flights": 6754
+  },
+  {
+   "day": "2026-01-28",
+   "status": "complete",
+   "flights": 7049
+  },
+  {
+   "day": "2026-01-29",
+   "status": "complete",
+   "flights": 8179
+  },
+  {
+   "day": "2026-01-30",
+   "status": "complete",
+   "flights": 9656
+  },
+  {
+   "day": "2026-01-31",
+   "status": "complete",
+   "flights": 7209
+  },
+  {
+   "day": "2026-02-01",
+   "status": "complete",
+   "flights": 9368
+  },
+  {
+   "day": "2026-02-02",
+   "status": "complete",
+   "flights": 9495
+  },
+  {
+   "day": "2026-02-03",
+   "status": "complete",
+   "flights": 7156
+  },
+  {
+   "day": "2026-02-04",
+   "status": "complete",
+   "flights": 7470
+  },
+  {
+   "day": "2026-02-05",
+   "status": "complete",
+   "flights": 8487
+  },
+  {
+   "day": "2026-02-06",
+   "status": "complete",
+   "flights": 9759
+  },
+  {
+   "day": "2026-02-07",
+   "status": "complete",
+   "flights": 8079
+  },
+  {
+   "day": "2026-02-08",
+   "status": "complete",
+   "flights": 9834
+  },
+  {
+   "day": "2026-02-09",
+   "status": "complete",
+   "flights": 9958
+  },
+  {
+   "day": "2026-02-10",
+   "status": "complete",
+   "flights": 7512
+  },
+  {
+   "day": "2026-02-11",
+   "status": "complete",
+   "flights": 7684
+  },
+  {
+   "day": "2026-02-12",
+   "status": "complete",
+   "flights": 8556
+  },
+  {
+   "day": "2026-02-13",
+   "status": "complete",
+   "flights": 10459
+  },
+  {
+   "day": "2026-02-14",
+   "status": "complete",
+   "flights": 8610
+  },
+  {
+   "day": "2026-02-15",
+   "status": "complete",
+   "flights": 9680
+  },
+  {
+   "day": "2026-02-16",
+   "status": "complete",
+   "flights": 10543
+  },
+  {
+   "day": "2026-02-17",
+   "status": "complete",
+   "flights": 8206
+  },
+  {
+   "day": "2026-02-18",
+   "status": "complete",
+   "flights": 8490
+  },
+  {
+   "day": "2026-02-19",
+   "status": "complete",
+   "flights": 9398
+  },
+  {
+   "day": "2026-02-20",
+   "status": "complete",
+   "flights": 10674
+  },
+  {
+   "day": "2026-02-21",
+   "status": "complete",
+   "flights": 9283
+  },
+  {
+   "day": "2026-02-22",
+   "status": "complete",
+   "flights": 10577
+  },
+  {
+   "day": "2026-02-23",
+   "status": "complete",
+   "flights": 10722
+  },
+  {
+   "day": "2026-02-24",
+   "status": "complete",
+   "flights": 8378
+  },
+  {
+   "day": "2026-02-25",
+   "status": "complete",
+   "flights": 8762
+  },
+  {
+   "day": "2026-02-26",
+   "status": "complete",
+   "flights": 10136
+  },
+  {
+   "day": "2026-02-27",
+   "status": "complete",
+   "flights": 11377
+  },
+  {
+   "day": "2026-02-28",
+   "status": "complete",
+   "flights": 8980
+  },
+  {
+   "day": "2026-03-01",
+   "status": "complete",
+   "flights": 10290
+  },
+  {
+   "day": "2026-03-02",
+   "status": "complete",
+   "flights": 10689
+  },
+  {
+   "day": "2026-03-03",
+   "status": "complete",
+   "flights": 8504
+  },
+  {
+   "day": "2026-03-04",
+   "status": "complete",
+   "flights": 8754
+  },
+  {
+   "day": "2026-03-05",
+   "status": "complete",
+   "flights": 9884
+  },
+  {
+   "day": "2026-03-06",
+   "status": "complete",
+   "flights": 11089
+  },
+  {
+   "day": "2026-03-07",
+   "status": "incomplete",
+   "flights": 7256,
+   "missing_hours_utc": [
+    14
+   ],
+   "flights_typical": 10178,
+   "flights_missing_estimate": 625
+  },
+  {
+   "day": "2026-03-08",
+   "status": "complete",
+   "flights": 10355
+  },
+  {
+   "day": "2026-03-09",
+   "status": "complete",
+   "flights": 10566
+  },
+  {
+   "day": "2026-03-10",
+   "status": "complete",
+   "flights": 8810
+  },
+  {
+   "day": "2026-03-11",
+   "status": "complete",
+   "flights": 8952
+  },
+  {
+   "day": "2026-03-12",
+   "status": "complete",
+   "flights": 9274
+  },
+  {
+   "day": "2026-03-13",
+   "status": "complete",
+   "flights": 10500
+  },
+  {
+   "day": "2026-03-14",
+   "status": "complete",
+   "flights": 8790
+  },
+  {
+   "day": "2026-03-15",
+   "status": "complete",
+   "flights": 10495
+  },
+  {
+   "day": "2026-03-16",
+   "status": "complete",
+   "flights": 11026
+  },
+  {
+   "day": "2026-03-17",
+   "status": "complete",
+   "flights": 8970
+  },
+  {
+   "day": "2026-03-18",
+   "status": "complete",
+   "flights": 9023
+  },
+  {
+   "day": "2026-03-19",
+   "status": "complete",
+   "flights": 10403
+  },
+  {
+   "day": "2026-03-20",
+   "status": "complete",
+   "flights": 11306
+  },
+  {
+   "day": "2026-03-21",
+   "status": "complete",
+   "flights": 8740
+  },
+  {
+   "day": "2026-03-22",
+   "status": "complete",
+   "flights": 10220
+  },
+  {
+   "day": "2026-03-23",
+   "status": "complete",
+   "flights": 11002
+  },
+  {
+   "day": "2026-03-24",
+   "status": "complete",
+   "flights": 6787
+  },
+  {
+   "day": "2026-03-25",
+   "status": "complete",
+   "flights": 8596
+  },
+  {
+   "day": "2026-03-26",
+   "status": "complete",
+   "flights": 10403
+  },
+  {
+   "day": "2026-03-27",
+   "status": "complete",
+   "flights": 11256
+  },
+  {
+   "day": "2026-03-28",
+   "status": "complete",
+   "flights": 9199
+  },
+  {
+   "day": "2026-03-29",
+   "status": "complete",
+   "flights": 11640
+  },
+  {
+   "day": "2026-03-30",
+   "status": "complete",
+   "flights": 11805
+  },
+  {
+   "day": "2026-03-31",
+   "status": "complete",
+   "flights": 11036
+  },
+  {
+   "day": "2026-04-01",
+   "status": "complete",
+   "flights": 6529
+  },
+  {
+   "day": "2026-04-02",
+   "status": "complete",
+   "flights": 7551
+  },
+  {
+   "day": "2026-04-03",
+   "status": "complete",
+   "flights": 11837
+  },
+  {
+   "day": "2026-04-04",
+   "status": "complete",
+   "flights": 10384
+  },
+  {
+   "day": "2026-04-05",
+   "status": "complete",
+   "flights": 11531
+  },
+  {
+   "day": "2026-04-06",
+   "status": "complete",
+   "flights": 12292
+  },
+  {
+   "day": "2026-04-07",
+   "status": "complete",
+   "flights": 11377
+  },
+  {
+   "day": "2026-04-08",
+   "status": "complete",
+   "flights": 11474
+  },
+  {
+   "day": "2026-04-09",
+   "status": "complete",
+   "flights": 11953
+  },
+  {
+   "day": "2026-04-10",
+   "status": "complete",
+   "flights": 10937
+  },
+  {
+   "day": "2026-04-11",
+   "status": "complete",
+   "flights": 10184
+  },
+  {
+   "day": "2026-04-12",
+   "status": "complete",
+   "flights": 11460
+  },
+  {
+   "day": "2026-04-13",
+   "status": "complete",
+   "flights": 10653
+  },
+  {
+   "day": "2026-04-14",
+   "status": "complete",
+   "flights": 9890
+  },
+  {
+   "day": "2026-04-15",
+   "status": "complete",
+   "flights": 10257
+  },
+  {
+   "day": "2026-04-16",
+   "status": "complete",
+   "flights": 10987
+  },
+  {
+   "day": "2026-04-17",
+   "status": "complete",
+   "flights": 11397
+  },
+  {
+   "day": "2026-04-18",
+   "status": "complete",
+   "flights": 9929
+  },
+  {
+   "day": "2026-04-19",
+   "status": "complete",
+   "flights": 11675
+  },
+  {
+   "day": "2026-04-20",
+   "status": "complete",
+   "flights": 11853
+  },
+  {
+   "day": "2026-04-21",
+   "status": "complete",
+   "flights": 10872
+  },
+  {
+   "day": "2026-04-22",
+   "status": "complete",
+   "flights": 10811
+  },
+  {
+   "day": "2026-04-23",
+   "status": "complete",
+   "flights": 11237
+  },
+  {
+   "day": "2026-04-24",
+   "status": "complete",
+   "flights": 11823
+  },
+  {
+   "day": "2026-04-25",
+   "status": "complete",
+   "flights": 9969
+  },
+  {
+   "day": "2026-04-26",
+   "status": "complete",
+   "flights": 11683
+  },
+  {
+   "day": "2026-04-27",
+   "status": "complete",
+   "flights": 12257
+  },
+  {
+   "day": "2026-04-28",
+   "status": "complete",
+   "flights": 11096
+  },
+  {
+   "day": "2026-04-29",
+   "status": "complete",
+   "flights": 10971
+  },
+  {
+   "day": "2026-04-30",
+   "status": "complete",
+   "flights": 11021
+  },
+  {
+   "day": "2026-05-01",
+   "status": "complete",
+   "flights": 11501
+  },
+  {
+   "day": "2026-05-02",
+   "status": "complete",
+   "flights": 9942
+  },
+  {
+   "day": "2026-05-03",
+   "status": "complete",
+   "flights": 11351
+  },
+  {
+   "day": "2026-05-04",
+   "status": "complete",
+   "flights": 14642
+  },
+  {
+   "day": "2026-05-08",
+   "status": "complete",
+   "flights": 11813
+  },
+  {
+   "day": "2026-05-09",
+   "status": "complete",
+   "flights": 9714
+  },
+  {
+   "day": "2026-05-10",
+   "status": "complete",
+   "flights": 11347
+  },
+  {
+   "day": "2026-05-11",
+   "status": "complete",
+   "flights": 11350
+  },
+  {
+   "day": "2026-05-12",
+   "status": "complete",
+   "flights": 10862
+  },
+  {
+   "day": "2026-05-13",
+   "status": "complete",
+   "flights": 11016
+  },
+  {
+   "day": "2026-05-14",
+   "status": "complete",
+   "flights": 10744
+  },
+  {
+   "day": "2026-05-15",
+   "status": "complete",
+   "flights": 10298
+  },
+  {
+   "day": "2026-05-16",
+   "status": "complete",
+   "flights": 10104
+  },
+  {
+   "day": "2026-05-17",
+   "status": "complete",
+   "flights": 11451
+  },
+  {
+   "day": "2026-05-18",
+   "status": "complete",
+   "flights": 12315
+  },
+  {
+   "day": "2026-05-19",
+   "status": "complete",
+   "flights": 11606
+  },
+  {
+   "day": "2026-05-20",
+   "status": "complete",
+   "flights": 12231
+  },
+  {
+   "day": "2026-05-21",
+   "status": "complete",
+   "flights": 12974
+  },
+  {
+   "day": "2026-05-22",
+   "status": "complete",
+   "flights": 13156
+  },
+  {
+   "day": "2026-05-23",
+   "status": "complete",
+   "flights": 11372
+  },
+  {
+   "day": "2026-05-24",
+   "status": "complete",
+   "flights": 12826
+  },
+  {
+   "day": "2026-05-25",
+   "status": "complete",
+   "flights": 13226
+  },
+  {
+   "day": "2026-05-26",
+   "status": "complete",
+   "flights": 12480
+  },
+  {
+   "day": "2026-05-27",
+   "status": "complete",
+   "flights": 13068
+  },
+  {
+   "day": "2026-05-28",
+   "status": "complete",
+   "flights": 13041
+  },
+  {
+   "day": "2026-05-29",
+   "status": "complete",
+   "flights": 13167
+  },
+  {
+   "day": "2026-05-30",
+   "status": "complete",
+   "flights": 11017
+  },
+  {
+   "day": "2026-05-31",
+   "status": "complete",
+   "flights": 12439
+  },
+  {
+   "day": "2026-06-01",
+   "status": "complete",
+   "flights": 13082
+  },
+  {
+   "day": "2026-06-02",
+   "status": "complete",
+   "flights": 11782
+  },
+  {
+   "day": "2026-06-03",
+   "status": "complete",
+   "flights": 11356
+  },
+  {
+   "day": "2026-06-04",
+   "status": "complete",
+   "flights": 11789
+  },
+  {
+   "day": "2026-06-05",
+   "status": "complete",
+   "flights": 12560
+  },
+  {
+   "day": "2026-06-06",
+   "status": "complete",
+   "flights": 10737
+  },
+  {
+   "day": "2026-06-07",
+   "status": "complete",
+   "flights": 12963
+  },
+  {
+   "day": "2026-06-08",
+   "status": "complete",
+   "flights": 13148
+  },
+  {
+   "day": "2026-06-09",
+   "status": "complete",
+   "flights": 11909
+  },
+  {
+   "day": "2026-06-10",
+   "status": "complete",
+   "flights": 11374
+  },
+  {
+   "day": "2026-06-12",
+   "status": "complete",
+   "flights": 12674
+  },
+  {
+   "day": "2026-06-13",
+   "status": "complete",
+   "flights": 11589
+  },
+  {
+   "day": "2026-06-14",
+   "status": "complete",
+   "flights": 13518
+  },
+  {
+   "day": "2026-06-15",
+   "status": "complete",
+   "flights": 13884
+  },
+  {
+   "day": "2026-06-16",
+   "status": "complete",
+   "flights": 13256
+  },
+  {
+   "day": "2026-06-17",
+   "status": "complete",
+   "flights": 13482
+  },
+  {
+   "day": "2026-06-18",
+   "status": "complete",
+   "flights": 13455
+  },
+  {
+   "day": "2026-06-19",
+   "status": "complete",
+   "flights": 13743
+  },
+  {
+   "day": "2026-06-20",
+   "status": "complete",
+   "flights": 12286
+  },
+  {
+   "day": "2026-06-21",
+   "status": "complete",
+   "flights": 13673
+  },
+  {
+   "day": "2026-06-22",
+   "status": "complete",
+   "flights": 13794
+  },
+  {
+   "day": "2026-06-23",
+   "status": "complete",
+   "flights": 12727
+  },
+  {
+   "day": "2026-06-24",
+   "status": "complete",
+   "flights": 13204
+  },
+  {
+   "day": "2026-06-25",
+   "status": "complete",
+   "flights": 13486
+  },
+  {
+   "day": "2026-06-26",
+   "status": "complete",
+   "flights": 13738
+  },
+  {
+   "day": "2026-06-27",
+   "status": "complete",
+   "flights": 11802
+  },
+  {
+   "day": "2026-06-28",
+   "status": "complete",
+   "flights": 13637
+  },
+  {
+   "day": "2026-06-29",
+   "status": "complete",
+   "flights": 13911
+  },
+  {
+   "day": "2026-06-30",
+   "status": "complete",
+   "flights": 13715
+  },
+  {
+   "day": "2026-07-01",
+   "status": "complete",
+   "flights": 13140
+  },
+  {
+   "day": "2026-07-02",
+   "status": "complete",
+   "flights": 13669
+  },
+  {
+   "day": "2026-07-03",
+   "status": "complete",
+   "flights": 14020
+  },
+  {
+   "day": "2026-07-04",
+   "status": "complete",
+   "flights": 12528
+  },
+  {
+   "day": "2026-07-05",
+   "status": "complete",
+   "flights": 13426
+  },
+  {
+   "day": "2026-07-06",
+   "status": "complete",
+   "flights": 13890
+  },
+  {
+   "day": "2026-07-07",
+   "status": "complete",
+   "flights": 13315
+  },
+  {
+   "day": "2026-07-08",
+   "status": "complete",
+   "flights": 13612
+  },
+  {
+   "day": "2026-07-09",
+   "status": "complete",
+   "flights": 14180
+  },
+  {
+   "day": "2026-07-10",
+   "status": "complete",
+   "flights": 13998
+  },
+  {
+   "day": "2026-07-11",
+   "status": "complete",
+   "flights": 10631
+  },
+  {
+   "day": "2026-07-12",
+   "status": "complete",
+   "flights": 13905
+  },
+  {
+   "day": "2026-07-13",
+   "status": "complete",
+   "flights": 13717
+  },
+  {
+   "day": "2026-07-14",
+   "status": "complete",
+   "flights": 13174
+  },
+  {
+   "day": "2026-07-15",
+   "status": "complete",
+   "flights": 13864
+  },
+  {
+   "day": "2026-07-16",
+   "status": "complete",
+   "flights": 13902
+  },
+  {
+   "day": "2026-07-17",
+   "status": "complete",
+   "flights": 14078
+  },
+  {
+   "day": "2026-07-18",
+   "status": "complete",
+   "flights": 12674
+  },
+  {
+   "day": "2026-07-19",
+   "status": "complete",
+   "flights": 13775
+  },
+  {
+   "day": "2026-07-20",
+   "status": "complete",
+   "flights": 14094
+  },
+  {
+   "day": "2026-07-21",
+   "status": "complete",
+   "flights": 13419
+  },
+  {
+   "day": "2026-07-22",
+   "status": "complete",
+   "flights": 13493
+  },
+  {
+   "day": "2026-07-23",
+   "status": "complete",
+   "flights": 13869
+  },
+  {
+   "day": "2026-07-24",
+   "status": "complete",
+   "flights": 13560
+  }
+ ]
+}
