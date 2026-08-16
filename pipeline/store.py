@@ -35,10 +35,17 @@ _POINTS_SCHEMA = pa.schema([
     ("vs_fpm", pa.float32()),
 ])
 
+# WARNING: this schema is a gate, not a description. `add()` iterates over
+# _FLIGHTS_SCHEMA.names and takes meta.get(n), so any key present in the meta
+# dict but ABSENT here is dropped with no error and no warning. Adding a field
+# to run_daily.py is not enough — it must be declared here too. Cost of learning
+# this the hard way: operator and MCP were wired up on 29 July, ran nightly for
+# two weeks, and wrote nothing.
 _FLIGHTS_SCHEMA = pa.schema([
     ("flight_id", pa.int32()),
     ("day", pa.string()),
     ("typecode", pa.string()),
+    ("operator", pa.string()),      # ICAO airline designator from callsign, nullable
     ("model", pa.string()),
     ("dep_ts", pa.int64()),
     ("arr_ts", pa.int64()),
@@ -56,6 +63,11 @@ _FLIGHTS_SCHEMA = pa.schema([
     ("hole_time_s", pa.float32()),
     ("flown_ge_09gc", pa.bool_()),
     ("max_alt_ft", pa.float32()),
+    # autopilot selected altitude (Mode S), ~99% of flights that pass the pipeline
+    ("mcp_n_pts", pa.int32()),
+    ("mcp_n_levels", pa.int32()),   # distinct levels held in LEVEL flight
+    ("mcp_first_ft", pa.float32()),
+    ("mcp_max_ft", pa.float32()),
     # first-pass emissions (IAS-based TAS, uncalibrated) — refined on the Mac
     ("fuel_kg_v0", pa.float32()),
     ("co2_kg_v0", pa.float32()),
