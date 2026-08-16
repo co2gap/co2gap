@@ -33,6 +33,14 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+# OpenAP emits a UserWarning per aircraft whose drag polar comes from a synonym
+# (a20n for a21n, e75l for e170, ...). They are known, harmless and repeated once
+# per flight, which on a full day is hundreds of thousands of lines. On the Pi
+# they reach journald and fill SystemMaxUse=200M in a few days, evicting exactly
+# the boot records the persistent journal was set up to keep — after the reboot
+# of 10 August there was nothing left to diagnose it with. The journal lives on
+# the SD card, so the fix is to stop the noise rather than enlarge the cap.
+warnings.filterwarnings("ignore", category=UserWarning, module=r"openap.*")
 
 ROOT = Path(os.environ.get("ADSB_ROOT", "/mnt/wd_elements/adsb-co2"))
 sys.path.insert(0, str(ROOT / "ingest"))
@@ -75,6 +83,10 @@ _APT = None
 
 def _init(box, airports_csv):
     global _BOX, _APT
+    # Repeated in the worker: the module-level filters survive fork, but not a
+    # spawn start method, and it is the workers that emit these warnings.
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
+    warnings.filterwarnings("ignore", category=UserWarning, module=r"openap.*")
     _BOX = box
     _APT = Airports(airports_csv)
 
