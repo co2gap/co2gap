@@ -12,10 +12,13 @@ A day like that does not fail, it just quietly weighs half as much in any
 monthly aggregate. So coverage has to be measured from the CONTENT, and the
 result has to be published rather than kept in a log.
 
-Detection is the hourly histogram of departures. Night hours are legitimately
-near-empty even on healthy days (hour 23 UTC is routinely zero), so the test is
-restricted to the hours that are always busy: 05:00-21:00 UTC, where a normal
-day carries 500-900 departures per hour. A zero there is unambiguous.
+Detection is the hourly histogram of departures, with each hour compared against
+the median of THAT SAME HOUR over the surrounding days. Traffic has a strong
+daily shape — hour 23 UTC is routinely empty, hours 20 and 21 run at 45% and 25%
+of the peak — so a fixed "busy window" mistakes the normal evening wind-down for
+missing data. A first version of this script did exactly that and flagged
+fourteen healthy days, one of which carried more traffic than its neighbours.
+Comparing like with like calibrates itself and needs no window to be guessed.
 
     lab-venv/bin/python lab/coverage_audit.py            # writes data/coverage.json
 
@@ -39,9 +42,10 @@ FLIGHTS_DIR = Path(os.environ.get("ADSB_FLIGHTS_DIR") or (ROOT / "data/flights")
 OUT = Path(os.environ.get("ADSB_COVERAGE_JSON") or (ROOT / "data/coverage.json"))
 MISSING_TXT = FLIGHTS_DIR.parent / "backfill_missing.txt"
 
-BUSY_FROM, BUSY_TO = 5, 21      # UTC hours that are always busy in ECAC
-LOW_HOUR_FRAC = 0.25            # an hour under this share of the day's busy median is partial
-LOW_DAY_FRAC = 0.70             # a day under this share of the trailing median is short
+WINDOW_DAYS = 15                # days either side used to build the reference profile
+MIN_HOUR_MEDIAN = 200           # below this an hour carries too little to judge (night)
+LOW_HOUR_FRAC = 0.25            # an hour under this share of its own median is missing data
+LOW_DAY_FRAC = 0.70             # a day under this share of the local median is short
 
 
 def hourly(day_dir: Path):
@@ -63,34 +67,42 @@ def main() -> int:
         print(f"no days under {FLIGHTS_DIR}", file=sys.stderr)
         return 1
 
-    recs = []
+    recs, profile = [], []
     for d in days:
         h = hourly(d)
         if h is None:
             recs.append({"day": d.name, "status": "unreadable"})
+            profile.append(None)
             continue
-        busy = h[BUSY_FROM:BUSY_TO + 1]
-        med_busy = float(np.median(busy))
-        empty = [BUSY_FROM + i for i, v in enumerate(busy) if v == 0]
-        partial = [BUSY_FROM + i for i, v in enumerate(busy)
-                   if 0 < v < LOW_HOUR_FRAC * med_busy] if med_busy > 0 else []
-        recs.append({"day": d.name, "flights": int(h.sum()),
-                     "empty_busy_hours": empty, "partial_busy_hours": partial,
-                     "status": "ok"})
+        recs.append({"day": d.name, "flights": int(h.sum()), "status": "ok"})
+        profile.append(h)
 
-    # A day can also be short without any single hour going to zero, so compare
-    # each day with the 28-day trailing median of its neighbours.
-    counts = [r.get("flights", 0) for r in recs]
     for i, r in enumerate(recs):
         if r["status"] == "unreadable":
             continue
-        lo, hi = max(0, i - 14), min(len(recs), i + 15)
-        window = [c for j, c in enumerate(counts) if lo <= j < hi and j != i and c > 0]
-        med = float(np.median(window)) if window else 0.0
-        r["local_median_flights"] = int(med)
-        short = med > 0 and r["flights"] < LOW_DAY_FRAC * med
-        if r["empty_busy_hours"] or r["partial_busy_hours"] or short:
+        lo, hi = max(0, i - WINDOW_DAYS), min(len(recs), i + WINDOW_DAYS + 1)
+        near = [profile[j] for j in range(lo, hi) if j != i and profile[j] is not None]
+        if not near:
+            continue
+        ref = np.median(np.vstack(near), axis=0)          # per-hour reference
+        missing, thin = [], []
+        for hh in range(24):
+            if ref[hh] < MIN_HOUR_MEDIAN:                 # night: nothing to judge
+                continue
+            v = profile[i][hh]
+            if v == 0:
+                missing.append(hh)
+            elif v < LOW_HOUR_FRAC * ref[hh]:
+                thin.append(hh)
+        med_day = float(np.median([n.sum() for n in near]))
+        short = med_day > 0 and r["flights"] < LOW_DAY_FRAC * med_day
+        r["local_median_flights"] = int(med_day)
+        r["missing_hours_utc"] = missing
+        r["thin_hours_utc"] = thin
+        if missing or thin or short:
             r["status"] = "partial"
+            r["lost_flights_estimate"] = int(sum(
+                max(ref[hh] - profile[i][hh], 0) for hh in missing + thin))
 
     # Days the source never published at all, so the record is complete.
     have = {r["day"] for r in recs}
@@ -117,10 +129,11 @@ def main() -> int:
         "days_absent_confirmed_unpublished": sorted(set(absent) & set(known_missing)),
         "days_partial": [r["day"] for r in part],
         "method": {
-            "busy_hours_utc": [BUSY_FROM, BUSY_TO],
-            "empty_hour": "zero departures in a busy hour",
-            "partial_hour": f"under {LOW_HOUR_FRAC:.0%} of that day's busy-hour median",
-            "short_day": f"under {LOW_DAY_FRAC:.0%} of the 28-day local median",
+            "reference": f"median of the same hour over +/-{WINDOW_DAYS} days",
+            "hours_judged": f"only hours whose reference exceeds {MIN_HOUR_MEDIAN} departures",
+            "missing_hour": "zero departures where the reference is substantial",
+            "thin_hour": f"under {LOW_HOUR_FRAC:.0%} of the same hour's reference",
+            "short_day": f"under {LOW_DAY_FRAC:.0%} of the local daily median",
         },
         "days": recs,
     }
@@ -131,9 +144,9 @@ def main() -> int:
     print(f"absent: {len(absent)} {absent}")
     print(f"partial: {len(part)}")
     for r in part:
-        print(f"  {r['day']}  {r['flights']:,} flights vs local median "
-              f"{r['local_median_flights']:,}  empty hours {r['empty_busy_hours']}"
-              f"  partial hours {r['partial_busy_hours']}")
+        print(f"  {r['day']}  {r['flights']:>6,} vs {r['local_median_flights']:>6,}"
+              f"  (-{r.get('lost_flights_estimate',0):,})"
+              f"  missing {r['missing_hours_utc']}  thin {r['thin_hours_utc']}")
     print(f"\nwrote {OUT}")
     return 0
 
