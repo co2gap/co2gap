@@ -102,7 +102,13 @@ STAB = {"pairs": 21, "median": 0.867, "worst": 0.789,
 # Verified against primary sources on 2026-07-27, see reports/.
 BENCH = {"cco_cdo_kg": 39, "cco_cdo_pct": 1.1,
          "pasutto_pct": 4.6, "pasutto_kg": 60, "pasutto_avg_pct": 7.5,
-         "pasutto_avg_kg": 85, "kea_published": 3.0}
+         "pasutto_avg_kg": 85, "kea_published": 3.0,
+         # SES performance scheme, reference period 4. These are TARGETS, not
+         # measurements: the binding Union-wide values Member States are held
+         # to, which measured performance has been exceeding. Kept distinct
+         # from kea_published above, which is the measured order of magnitude —
+         # comparing our measurement against a target would be a category error.
+         "kea_rp4_start": 2.80, "kea_rp4_end": 2.66}
 
 # Never aggregate below this. The published product is always aggregate: no row
 # of this page may describe an individual flight or aircraft.
@@ -495,10 +501,26 @@ indicator</b> — a ratio of sums, over the en-route portion beyond 40 NM from t
 airports — we obtain <b>+{kea:.2f}%</b> against the
 <b>~{BENCH['kea_published']:.0f}%</b> published. Same order of magnitude and
 same construction.</p>
-<p>Differences remain that we cannot remove: they use radar data over the
+<p>KEA is not merely a published statistic: it is the <b>only environmental
+indicator on which the Single European Sky performance scheme sets binding
+targets</b> for Member States. For the current reference period, RP4, the
+Union-wide target falls from <b>{BENCH['kea_rp4_start']:.2f}% in 2025 to
+{BENCH['kea_rp4_end']:.2f}% in 2029</b>, and measured performance has been
+running above target.</p>
+<p><b>Our figure is lower than the published one, and the reason is the flight
+population rather than the arithmetic.</b> KEA covers <i>every</i> flight
+crossing the reference area, including overflights, counted over their in-area
+portion; the 40 NM exclusion applies only around departure and arrival airports,
+so an overflight has none removed. We count only flights that both take off and
+land inside our area, so every flight we measure has had both terminal cylinders
+cut out — precisely the phase where route extension is greatest. EUROCONTROL
+also discards the ten best and ten worst days of the year, and we do not. These
+differences all push the same way, and they are enough to explain the gap
+without either figure being wrong.</p>
+<p>Further differences we cannot remove: they use radar data over the
 EUROCONTROL reference area, we use ADS-B over a quality-filtered subset, with
 our own baseline and criteria. The comparison says "consistent", not
-"identical".</p>
+"identical", and it should not be read as reproducing their number.</p>
 
 <h2>8. Stated limitations</h2>
 <ul>
