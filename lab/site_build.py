@@ -215,6 +215,68 @@ def gc_crosses_closed(a, b, coords, n=40) -> list:
             if ((lat >= s) & (lat <= nn) & (lon >= w) & (lon <= e)).any()]
 
 
+SITE_URL = "https://co2gap.org"
+
+# rel="me" is what makes Mastodon show the profile link as verified: the profile
+# points at this site, this site points back, and the pair proves the same
+# person controls both. It only works on the exact URL the profile links to, so
+# these links belong in the footer of the page served at the domain root.
+# Bluesky needs none of this — the handle *is* the domain — but the link is
+# listed for symmetry.
+# LinkedIn carries no rel="me" — it does not support the mechanism — so it is a
+# plain link, listed because it is where an organisation looks for someone to
+# talk to.
+SOCIAL = (
+    '<a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · '
+    '<a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · '
+    '<a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · '
+    '<a href="https://github.com/Pengo-fmm/co2gap">source</a>'
+)
+
+
+def meta(title, desc, page=""):
+    """Head tags for link previews and icons.
+
+    Without these, every link shared to Bluesky, Mastodon, LinkedIn or Slack
+    renders as a bare URL. The preview is what most people see, since most
+    people do not click, so the caveat travels inside the image itself
+    (site/og.png) and inside the description below — never the headline
+    percentage on its own.
+    """
+    url = f"{SITE_URL}/{page}"
+    return f"""<meta name=description content="{esc(desc)}">
+<link rel=canonical href="{url}">
+<meta property=og:type content=website>
+<meta property=og:site_name content=co2gap>
+<meta property=og:url content="{url}">
+<meta property=og:title content="{esc(title)}">
+<meta property=og:description content="{esc(desc)}">
+<meta property=og:image content="{SITE_URL}/og.png">
+<meta property=og:image:width content=1200>
+<meta property=og:image:height content=630>
+<meta property=og:image:alt content="co2gap — 1,833,127 flights, 25.4 Mt CO2 emitted, \
+4.57 Mt gap from the theoretical optimum">
+<meta name=twitter:card content=summary_large_image>
+<meta name=twitter:title content="{esc(title)}">
+<meta name=twitter:description content="{esc(desc)}">
+<meta name=twitter:image content="{SITE_URL}/og.png">
+<link rel=icon href=favicon.svg type="image/svg+xml">
+<link rel=icon href=favicon-32.png sizes=32x32>
+<link rel=apple-touch-icon href=apple-touch-icon.png>"""
+
+
+DESC_INDEX = (
+    "CO2 and flight inefficiency in Europe, computed from the ADS-B trajectory "
+    "of 1,833,127 flights against a wind-corrected great-circle baseline. "
+    "It measures the distance from a theoretical optimum, not recoverable fuel. "
+    "Open method, open code, aggregate data only."
+)
+DESC_METHOD = (
+    "How co2gap computes emissions and the gap against an ideal flight: "
+    "trajectory processing, OpenAP fuel model, wind-corrected baseline, "
+    "lateral/vertical decomposition, and the limits of what the figures mean."
+)
+
 STYLE = """
 :root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
 --pos:#ff8a6b;--neg:#5fd0a8;--hi:#5ac8fa;--warn:#f0b429}
@@ -308,6 +370,7 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
 <html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Methodology — co2gap</title>
+{meta("Methodology — co2gap", DESC_METHOD, "methodology.html")}
 <style>{STYLE}</style></head><body><div class=wrap>
 
 <p><a href="index.html">← back to the data</a></p>
@@ -653,7 +716,9 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · next update
 {NEXT_RELEASE}.<br>
 {len(df):,} flights · {len(days)} days · {n_routes_all:,} publishable routes ·
-{n_routes_rank:,} ranked · {n_airports:,} airports · generated {esc(gen)}.
+{n_routes_rank:,} ranked · {n_airports:,} airports · generated {esc(gen)}.<br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
+{SOCIAL}
 </p>
 
 </div></body></html>
@@ -860,6 +925,7 @@ def main():
 <html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>co2gap — CO&#8322; and flight inefficiency observatory for Europe</title>
+{meta("co2gap — CO2 and flight inefficiency observatory for Europe", DESC_INDEX)}
 <style>{STYLE_INDEX}</style></head><body><div class=wrap>
 
 <h1>co2gap — CO&#8322; and flight inefficiency observatory for Europe</h1>
@@ -1143,7 +1209,9 @@ Performance model: OpenAP, TU Delft.
 Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; reusing
 these figures as a <i>dataset</i> triggers ODbL share-alike —
 <a href="methodology.html#licence">what that means</a>.<br>
-{len(df):,} flights · {len(days)} days · {len(months)} months.
+{len(df):,} flights · {len(days)} days · {len(months)} months.<br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
+{SOCIAL}
 </p>
 
 </div></body></html>

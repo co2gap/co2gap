@@ -2,6 +2,24 @@
 <html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Methodology — co2gap</title>
+<meta name=description content="How co2gap computes emissions and the gap against an ideal flight: trajectory processing, OpenAP fuel model, wind-corrected baseline, lateral/vertical decomposition, and the limits of what the figures mean.">
+<link rel=canonical href="https://co2gap.org/methodology.html">
+<meta property=og:type content=website>
+<meta property=og:site_name content=co2gap>
+<meta property=og:url content="https://co2gap.org/methodology.html">
+<meta property=og:title content="Methodology — co2gap">
+<meta property=og:description content="How co2gap computes emissions and the gap against an ideal flight: trajectory processing, OpenAP fuel model, wind-corrected baseline, lateral/vertical decomposition, and the limits of what the figures mean.">
+<meta property=og:image content="https://co2gap.org/og.png">
+<meta property=og:image:width content=1200>
+<meta property=og:image:height content=630>
+<meta property=og:image:alt content="co2gap — 1,833,127 flights, 25.4 Mt CO2 emitted, 4.57 Mt gap from the theoretical optimum">
+<meta name=twitter:card content=summary_large_image>
+<meta name=twitter:title content="Methodology — co2gap">
+<meta name=twitter:description content="How co2gap computes emissions and the gap against an ideal flight: trajectory processing, OpenAP fuel model, wind-corrected baseline, lateral/vertical decomposition, and the limits of what the figures mean.">
+<meta name=twitter:image content="https://co2gap.org/og.png">
+<link rel=icon href=favicon.svg type="image/svg+xml">
+<link rel=icon href=favicon-32.png sizes=32x32>
+<link rel=apple-touch-icon href=apple-touch-icon.png>
 <style>
 :root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
 --pos:#ff8a6b;--neg:#5fd0a8;--hi:#5ac8fa;--warn:#f0b429}
@@ -39,7 +57,7 @@ padding:1px 5px;border-radius:4px}
 <h1>Methodology</h1>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-16 16:54 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-17 13:24 UTC.</p>
 
 <h2>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -261,7 +279,7 @@ with at least 100 flights.</li>
 and December is not covered.</li>
 <li><b>Eight days are missing</b>: four absent at the source, four because of
 weather data latency.</li>
-<li><b>One day in the period is incomplete at the source</b>, with whole hours absent from the dump: 2026-03-07 (hours 14 UTC). An estimated 625 flights are missing as a result. Such days are kept and labelled rather than removed, and the complete record is published as <a href="coverage.json">coverage.json</a>.</li>
+
 <li>Routes flagged ⚑ <b>cannot</b> fly the direct path because the airspace is
 closed. The ban applies to European carriers and not to third-country ones, so
 the figure shown is an average between those who must divert and those who need
@@ -380,7 +398,9 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · next update
 March 2027.<br>
 1,833,127 flights · 197 days · 5,520 publishable routes ·
-2,788 ranked · 152 airports · generated 2026-08-16 16:54 UTC.
+2,788 ranked · 152 airports · generated 2026-08-17 13:24 UTC.<br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
+<a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/Pengo-fmm/co2gap">source</a>
 </p>
 
 </div></body></html>
