@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>co2gap — CO&#8322; and flight inefficiency observatory for Europe</title>
+
+<!-- SEGNAPOSTO, in linea dal 17/08/2026 fino al rilascio dell'1/09.
+     ⚠️ NESSUNA CIFRA, per costruzione: i numeri comunicati ai quattro enti il
+     29/07 restano congelati fino alla pubblicazione, e un dato che comparisse
+     qui prima del rilascio romperebbe il preavviso.
+     ⚠️ NESSUN og:image: quella del sito (og.png) contiene i numeri chiave, e
+     condividere questo link la pubblicherebbe in anticipo.
+     Al rilascio, questa pagina viene sostituita dal sito generato da
+     lab/site_build.py. -->
+
+<meta name=description content="An open observatory measuring CO2 and flight
+inefficiency in Europe from ADS-B trajectories. Method and code open. First
+release 1 September 2026.">
+<link rel=canonical href="https://co2gap.org/">
+<meta property=og:type content=website>
+<meta property=og:site_name content=co2gap>
+<meta property=og:url content="https://co2gap.org/">
+<meta property=og:title content="co2gap — CO2 and flight inefficiency observatory for Europe">
+<meta property=og:description content="Open method, open code. First release 1 September 2026.">
+<link rel=icon href=favicon.svg type="image/svg+xml">
+<link rel=icon href=favicon-32.png sizes=32x32>
+<link rel=apple-touch-icon href=apple-touch-icon.png>
+
+<style>
+:root{--bg:#fbfcfd;--card:#fff;--fg:#16212b;--mut:#5b6b78;--line:#e2e8ee;--hi:#0d6d99}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;--hi:#5ac8fa}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:clamp(40px,10vh,110px) 24px 80px}
+.brand{display:flex;align-items:center;gap:16px;margin-bottom:34px}
+.brand svg{width:64px;height:64px;flex:none}
+.brand .name{font-size:2rem;font-weight:650;letter-spacing:-.025em;line-height:1}
+.brand .name sub{font-size:.62em;vertical-align:baseline;position:relative;top:.16em}
+h1{font-size:1.22rem;font-weight:650;letter-spacing:-.015em;margin:0 0 18px;
+line-height:1.35}
+p{margin:0 0 16px}
+.mut{color:var(--mut)}
+.date{background:var(--card);border:1px solid var(--line);border-radius:10px;
+padding:14px 18px;margin:26px 0}
+.date b{font-weight:650}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);
+color:var(--mut);font-size:.9rem}
+a{color:var(--hi)}
+</style></head><body><div class=wrap>
+
+<div class=brand>
+  <svg viewBox="-2.5 0.25 69 69" xmlns="http://www.w3.org/2000/svg" aria-hidden=true>
+    <path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/>
+    <path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3"
+          stroke-linecap="round" stroke-dasharray="5 4.5"/>
+    <path d="M6 50 A26 25 0 0 1 32 25" fill="none" stroke="#ff7a55" stroke-width="3.6"
+          stroke-linecap="round"/>
+    <circle cx="6" cy="50" r="3.4" fill="#8ea3b2"/>
+    <circle cx="58" cy="50" r="3.4" fill="#8ea3b2"/>
+    <path fill="#ff7a55" transform="translate(41 27) rotate(24) scale(.92)"
+          d="M10 0 C10 -1.3 8.2 -2.1 6 -2.3 L1.5 -2.5 L-5 -9 L-7.6 -9 L-4 -2.5
+             L-6 -2.3 L-8 -5 L-9.6 -5 L-9.1 -1.5 L-9.1 1.5 L-9.6 5 L-8 5 L-6 2.3 L-4 2.5
+             L-7.6 9 L-5 9 L1.5 2.5 L6 2.3 C8.2 2.1 10 1.3 10 0 Z"/>
+  </svg>
+  <div class=name>co<sub>2</sub>gap</div>
+</div>
+
+<h1>An open observatory of CO<sub>2</sub> and flight inefficiency in Europe,
+measured from ADS-B trajectories.</h1>
+
+<p>For every flight it computes the CO<sub>2</sub> actually emitted and compares
+it with an ideal flight: same aircraft type, direct great-circle route, the most
+fuel-efficient altitude and speed profile for that distance, and the same real
+wind. The difference is split into a lateral component — the route — and a
+vertical one — the profile.</p>
+
+<p class=mut>It measures the distance from a theoretical optimum, <b>not
+recoverable fuel</b>: published estimates of what is actually recoverable are far
+smaller. Results are aggregated by route and airport only; nothing is published
+per flight, per aircraft or per operator.</p>
+
+<div class=date>
+  <b>First release: 1 September 2026.</b><br>
+  <span class=mut>Method, code and data sources are published together with the
+  figures. The organisations named in the first release were notified in writing
+  before publication, and any response is published next to the figure it
+  concerns.</span>
+</div>
+
+<p class=mut>A personal project, built with AI assistance. I am not an aviation
+professional, an air traffic controller or a climate scientist — the method is
+open precisely so that people who know the field can check it.</p>
+
+<div class=foot>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
+<a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> ·
+<a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> ·
+<a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a><br>
+Trajectories © adsb.lol contributors (ODbL) · wind: ERA5, Copernicus ·
+performance model: OpenAP, TU Delft.
+</div>
+
+</div></body></html>
