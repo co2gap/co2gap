@@ -26,6 +26,7 @@ import html
 import json
 import os
 import shutil
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,39 @@ AIRPORTS = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airports.cs
 OUT = Path(os.environ.get("ADSB_SITE_OUT") or (ROOT / "site/index.html"))
 OUT_METH = OUT.parent / "methodology.html"
 COVERAGE = Path(os.environ.get("ADSB_COVERAGE_JSON") or (ROOT / "data/coverage.json"))
+# Optional. When the phase split has been produced, the airport note can say
+# WHERE in the flight the gap happened instead of admitting it cannot. Absent,
+# the page falls back to the earlier wording, so building the site never depends
+# on a step that may not have run.
+PHASE_DIR = Path(os.environ.get("ADSB_PHASE_DIR") or (ROOT / "data/decomposition_phase"))
+
+
+def phase_attribution(df):
+    """Where the vertical gap of an airport was produced, or None.
+
+    Numbers derived in code, never typed: this project's rule, and the reason
+    the finding paragraphs elsewhere on the page read their own figures out of
+    the data. The computation itself lives in lab/phase_attrib.py, shared with
+    lab/phase_report.py, so the sentence on the page cannot drift away from the
+    report it came from.
+    """
+    sys.path.insert(0, str(ROOT / "lab"))
+    try:
+        from phase_attrib import load_phase, add_mean_norm, by_airport, headline
+    except Exception:
+        return None
+    ph = load_phase(PHASE_DIR)
+    if ph is None:
+        return None
+    # A partial phase run would describe a different population from the one
+    # the table shows, so it is refused rather than quietly averaged in.
+    if set(ph.day.unique()) != set(df.day.unique()):
+        print(f"phase split covers {ph.day.nunique()} days against "
+              f"{df.day.nunique()} published: attribution note omitted")
+        return None
+    m = df.merge(ph, on=["day", "flight_id"], how="inner", validate="one_to_one")
+    return headline(by_airport(add_mean_norm(m, BINS, MIN_N_CELL),
+                               MIN_N_AIRPORT))
 
 
 def coverage_note(days) -> str:
@@ -85,12 +119,26 @@ def coverage_note(days) -> str:
 # page without new data must not look like a new release.
 RELEASE = "2026-09-01"
 METHOD_VERSION = "1.0"
-# Releases are twice a year, in March and September. March carries the full
-# preceding calendar year and is the reference release; September carries the
-# first half. The cadence is deliberately slower than the data: month-to-month
-# rank correlation is 0.92 (lab/stability.py), so a quarterly republication of a
-# structurally stable signal would present noise as news.
-NEXT_RELEASE = "March 2027"
+# Releases are twice a year, at the end of January and the end of July, and
+# each one carries 12 MONTHS — not the calendar half it follows. January carries
+# the calendar year just ended (so it doubles as "the 2026 figures", which is
+# the form a citation takes); July carries the 12 months to the end of June.
+# The window matters more than the date: this site's own figures are seasonal
+# (an airport's margin moves between its strongest and weakest month), so
+# consecutive releases covering Jan-Jun and then Jul-Dec would differ for
+# reasons of season and be read as a change in efficiency. A rolling 12-month
+# window contains every season, which is also why EUROCONTROL computes KEA over
+# a rolling 12 months. The cost, stated on the page: two consecutive releases
+# share six months of data, so movements between them are damped.
+# End of the month, not the 1st: ERA5T lags ~5 days and the pipeline needs a
+# few more, so the margin is taken once instead of chased twice a year.
+# The cadence stays deliberately slower than the data: month-to-month rank
+# correlation is 0.92 (lab/stability.py), so republishing a structurally stable
+# signal quarterly would present noise as news.
+NEXT_RELEASE = "31 January 2027"
+# The window of the NEXT release, named on the page. It is not derivable from
+# the date: January names a calendar year, July names a straddling 12 months.
+NEXT_WINDOW = "the whole of 2026"
 
 # Results produced by other steps of the pipeline and quoted on the methodology
 # page. They are constants here because they come from runs this script does not
@@ -713,8 +761,8 @@ data published here is distributed under the same terms, as the licence requires
 Wind: ERA5, Copernicus Climate Change Service.
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.<br>
-<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · next update
-{NEXT_RELEASE}.<br>
+<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · updated twice a year over a 12-month window ·
+next update {NEXT_RELEASE}, covering {NEXT_WINDOW}.<br>
 {len(df):,} flights · {len(days)} days · {n_routes_all:,} publishable routes ·
 {n_routes_rank:,} ranked · {n_airports:,} airports · generated {esc(gen)}.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
@@ -805,11 +853,56 @@ def main():
     g["closed"] = [", ".join(gc_crosses_closed(a, b, coords)) for a, b in g.index]
 
     # ---- airports -------------------------------------------------------
-    both = pd.concat([df.assign(ap=df.origin_icao), df.assign(ap=df.dest_icao)])
+    # A flight is counted at BOTH ends, and its gap is measured over the WHOLE
+    # flight — so a share of what appears under one airport was produced at the
+    # other, and a share of it in cruise, far from either. No arithmetic here
+    # removes that: the pipeline has no phase-resolved excess, only totals per
+    # flight. What it can do is TEST it, by splitting the same figure by the
+    # role the airport played. If a figure were inherited from the airports it
+    # connects to, one of the two sides would sit near the norm; when both are
+    # high, the deviation travels with the airport and not with its partners.
+    # (Same split already produced per airport by lab/export_airport.py.)
+    # Where inside the flight the gap sits, when the phase split has been run.
+    # The fallback text is the older admission that we could not tell, so the
+    # page never claims more than the data behind it supports.
+    pa = phase_attribution(df)
+    if pa is None:
+        phase_note = (
+            "<b>What no column here can do is locate the gap inside the "
+            "flight.</b> These data do not say how many points happened in the "
+            "descent, or in the departure sequence, or in the cruise between "
+            "them. A high figure says that flights touching this airport "
+            "deviate from comparable ones; it does not say who or what "
+            "produced the deviation.")
+    else:
+        phase_note = (
+            "<b>Where inside the flight does it sit?</b> Splitting the same "
+            "vertical gap by the part of the path it was burnt on gives a "
+            "sharper answer than the two columns alone. Measured across the "
+            f"{pa['n_dep']} airports whose departures deviate by at least two "
+            "points, a median of "
+            f"<b>{pa['dep_own']:.0f}%</b> of that deviation was produced within "
+            "40 NM of the airport itself, and "
+            f"<b>{pa['dep_climb']:.0f}%</b> of it in the climb. For arrivals "
+            f"({pa['n_arr']} airports) it is "
+            f"<b>{pa['arr_own']:.0f}%</b> within 40 NM and "
+            f"<b>{pa['arr_desc']:.0f}%</b> in the descent. What happens at the "
+            "far end of the flight, and in the cruise between the two, accounts "
+            "for very little of what separates one airport from another.<br><br>"
+            "<b>That is a location, not a cause.</b> It says the gap was burnt "
+            "near this airport, in the climb out of it or the descent into it. "
+            "It does not say whether the profile was chosen by the operator or "
+            "imposed by the traffic, and nothing here distinguishes the two.")
+
+    both = pd.concat([df.assign(ap=df.origin_icao, role="dep"),
+                      df.assign(ap=df.dest_icao, role="arr")])
     ga = both.groupby("ap").agg(
         n=("d_tot", "size"), d=("d_tot", "median"),
         lat=("d_lat", "median"), vert=("d_vert", "median"),
     )
+    by_role = both.pivot_table(index="ap", columns="role", values="d_tot",
+                               aggfunc="median")
+    ga["dep"], ga["arr"] = by_role["dep"], by_role["arr"]
     ga = ga[ga.n >= MIN_N_AIRPORT]
 
     # ---- numbers behind the findings section ----------------------------
@@ -828,6 +921,15 @@ def main():
     ap2, ap2r = top_ap.index[1], top_ap.iloc[1]
     ap3, ap3r = top_ap.index[2], top_ap.iloc[2]
     ap_med = float(ga.d.median())
+    # Two examples for the attribution note, chosen by the PROPERTY they show
+    # and never by rank: one airport whose two roles agree (the deviation
+    # travels with the airport) and one where they diverge (the combined figure
+    # alone would not have told you which side it came from). Picking these by
+    # position instead would eventually put an airport under a sentence that
+    # says the opposite of its own numbers.
+    shown_ap = top_ap.head(15).assign(spread=lambda x: (x.dep - x.arr).abs())
+    sym_ap, asym_ap = shown_ap.spread.idxmin(), shown_ap.spread.idxmax()
+    symr, asymr = ga.loc[sym_ap], ga.loc[asym_ap]
     # Monthly behaviour of the two leaders.
     #
     # The rank alone is misleading and nearly cost us a wrong claim: the second
@@ -908,6 +1010,8 @@ def main():
                 f"<span class=code>{esc(icao)}</span></td>"
                 f"<td class=num>{int(r.n):,}</td>"
                 f"<td class='num big {'pos' if r.d>0 else 'neg'}'>{r.d:+.1f}</td>"
+                f"<td class=num>{r.dep:+.1f}</td>"
+                f"<td class=num>{r.arr:+.1f}</td>"
                 f"<td class=num>{r.lat:+.1f}</td>"
                 f"<td class='num big {'pos' if r.vert>0 else 'neg'}'>{r.vert:+.1f}</td></tr>")
 
@@ -934,7 +1038,8 @@ from the ADS-B trajectory of every flight, with a great-circle baseline
 <b>corrected for wind</b> and split into a <b>lateral</b> component (the route)
 and a <b>vertical</b> one (the profile).
 ECAC area · {esc(days[0])} → {esc(days[-1])} · {len(days)} days.<br>
-<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · next update {NEXT_RELEASE} ·
+<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · updated twice a year over a 12-month window ·
+next update {NEXT_RELEASE}, covering {NEXT_WINDOW} ·
 generated {esc(gen)}.</p>
 
 <div class=stats>
@@ -1127,14 +1232,35 @@ flagged).</p>
 <p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT} flights.
 The <b>vert.</b> column isolates the profile component — where early descents
 and terminal-area holding show up.</p>
+
+<div class=note>
+<b>Read this before reading the table.</b> Each row describes <b>the flights that
+touch this airport</b>. It is not a measure of the airport's own conduct. A flight
+is counted at both of its ends, and its gap is measured over the <b>whole flight</b>
+— so a share of what appears under one airport was produced at the other, and a
+share of it in cruise, far from either.<br><br>
+That is why <b>on dep.</b> and <b>on arr.</b> are shown separately: the same figure,
+split by the role the airport played. If it were inherited from the airports at the
+far end, one of the two sides would sit near the norm. Both readings occur here.
+<b>{esc(aname(sym_ap))}</b> stands at {symr.dep:+.1f} on departure and
+{symr.arr:+.1f} on arrival: the deviation travels with the airport, not with its
+partners. <b>{esc(aname(asym_ap))}</b> stands at {asymr.dep:+.1f} and
+{asymr.arr:+.1f}: nearly all of it appears on one side, and its combined figure of
+{asymr.d:+.1f} alone would not have told you which. The median across all
+{len(ga)} airports is {ap_med:+.1f}.<br><br>
+{phase_note}
+</div>
+
 <div class=scroll><table><thead><tr><th>Airport</th><th class=num>movements</th>
-<th class=num>Δ norm</th><th class=num>Δ lat.</th><th class=num>Δ vert.</th>
+<th class=num>Δ norm</th><th class=num>on dep.</th><th class=num>on arr.</th>
+<th class=num>Δ lat.</th><th class=num>Δ vert.</th>
 </tr></thead><tbody>
 {ap_worst}
 </tbody></table></div>
 <p class=hint style="margin-top:18px">Airports closest to the norm:</p>
 <div class=scroll><table><thead><tr><th>Airport</th><th class=num>movements</th>
-<th class=num>Δ norm</th><th class=num>Δ lat.</th><th class=num>Δ vert.</th>
+<th class=num>Δ norm</th><th class=num>on dep.</th><th class=num>on arr.</th>
+<th class=num>Δ lat.</th><th class=num>Δ vert.</th>
 </tr></thead><tbody>
 {ap_best}
 </tbody></table></div>

@@ -63,8 +63,9 @@ from the ADS-B trajectory of every flight, with a great-circle baseline
 <b>corrected for wind</b> and split into a <b>lateral</b> component (the route)
 and a <b>vertical</b> one (the profile).
 ECAC area · 2026-01-01 → 2026-07-20 · 197 days.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · next update March 2027 ·
-generated 2026-08-17 13:24 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
+next update 31 January 2027, covering the whole of 2026 ·
+generated 2026-08-17 22:20 UTC.</p>
 
 <div class=stats>
   <div class=stat><div class=v>1,833,127</div><div class=l>flights analysed</div></div>
@@ -305,39 +306,60 @@ flagged).</p>
 <p class=hint>Arrivals and departures combined, at least 2000 flights.
 The <b>vert.</b> column isolates the profile component — where early descents
 and terminal-area holding show up.</p>
+
+<div class=note>
+<b>Read this before reading the table.</b> Each row describes <b>the flights that
+touch this airport</b>. It is not a measure of the airport's own conduct. A flight
+is counted at both of its ends, and its gap is measured over the <b>whole flight</b>
+— so a share of what appears under one airport was produced at the other, and a
+share of it in cruise, far from either.<br><br>
+That is why <b>on dep.</b> and <b>on arr.</b> are shown separately: the same figure,
+split by the role the airport played. If it were inherited from the airports at the
+far end, one of the two sides would sit near the norm. Both readings occur here.
+<b>Brussels</b> stands at +4.4 on departure and
++5.3 on arrival: the deviation travels with the airport, not with its
+partners. <b>Josep Tarradellas Barcelona-El Prat</b> stands at +17.2 and
++0.3: nearly all of it appears on one side, and its combined figure of
++7.3 alone would not have told you which. The median across all
+152 airports is -2.4.<br><br>
+<b>Where inside the flight does it sit?</b> Splitting the same vertical gap by the part of the path it was burnt on gives a sharper answer than the two columns alone. Measured across the 118 airports whose departures deviate by at least two points, a median of <b>79%</b> of that deviation was produced within 40 NM of the airport itself, and <b>83%</b> of it in the climb. For arrivals (123 airports) it is <b>84%</b> within 40 NM and <b>90%</b> in the descent. What happens at the far end of the flight, and in the cruise between the two, accounts for very little of what separates one airport from another.<br><br><b>That is a location, not a cause.</b> It says the gap was burnt near this airport, in the climb out of it or the descent into it. It does not say whether the profile was chosen by the operator or imposed by the traffic, and nothing here distinguishes the two.
+</div>
+
 <div class=scroll><table><thead><tr><th>Airport</th><th class=num>movements</th>
-<th class=num>Δ norm</th><th class=num>Δ lat.</th><th class=num>Δ vert.</th>
+<th class=num>Δ norm</th><th class=num>on dep.</th><th class=num>on arr.</th>
+<th class=num>Δ lat.</th><th class=num>Δ vert.</th>
 </tr></thead><tbody>
-<tr><td class=r>Amsterdam Schiphol<span class=code>EHAM</span></td><td class=num>149,605</td><td class='num big pos'>+10.8</td><td class=num>-0.2</td><td class='num big pos'>+11.1</td></tr>
-<tr><td class=r>Adolfo Suárez Madrid–Barajas<span class=code>LEMD</span></td><td class=num>100,759</td><td class='num big pos'>+10.1</td><td class=num>+0.4</td><td class='num big pos'>+9.3</td></tr>
-<tr><td class=r>Dublin<span class=code>EIDW</span></td><td class=num>79,859</td><td class='num big pos'>+8.0</td><td class=num>+1.1</td><td class='num big pos'>+7.0</td></tr>
-<tr><td class=r>Josep Tarradellas Barcelona-El Prat<span class=code>LEBL</span></td><td class=num>122,426</td><td class='num big pos'>+7.3</td><td class=num>+1.5</td><td class='num big pos'>+5.7</td></tr>
-<tr><td class=r>A Coruña<span class=code>LECO</span></td><td class=num>4,098</td><td class='num big pos'>+7.3</td><td class=num>-0.1</td><td class='num big pos'>+7.0</td></tr>
-<tr><td class=r>Munich<span class=code>EDDM</span></td><td class=num>94,685</td><td class='num big pos'>+7.0</td><td class=num>+0.0</td><td class='num big pos'>+7.5</td></tr>
-<tr><td class=r>Graz<span class=code>LOWG</span></td><td class=num>3,310</td><td class='num big pos'>+6.8</td><td class=num>-0.9</td><td class='num big pos'>+7.7</td></tr>
-<tr><td class=r>London Heathrow<span class=code>EGLL</span></td><td class=num>113,135</td><td class='num big pos'>+6.1</td><td class=num>+1.1</td><td class='num big pos'>+5.0</td></tr>
-<tr><td class=r>Stuttgart<span class=code>EDDS</span></td><td class=num>19,421</td><td class='num big pos'>+5.7</td><td class=num>-0.5</td><td class='num big pos'>+6.7</td></tr>
-<tr><td class=r>Venice Marco Polo<span class=code>LIPZ</span></td><td class=num>30,274</td><td class='num big pos'>+5.6</td><td class=num>+1.3</td><td class='num big pos'>+4.2</td></tr>
-<tr><td class=r>Bilbao<span class=code>LEBB</span></td><td class=num>16,631</td><td class='num big pos'>+5.0</td><td class=num>+2.1</td><td class='num big pos'>+2.9</td></tr>
-<tr><td class=r>London Stansted<span class=code>EGSS</span></td><td class=num>64,037</td><td class='num big pos'>+4.9</td><td class=num>+0.6</td><td class='num big pos'>+4.5</td></tr>
-<tr><td class=r>Václav Havel Prague<span class=code>LKPR</span></td><td class=num>39,635</td><td class='num big pos'>+4.9</td><td class=num>+0.5</td><td class='num big pos'>+4.7</td></tr>
-<tr><td class=r>Jersey<span class=code>EGJJ</span></td><td class=num>4,206</td><td class='num big pos'>+4.9</td><td class=num>+3.0</td><td class='num big pos'>+1.8</td></tr>
-<tr><td class=r>Brussels<span class=code>EBBR</span></td><td class=num>55,870</td><td class='num big pos'>+4.9</td><td class=num>-0.0</td><td class='num big pos'>+4.9</td></tr>
+<tr><td class=r>Amsterdam Schiphol<span class=code>EHAM</span></td><td class=num>149,605</td><td class='num big pos'>+10.8</td><td class=num>+7.4</td><td class=num>+15.0</td><td class=num>-0.2</td><td class='num big pos'>+11.1</td></tr>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas<span class=code>LEMD</span></td><td class=num>100,759</td><td class='num big pos'>+10.1</td><td class=num>+9.1</td><td class=num>+10.9</td><td class=num>+0.4</td><td class='num big pos'>+9.3</td></tr>
+<tr><td class=r>Dublin<span class=code>EIDW</span></td><td class=num>79,859</td><td class='num big pos'>+8.0</td><td class=num>+6.6</td><td class=num>+9.1</td><td class=num>+1.1</td><td class='num big pos'>+7.0</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat<span class=code>LEBL</span></td><td class=num>122,426</td><td class='num big pos'>+7.3</td><td class=num>+17.2</td><td class=num>+0.3</td><td class=num>+1.5</td><td class='num big pos'>+5.7</td></tr>
+<tr><td class=r>A Coruña<span class=code>LECO</span></td><td class=num>4,098</td><td class='num big pos'>+7.3</td><td class=num>+6.6</td><td class=num>+8.2</td><td class=num>-0.1</td><td class='num big pos'>+7.0</td></tr>
+<tr><td class=r>Munich<span class=code>EDDM</span></td><td class=num>94,685</td><td class='num big pos'>+7.0</td><td class=num>+9.5</td><td class=num>+5.0</td><td class=num>+0.0</td><td class='num big pos'>+7.5</td></tr>
+<tr><td class=r>Graz<span class=code>LOWG</span></td><td class=num>3,310</td><td class='num big pos'>+6.8</td><td class=num>+10.6</td><td class=num>+2.7</td><td class=num>-0.9</td><td class='num big pos'>+7.7</td></tr>
+<tr><td class=r>London Heathrow<span class=code>EGLL</span></td><td class=num>113,135</td><td class='num big pos'>+6.1</td><td class=num>+5.0</td><td class=num>+7.0</td><td class=num>+1.1</td><td class='num big pos'>+5.0</td></tr>
+<tr><td class=r>Stuttgart<span class=code>EDDS</span></td><td class=num>19,421</td><td class='num big pos'>+5.7</td><td class=num>+6.9</td><td class=num>+4.7</td><td class=num>-0.5</td><td class='num big pos'>+6.7</td></tr>
+<tr><td class=r>Venice Marco Polo<span class=code>LIPZ</span></td><td class=num>30,274</td><td class='num big pos'>+5.6</td><td class=num>+7.5</td><td class=num>+3.8</td><td class=num>+1.3</td><td class='num big pos'>+4.2</td></tr>
+<tr><td class=r>Bilbao<span class=code>LEBB</span></td><td class=num>16,631</td><td class='num big pos'>+5.0</td><td class=num>+7.5</td><td class=num>+2.6</td><td class=num>+2.1</td><td class='num big pos'>+2.9</td></tr>
+<tr><td class=r>London Stansted<span class=code>EGSS</span></td><td class=num>64,037</td><td class='num big pos'>+4.9</td><td class=num>+1.0</td><td class=num>+7.8</td><td class=num>+0.6</td><td class='num big pos'>+4.5</td></tr>
+<tr><td class=r>Václav Havel Prague<span class=code>LKPR</span></td><td class=num>39,635</td><td class='num big pos'>+4.9</td><td class=num>+6.1</td><td class=num>+3.7</td><td class=num>+0.5</td><td class='num big pos'>+4.7</td></tr>
+<tr><td class=r>Jersey<span class=code>EGJJ</span></td><td class=num>4,206</td><td class='num big pos'>+4.9</td><td class=num>+8.0</td><td class=num>+1.3</td><td class=num>+3.0</td><td class='num big pos'>+1.8</td></tr>
+<tr><td class=r>Brussels<span class=code>EBBR</span></td><td class=num>55,870</td><td class='num big pos'>+4.9</td><td class=num>+4.4</td><td class=num>+5.3</td><td class=num>-0.0</td><td class='num big pos'>+4.9</td></tr>
 </tbody></table></div>
 <p class=hint style="margin-top:18px">Airports closest to the norm:</p>
 <div class=scroll><table><thead><tr><th>Airport</th><th class=num>movements</th>
-<th class=num>Δ norm</th><th class=num>Δ lat.</th><th class=num>Δ vert.</th>
+<th class=num>Δ norm</th><th class=num>on dep.</th><th class=num>on arr.</th>
+<th class=num>Δ lat.</th><th class=num>Δ vert.</th>
 </tr></thead><tbody>
-<tr><td class=r>Stavanger, Sola<span class=code>ENZV</span></td><td class=num>8,588</td><td class='num big neg'>-20.1</td><td class=num>-3.8</td><td class='num big neg'>-15.5</td></tr>
-<tr><td class=r>Malmö Sturup<span class=code>ESMS</span></td><td class=num>2,594</td><td class='num big neg'>-15.2</td><td class=num>-3.4</td><td class='num big neg'>-11.6</td></tr>
-<tr><td class=r>Ajaccio Napoléon Bonaparte airport<span class=code>LFKJ</span></td><td class=num>2,876</td><td class='num big neg'>-14.1</td><td class=num>-2.8</td><td class='num big neg'>-11.5</td></tr>
-<tr><td class=r>Kristiansand<span class=code>ENCN</span></td><td class=num>2,357</td><td class='num big neg'>-13.4</td><td class=num>-2.6</td><td class='num big neg'>-10.2</td></tr>
-<tr><td class=r>Luleå<span class=code>ESPA</span></td><td class=num>4,058</td><td class='num big neg'>-13.1</td><td class=num>-4.0</td><td class='num big neg'>-7.9</td></tr>
-<tr><td class=r>Belfast<span class=code>EGAA</span></td><td class=num>14,093</td><td class='num big neg'>-13.0</td><td class=num>-2.5</td><td class='num big neg'>-9.2</td></tr>
-<tr><td class=r>Lamezia Terme Sant&#x27;Eufemia<span class=code>LICA</span></td><td class=num>4,380</td><td class='num big neg'>-11.7</td><td class=num>-3.0</td><td class='num big neg'>-8.3</td></tr>
-<tr><td class=r>Ålesund<span class=code>ENAL</span></td><td class=num>2,888</td><td class='num big neg'>-10.6</td><td class=num>-2.6</td><td class='num big neg'>-7.4</td></tr>
-<tr><td class=r>Montpellier-Méditerranée<span class=code>LFMT</span></td><td class=num>3,987</td><td class='num big neg'>-10.5</td><td class=num>-0.6</td><td class='num big neg'>-9.8</td></tr>
-<tr><td class=r>Abruzzo<span class=code>LIBP</span></td><td class=num>3,532</td><td class='num big neg'>-10.4</td><td class=num>-1.6</td><td class='num big neg'>-8.2</td></tr>
+<tr><td class=r>Stavanger, Sola<span class=code>ENZV</span></td><td class=num>8,588</td><td class='num big neg'>-20.1</td><td class=num>-20.0</td><td class=num>-20.1</td><td class=num>-3.8</td><td class='num big neg'>-15.5</td></tr>
+<tr><td class=r>Malmö Sturup<span class=code>ESMS</span></td><td class=num>2,594</td><td class='num big neg'>-15.2</td><td class=num>-14.4</td><td class=num>-16.6</td><td class=num>-3.4</td><td class='num big neg'>-11.6</td></tr>
+<tr><td class=r>Ajaccio Napoléon Bonaparte airport<span class=code>LFKJ</span></td><td class=num>2,876</td><td class='num big neg'>-14.1</td><td class=num>-14.1</td><td class=num>-14.0</td><td class=num>-2.8</td><td class='num big neg'>-11.5</td></tr>
+<tr><td class=r>Kristiansand<span class=code>ENCN</span></td><td class=num>2,357</td><td class='num big neg'>-13.4</td><td class=num>-10.4</td><td class=num>-15.6</td><td class=num>-2.6</td><td class='num big neg'>-10.2</td></tr>
+<tr><td class=r>Luleå<span class=code>ESPA</span></td><td class=num>4,058</td><td class='num big neg'>-13.1</td><td class=num>-14.3</td><td class=num>-12.0</td><td class=num>-4.0</td><td class='num big neg'>-7.9</td></tr>
+<tr><td class=r>Belfast<span class=code>EGAA</span></td><td class=num>14,093</td><td class='num big neg'>-13.0</td><td class=num>-13.2</td><td class=num>-12.7</td><td class=num>-2.5</td><td class='num big neg'>-9.2</td></tr>
+<tr><td class=r>Lamezia Terme Sant&#x27;Eufemia<span class=code>LICA</span></td><td class=num>4,380</td><td class='num big neg'>-11.7</td><td class=num>-11.0</td><td class=num>-15.3</td><td class=num>-3.0</td><td class='num big neg'>-8.3</td></tr>
+<tr><td class=r>Ålesund<span class=code>ENAL</span></td><td class=num>2,888</td><td class='num big neg'>-10.6</td><td class=num>-8.7</td><td class=num>-12.8</td><td class=num>-2.6</td><td class='num big neg'>-7.4</td></tr>
+<tr><td class=r>Montpellier-Méditerranée<span class=code>LFMT</span></td><td class=num>3,987</td><td class='num big neg'>-10.5</td><td class=num>-7.0</td><td class=num>-14.2</td><td class=num>-0.6</td><td class='num big neg'>-9.8</td></tr>
+<tr><td class=r>Abruzzo<span class=code>LIBP</span></td><td class=num>3,532</td><td class='num big neg'>-10.4</td><td class=num>-7.7</td><td class=num>-12.4</td><td class=num>-1.6</td><td class='num big neg'>-8.2</td></tr>
 </tbody></table></div>
 
 <h2>Routes by total CO&#8322;</h2>

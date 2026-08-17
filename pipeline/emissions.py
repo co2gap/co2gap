@@ -90,6 +90,21 @@ class FuelResult:
     cruise_ff_kgph: float = 0.0     # mean fuel flow during cruise
     tas_mode: str = ""
     phase_fuel: dict = None
+    # Per-step burn (kg) and ground distance (km), aligned, only populated when
+    # the caller asks (`with_steps=True`). They exist so a caller can partition
+    # the SAME integral along the path instead of re-running it with different
+    # bounds: the phase split needs the burn as a function of distance flown,
+    # and re-integrating per phase would let rounding drift between the parts
+    # and the whole. Off by default so the daily pipeline, which discards them,
+    # keeps returning a small object.
+    burn_kg_step: object = None
+    dist_km_step: object = None
+    vs_fpm_step: object = None
+    # Which of the input segments survived the step filter. Needed to place a
+    # POINT-level event (leaving a cylinder, reaching top of climb) on the same
+    # arc-length axis as the burn: the integral runs over kept steps only, so a
+    # position measured over all segments would not line up with it.
+    valid_step: object = None
 
 
 # OpenAP type-code aliases -> supported model
@@ -286,12 +301,12 @@ def _steps_from_flight(flight, tas_mode):
     valid = (dt > 0) & (dt <= 600) & np.isfinite(tas) & (tas > 0)
     if valid.sum() < 10:
         return None
-    return dt[valid], alt0[valid], vs[valid], tas[valid], d_km[valid]
+    return dt[valid], alt0[valid], vs[valid], tas[valid], d_km[valid], valid
 
 
 def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
                   reserve_kg=DEFAULT_RESERVE_KG, tas_mode="ias",
-                  iters=4) -> FuelResult:
+                  iters=4, with_steps=False) -> FuelResult:
     model = openap_model(flight.typecode)
     if model is None:
         return FuelResult(flight.typecode, False, "type not in OpenAP")
@@ -302,7 +317,7 @@ def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
     steps = _steps_from_flight(flight, tas_mode)
     if steps is None:
         return FuelResult(flight.typecode, False, "too few usable steps")
-    dt, alt, vs, tas, d_km = steps
+    dt, alt, vs, tas, d_km, valid = steps
 
     ac = _get_ac(model)
     oew, mtow = ac["oew"], ac["mtow"]
@@ -344,4 +359,8 @@ def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
         co2_kg=burned * CO2_PER_KG_FUEL, duration_s=float(dt.sum()),
         dist_flown_km=float(d_km.sum()), init_mass_kg=m0, cruise_ff_kgph=cruise_ff,
         tas_mode=tas_mode, phase_fuel=phase_fuel,
+        burn_kg_step=(burn if with_steps else None),
+        dist_km_step=(d_km if with_steps else None),
+        vs_fpm_step=(vs if with_steps else None),
+        valid_step=(valid if with_steps else None),
     )
