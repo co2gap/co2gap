@@ -33,9 +33,12 @@ AREA = ([float(x) for x in os.environ["ERA5_AREA"].split(",")]
 # boxes MUST NOT share a directory: the second would silently overwrite the
 # first and WindField would then interpolate the wrong geography without any
 # error. Override the directory whenever the area is overridden.
+# La radice si deriva dalla posizione del file, mai da un percorso assoluto:
+# quello esporrebbe la home di chi l'ha scritto e romperebbe su ogni altra
+# macchina — ed e' la classe di bug che in questo progetto e' gia' costata caro.
 ERA5_DIR = Path(os.environ.get("ERA5_DIR") or
                 (Path(os.environ.get("ADSB_ROOT",
-                                     "/Users/fmavellia/adsb-co2-lab/adsb-co2"))
+                                     str(Path(__file__).resolve().parents[1])))
                  / "data/era5"))
 
 

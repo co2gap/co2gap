@@ -14,8 +14,8 @@
 # the user's explicit decision, never a side effect of a rerun.
 set -uo pipefail
 
-ROOT="${ADSB_ROOT:-/Users/fmavellia/adsb-co2-lab/adsb-co2}"
-PY="${ADSB_PY:-/Users/fmavellia/adsb-co2-lab/lab-venv/bin/python}"
+ROOT="${ADSB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+PY="${ADSB_PY:-$ROOT/../lab-venv/bin/python}"
 FROM_DAY="${FROM_DAY:-2026-01-01}"
 TO_DAY="${TO_DAY:-2026-07-23}"
 
@@ -33,7 +33,7 @@ step() { echo; echo "=== $* ==="; }
 
 if [ "$do_sync" = 1 ]; then
   step "1/5 sync parquet from the Pi (parquet only, never raw dumps)"
-  bash /Users/fmavellia/adsb-co2-lab/sync_parquet.sh || echo "  sync failed — continuing with local days"
+  bash "$ROOT/../sync_parquet.sh" || echo "  sync failed — continuing with local days"
 fi
 
 if [ "$do_era5" = 1 ]; then
