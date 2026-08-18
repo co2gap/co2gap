@@ -152,6 +152,10 @@ STAB = {"pairs": 21, "median": 0.867, "worst": 0.789,
 BENCH = {"cco_cdo_kg": 39, "cco_cdo_pct": 1.1,
          "pasutto_pct": 4.6, "pasutto_kg": 60, "pasutto_avg_pct": 7.5,
          "pasutto_avg_kg": 85, "kea_published": 3.0,
+         # Alcabin et al., AIAA 2009, traffico USA: quota dell'eccesso
+         # verticale che cade in discesa e arrivo. E' il riferimento
+         # esterno indipendente per la nostra scomposizione per fase.
+         "alcabin_desc_pct": 80,
          # SES performance scheme, reference period 4. These are TARGETS, not
          # measurements: the binding Union-wide values Member States are held
          # to, which measured performance has been exceeding. Kept distinct
@@ -1845,6 +1849,57 @@ partners. <b>{esc(aname(asym_ap))}</b> stands at {asymr.dep:+.1f} and
 
 
 <section>
+<h2>What I make of this</h2>
+<p class=hint>The rest of this site is measurement. This section is opinion, and it
+is signed. Anyone named here has the right of reply, published in full.</p>
+
+<div class=note>
+<p>Nobody commissioned this. I have an ADS-B receiver, the daily dumps are public,
+the performance model is open, and I wanted to know what those trajectories would
+say if you asked them something harder than <i>where is that plane</i>.</p>
+
+<p>What surprised me is how far that got. Aggregated the way EUROCONTROL builds its
+own indicator, this comes out at <b>+{kea:.2f}%</b> against the
+~{BENCH['kea_published']:.0f}% they publish. Split by phase,
+<b>{pa['arr_desc']:.0f}% of an airport's arrival deviation is burnt in the descent
+into it</b> — and a 2009 study of US traffic, which I found afterwards, put
+{BENCH['alcabin_desc_pct']}% in descent and arrival. I did not expect a receiver on
+a roof to land that close to institutions that do this for a living.</p>
+
+<p>Five things I will say as opinions rather than findings.</p>
+
+<p><b>If there is room anywhere, it is in the last forty miles.</b> That is where the
+fuel goes. A descent profile is not something an airline decides on its own.</p>
+
+<p><b>The shorter the flight, the worse the arithmetic.</b> Below 200 km a flight
+burns about {band.iloc[0].med:.0f}% more than its ideal; on the longest sectors it
+is {band.iloc[-1].med:.0f}%. Climbing to altitude costs the same whether you then
+fly for twenty minutes or for four hours, so on a short sector that fixed cost is
+most of the flight. This is geometry, not blame — but it is the clearest pattern in
+the whole dataset.</p>
+
+<p><b>A single number per airport can be false.</b> {esc(aname(asym_ap))} is
+{asymr.d:+.1f} combined — and {asymr.dep:+.1f} on departure against
+{asymr.arr:+.1f} on arrival. I published the split because the combined figure would
+have been a lie of omission, and combined figures are what this field usually
+publishes.</p>
+
+<p><b>A closed sky has a fuel bill, and you can read it from the ground.</b>
+{kal_a} to {kal_b} flies <b>{kal_pct:.0f}%</b> further en route than the straight
+line, because the straight line crosses Kaliningrad; {n_closed} of the ranked routes
+have a direct path through airspace that is closed or avoided. None of it is
+anyone's inefficiency, and all of it is burnt.</p>
+
+<p><b>Most of this table is not a ranking.</b> Half the routes sit within a few
+points of the norm, and at the head of the airport table ten positions can be
+separated by {head_span_min:.1f} points. Only the extremes mean anything.</p>
+
+<p>The thing I am most aware of <i>not</i> measuring is contrails. What I would most
+like is to be told where the method is wrong.</p>
+
+<p style="text-align:right;color:var(--mut)">— co2gap</p>
+</div>
+
 <h2 id=download>Check it yourself</h2>
 <p class=hint>Every figure here can be recomputed from scratch: the data is public,
 the method is documented in full and the code is open.</p>
