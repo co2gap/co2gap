@@ -279,7 +279,7 @@ SOCIAL = (
     '<a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · '
     '<a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · '
     '<a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · '
-    '<a href="https://github.com/Pengo-fmm/co2gap">source</a>'
+    '<a href="https://github.com/co2gap/co2gap">source</a>'
 )
 
 
@@ -1275,7 +1275,7 @@ routes or airports with their figures, redistributed as data — is a
 upstream licence's requirement, not an additional condition imposed here.</li>
 <li><b>The text of these pages</b> is
 <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; the
-<a href="https://github.com/Pengo-fmm/co2gap">pipeline source code</a> is
+<a href="https://github.com/co2gap/co2gap">pipeline source code</a> is
 Apache-2.0. The project name and domain are not covered by either.</li>
 </ul>
 <p>Wind data: ERA5, Copernicus Climate Change Service. Fuel references: ICAO CEC
@@ -1853,7 +1853,7 @@ the method is documented in full and the code is open.</p>
 band, searchable by name or ICAO code</span></a>
 <a href="methodology.html"><b>Methodology →</b><span>What is not measured,
 validations, stated limitations, independence</span></a>
-<a href="https://github.com/Pengo-fmm/co2gap"><b>Source code →</b><span>The whole
+<a href="https://github.com/co2gap/co2gap"><b>Source code →</b><span>The whole
 pipeline, from raw ADS-B to this page</span></a>
 <a href="mailto:hello@co2gap.org"><b>Ask for your own figures →</b><span>Airports,
 ANSPs and airlines: the detail behind these numbers for your own traffic</span></a>

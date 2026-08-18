@@ -17,13 +17,13 @@ abstract: >-
   route and airport only, never per flight, aircraft or operator. Validated
   against the EUROCONTROL horizontal en-route flight efficiency indicator (KEA).
 authors:
-  - family-names: Mavellia
-    given-names: Ferdinando
-    # orcid: "https://orcid.org/0000-0000-0000-0000"   # add if one is created
+  # Entita', non persona: il progetto e' firmato co2gap e il DOI Zenodo va
+  # attribuito al progetto. La forma `name:` e' l'autore-entita' di CFF.
+  - name: "co2gap"
 version: "1.0.0"
 date-released: "2026-09-01"
 license: Apache-2.0
-repository-code: "https://github.com/Pengo-fmm/co2gap"
+repository-code: "https://github.com/co2gap/co2gap"
 url: "https://co2gap.org"
 keywords:
   - ADS-B
