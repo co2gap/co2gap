@@ -324,6 +324,11 @@ DESC_METHOD = (
     "trajectory processing, OpenAP fuel model, wind-corrected baseline, "
     "lateral/vertical decomposition, and the limits of what the figures mean."
 )
+DESC_FAQ = (
+    "Straight answers to the questions this site invites: whether it says fuel is "
+    "being wasted, what an airport's number does and does not mean, who pays for "
+    "it, what it leaves out, and how to reuse the figures."
+)
 DESC_DATA = (
     "Every route, airport and distance band behind the co2gap figures, "
     "searchable by airport name or ICAO code. Aggregate data only."
@@ -506,7 +511,7 @@ LOGO = ('<svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true">'
 NAV = f"""<div class=top><div class=wrap>
 <a class=brand href="index.html">{LOGO}co2gap</a>
 <nav><a href="index.html#findings">Findings</a><a href="data.html">Data</a>
-<a href="methodology.html">Method</a><a href="index.html#download">Download</a></nav>
+<a href="methodology.html">Method</a><a href="faq.html">FAQ</a><a href="index.html#download">Download</a></nav>
 </div></div>"""
 
 # ---------------------------------------------------------------- glossario --
@@ -600,6 +605,83 @@ def term(slug, text=None, page="methodology.html"):
 # non porta mai il colore della serie, e ogni grafico ha il suo gemello in
 # tabella su data.html. Arancio e rosso non compaiono mai insieme: la coppia
 # fallisce i controlli per daltonismo (blu-arancio e blu-rosso li passano).
+
+
+def viz_concept():
+    """I due termini disegnati, non descritti.
+
+    E' il concetto centrale del sito e finora esisteva solo a parole: chi non ha
+    mai pensato a un profilo di volo legge "climb, cruise and descent" e non
+    vede niente, mentre quel termine e' due terzi del gap. Il linguaggio e'
+    quello del marchio — tratteggiato l'ideale, pieno il reale, l'area fra i due
+    e' il gap — e i colori sono quelli della barra della scomposizione, cosi'
+    il disegno e il numero si riconoscono l'un l'altro.
+    SCHEMATICO, e la didascalia lo dice: non e' un volo reale.
+    """
+    W, H = 700, 250
+    o = []
+    # ---- pannello sinistro: vista in pianta, il termine laterale -----------
+    ox, oy, dx_, dy = 40, 170, 300, 96
+    o.append(f'<text x="0" y="16" font-size="12" font-weight="600" fill="var(--fg)">'
+             f'Lateral — the route on the map</text>')
+    # l'area fra percorso diretto e traccia reale
+    o.append(f'<path d="M{ox} {oy} L{dx_} {dy} Q{230} {40} {ox} {oy} Z" '
+             f'fill="var(--s1)" fill-opacity=".13"/>')
+    o.append(f'<line x1="{ox}" y1="{oy}" x2="{dx_}" y2="{dy}" stroke="var(--mut)" '
+             f'stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round"/>')
+    o.append(f'<path d="M{ox} {oy} Q{230} {40} {dx_} {dy}" fill="none" '
+             f'stroke="var(--s1)" stroke-width="2.5" stroke-linecap="round"/>')
+    for cx, cy in ((ox, oy), (dx_, dy)):
+        o.append(f'<circle cx="{cx}" cy="{cy}" r="5" fill="var(--fg)" '
+                 f'stroke="var(--card)" stroke-width="2"/>')
+    o.append(f'<text x="{ox-6}" y="{oy+20}" font-size="11" fill="var(--mut)">departure</text>')
+    o.append(f'<text x="{dx_+6}" y="{dy+4}" font-size="11" fill="var(--mut)">arrival</text>')
+    o.append(f'<text x="150" y="152" font-size="11" fill="var(--mut)">direct route</text>')
+    o.append(f'<text x="150" y="72" font-size="11" fill="var(--s1)" font-weight="600">'
+             f'flown track</text>')
+    o.append(f'<text x="0" y="{H-26}" font-size="11.5" fill="var(--fg)">'
+             f'The shaded area is the <tspan font-weight="600">extra distance</tspan>.</text>')
+    o.append(f'<text x="0" y="{H-9}" font-size="11.5" fill="var(--mut)">'
+             f'It is the smaller of the two terms.</text>')
+    # ---- pannello destro: vista di profilo, il termine verticale -----------
+    L, G = 380, 196          # margine sinistro del pannello, quota del suolo
+    o.append(f'<line x1="360" y1="8" x2="360" y2="{H-40}" stroke="var(--line)"/>')
+    o.append(f'<text x="{L}" y="16" font-size="12" font-weight="600" fill="var(--fg)">'
+             f'Vertical — the profile flown along it</text>')
+    # I due profili come liste di punti: il riempimento si chiude percorrendo
+    # l'ideale in avanti e il reale all'indietro. Concatenarli nello stesso
+    # verso produce un poligono che si autointerseca — e si vede.
+    ideal_pts = [(L, G), (450, 70), (610, 70), (690, G)]
+    # Il reale deve restare SOTTO l'ideale per tutto il tracciato: se i due si
+    # incrociano il disegno dice che il volo e' rimasto piu' alto dell'ottimo,
+    # cioe' il contrario di cio' che i dati mostrano. Il livellamento in discesa
+    # va quindi tenuto piu' basso della dashed alla stessa ascissa.
+    real_pts = [(L, G), (432, 116), (474, 116), (520, 86),
+                (596, 86), (620, 155), (650, 155), (690, G)]
+    pth = lambda pts: "M" + " L".join(f"{x} {y}" for x, y in pts)
+    ideal, real = pth(ideal_pts), pth(real_pts)
+    o.append(f'<path d="{pth(ideal_pts + real_pts[::-1])} Z" '
+             f'fill="var(--s2)" fill-opacity=".13"/>')
+    o.append(f'<line x1="{L}" y1="{G}" x2="690" y2="{G}" stroke="var(--axis)"/>')
+    o.append(f'<path d="{ideal}" fill="none" stroke="var(--mut)" stroke-width="2" '
+             f'stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round"/>')
+    o.append(f'<path d="{real}" fill="none" stroke="var(--s2)" stroke-width="2.5" '
+             f'stroke-linecap="round" stroke-linejoin="round"/>')
+    o.append(f'<text x="470" y="62" font-size="11" fill="var(--mut)">ideal profile</text>')
+    o.append(f'<text x="530" y="106" font-size="11" fill="var(--s2)" font-weight="600">'
+             f'flown profile</text>')
+    o.append(f'<text x="434" y="134" font-size="10.5" fill="var(--mut)">levelling off</text>')
+    o.append(f'<text x="576" y="184" font-size="10.5" fill="var(--mut)">early descent</text>')
+    o.append(f'<text x="{L}" y="{H-26}" font-size="11.5" fill="var(--fg)">'
+             f'The shaded area is <tspan font-weight="600">two thirds of the gap</tspan>, '
+             f'and</text>')
+    o.append(f'<text x="{L}" y="{H-9}" font-size="11.5" fill="var(--mut)">'
+             f'most of it sits in the descent.</text>')
+    return (f'<svg class=viz viewBox="0 0 {W} {H}" role="img" aria-label="Two schematic '
+            f'diagrams: on the left a flown track bowing away from the direct route between '
+            f'two airports; on the right a flown altitude profile that levels off during the '
+            f'climb and starts its descent early, against a continuous ideal profile">'
+            + "".join(o) + "</svg>")
 
 def viz_split(lat_w, vert_w):
     """Anatomia del numero di testa: quanto e' percorso e quanto e' profilo."""
@@ -1537,6 +1619,9 @@ real wind</b>. The difference splits into two additive parts: the
 (having flown the same route on a less efficient altitude and speed profile).
 Over the period observed: total <b>{(lat_w+vert_w):.1f}%</b>, of which
 lateral <b>{lat_w:.1f}%</b> and vertical <b>{vert_w:.1f}%</b>.</p>
+<div class=card><div class=vizwrap>{viz_concept()}</div>
+<p class=caveat style="margin-top:14px">Schematic, not a real flight: the shapes are
+drawn to show what the two terms mean, not to depict a particular trajectory.</p></div>
 <div class=card><div class=vizwrap>{viz_split(lat_w, vert_w)}</div></div>
 <p class=cap>The vertical component is about twice the lateral one: the gap is mostly in
 how flights climb, cruise and descend, not in how far they go.</p>
@@ -1876,6 +1961,148 @@ q.addEventListener('input',run);
     OUT_DATA = OUT.parent / "data.html"
     OUT_DATA.write_text(data_doc)
     print(f"scritto {OUT_DATA}  ({len(data_doc)/1024:.0f} KB)")
+
+
+    # ---- FAQ ---------------------------------------------------------------
+    # Le domande che questo sito si tira addosso da solo, con la risposta
+    # scritta prima che arrivino. Ogni cifra e' interpolata, mai battuta a mano:
+    # una FAQ che diverge dalla pagina che spiega e' peggio di nessuna FAQ.
+    # L'ordine non e' per importanza ma per sospetto: si apre con l'accusa piu'
+    # probabile, non con la presentazione.
+    pa_arr_own = f"{pa['arr_own']:.0f}%" if pa else "40 NM of it"
+    QA = [
+        ("Are you saying airlines and airports are wasting fuel?",
+         f"""<b>No, and the distinction is the whole point of this site.</b> We
+measure the distance between what a flight actually burnt and what the same
+aircraft would have burnt flying the direct route at the most efficient profile,
+in the same real wind. That ideal is a <i>theoretical limit</i>: separation
+between aircraft, route structure, closed airspace and arrival queues put it out
+of reach of every real flight. Published estimates of what is genuinely
+<i>recoverable</i> are far smaller — EUROCONTROL puts about
+{BENCH['cco_cdo_kg']} kg of fuel per flight on continuous climb and descent
+procedures. Of the {vert_fleet:.1f} points of vertical gap we measure,
+<b>{vert_floor:.1f} remain even for a flight going direct through an empty night
+sky</b>: that is the baseline being unreachable, not anybody's inefficiency."""),
+        ("What does an airport's number actually mean?",
+         f"""It describes <b>the flights that touch that airport</b>, not the
+conduct of the airport. Each flight is counted at both ends and its gap is
+measured over the whole flight, so the columns <b>on dep.</b> and <b>on arr.</b>
+split the same figure by the role the airport played. The phase split goes
+further: for arrivals, a median of {pa_arr_own if pa else '—'} of an airport's
+deviation was produced within {term('nm', '40 NM')} of the airport itself.
+<b>That is a location, not a cause.</b> It says where the fuel was burnt; it does
+not say whether the profile was chosen by the operator or imposed by the
+traffic, and nothing here distinguishes the two."""),
+        ("Can I trust the ranking order?",
+         f"""<b>Only its tails.</b> About half the routes sit within a few points
+of the norm, inside the uncertainty of the method, and their ordering carries no
+information. At the head of the airport table ten positions can be separated by
+as little as {head_span_min:.1f} points within a single month. What is stable is
+the <i>distance from the norm</i>, not the position: read "well above comparable
+flights", never "third worst in Europe"."""),
+        ("Is this peer reviewed?",
+         """<b>No.</b> It is an independent open-data project, not an institutional
+or academic publication. What it offers instead is verifiability: the source data
+is public, the method is documented in full, the code is open, and every figure
+can be recomputed from scratch. The organisations named on this site were given
+advance notice before publication, and any reply they send is published here in
+full and unconditionally."""),
+        ("Who pays for this?",
+         """<b>Nobody.</b> There is no funder, client, sponsor or advertising, and
+no organisation has had sight of the figures before publication beyond the
+advance notice given to those named. The rules that keep it that way — including
+what happens if that ever changes — are written down under
+<a href="methodology.html#independence">independence</a>."""),
+        ("What does it leave out?",
+         """<b>CO&#8322; is not the whole climate effect of flying.</b> Contrails
+and nitrogen oxides contribute a large share of aviation's total warming effect —
+by published assessments, the majority of it — and this site measures none of
+them. It also excludes ground operations, and ADS-B coverage does not include
+oceanic sectors. Read the figures here as what they are: fuel burnt in the air
+over Europe, turned into CO&#8322;."""),
+        ("Why only 2026, and why no comparison with last year?",
+         f"""Because {len(days)} days of 2026 is what has been processed so far,
+and a year-on-year comparison built on a single period would be an invitation to
+read weather as a trend. Releases come twice a year from now on, each covering
+twelve months, so the first honest comparison becomes possible once two of those
+windows exist."""),
+        ("Does this track individual flights, aircraft or people?",
+         f"""<b>No.</b> Nothing is published below an aggregate of at least
+{MIN_N} flights, and rankings need at least {RANK_MIN_N}. The pipeline keeps no
+registration and no callsign — only the aircraft type and the airports — and no
+figure on this site describes an identifiable flight, operator crew or
+passenger."""),
+        ("How accurate is the fuel model?",
+         """Fuel burn comes from <a href="https://openap.dev">OpenAP</a>, an open
+performance model from TU Delft, anchored per aircraft type to the ICAO Carbon
+Emissions Calculator methodology. The check that matters is on the types the
+model was <i>not</i> corrected for: the most common airliners in the sample land
+within about 5% of a reference the model never saw. Types that needed correction,
+and why, are listed in the <a href="methodology.html">methodology</a> — the
+correction compensates a documented limitation, not an unexplained
+discrepancy."""),
+        ("A route here cannot fly its direct path. Is that counted as inefficiency?",
+         f"""It is measured, and it is flagged. {n_closed} ranked routes have a
+great circle crossing closed or systematically avoided airspace, and they carry a
+⚑ wherever they appear. That detour is not recoverable while the closures hold.
+Note also that an overflight ban binds European carriers and not third-country
+ones, so a figure for such a route averages operators that must divert with
+operators that need not."""),
+        ("Can I reuse these figures?",
+         f"""Yes, and the terms differ by what you reuse. The <b>text</b> is
+CC BY 4.0. The <b>figures as data</b> derive from
+<a href="https://adsb.lol">adsb.lol</a> trajectories under
+{term('odbl', 'ODbL')}, so a dataset built from them is a derivative database and carries
+the same share-alike obligation. In both cases attribution is required. The
+detail is under <a href="methodology.html#licence">licence and reuse</a>."""),
+        ("I am named here and I disagree with the figure. What happens?",
+         """Write to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. A
+reply is published on this site <b>in full, unconditionally and next to the
+figure it concerns</b> — not summarised, not answered selectively. If the
+disagreement is about the method rather than the reading, the pipeline is open
+and a reproducible counter-example is the fastest way to change what is
+published."""),
+    ]
+    qa_html = "\n".join(
+        f"<section><h2>{q}</h2><p>{a}</p></section>" for q, a in QA)
+    FOOT_FAQ = f"""<p class=foot><span class=wrap style="display:block">
+Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
+data published here is distributed under the same terms.
+Wind: ERA5, Copernicus. Fuel references: ICAO CEC v13.1. Performance model:
+OpenAP, TU Delft.<br>
+{len(df):,} flights · {len(days)} days · release {RELEASE} · generated {esc(gen)}.<br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
+{SOCIAL}
+</span></p>"""
+    faq_doc = f"""<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Questions and answers — co2gap</title>
+{meta("Questions and answers — co2gap", DESC_FAQ, "faq.html")}
+<style>{STYLE_INDEX}</style></head><body>
+{NAV}
+<div class=wrap>
+<div class=hero style="padding-bottom:0">
+<p class=eyebrow>Questions and answers</p>
+<h1>What this site does and does not say</h1>
+<p class=lede>The questions a project like this invites, answered before they are
+asked. If yours is not here, <a href="mailto:hello@co2gap.org">write</a> and it will
+be — the list is meant to grow.</p>
+</div>
+{qa_html}
+<section>
+<h2>Still unanswered?</h2>
+<p class=hint><a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections and
+replies are published on this site, in full and unconditionally.</p>
+</section>
+</div>
+{FOOT_FAQ}
+</body></html>
+"""
+    OUT_FAQ = OUT.parent / "faq.html"
+    OUT_FAQ.write_text(faq_doc)
+    print(f"scritto {OUT_FAQ}  ({len(faq_doc)/1024:.0f} KB)")
 
     meth = build_methodology(df, days, months, lat_w, vert_w, kea,
                              co2_t, excess_t, len(g_all), len(g), len(ga), gen,

@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Questions and answers — co2gap</title>
+<meta name=description content="Straight answers to the questions this site invites: whether it says fuel is being wasted, what an airport&#x27;s number does and does not mean, who pays for it, what it leaves out, and how to reuse the figures.">
+<link rel=canonical href="https://co2gap.org/faq.html">
+<meta property=og:type content=website>
+<meta property=og:site_name content=co2gap>
+<meta property=og:url content="https://co2gap.org/faq.html">
+<meta property=og:title content="Questions and answers — co2gap">
+<meta property=og:description content="Straight answers to the questions this site invites: whether it says fuel is being wasted, what an airport&#x27;s number does and does not mean, who pays for it, what it leaves out, and how to reuse the figures.">
+<meta property=og:image content="https://co2gap.org/og.png">
+<meta property=og:image:width content=1200>
+<meta property=og:image:height content=630>
+<meta property=og:image:alt content="co2gap — 1,833,127 flights, 25.4 Mt CO2 emitted, 4.57 Mt gap from the theoretical optimum">
+<meta name=twitter:card content=summary_large_image>
+<meta name=twitter:title content="Questions and answers — co2gap">
+<meta name=twitter:description content="Straight answers to the questions this site invites: whether it says fuel is being wasted, what an airport&#x27;s number does and does not mean, who pays for it, what it leaves out, and how to reuse the figures.">
+<meta name=twitter:image content="https://co2gap.org/og.png">
+<link rel=icon href=favicon.svg type="image/svg+xml">
+<link rel=icon href=favicon-32.png sizes=32x32>
+<link rel=apple-touch-icon href=apple-touch-icon.png>
+<style>
+:root{color-scheme:light dark;
+--bg:#fbfcfd;--card:#ffffff;--fg:#111c25;--mut:#5b6b78;--line:#e4e9ee;
+--grid:#eceff3;--axis:#c8d1d9;--s1:#2a78d6;--s2:#eb6834;--up:#e34948;--dn:#2a78d6;
+--pos:#c2410c;--neg:#0f766e;--hi:#1b64c0;--warn:#b45309;--warnbg:#fdf6ec}
+@media(prefers-color-scheme:dark){:root{
+--bg:#0d1216;--card:#161d23;--fg:#e9eef2;--mut:#93a4b1;--line:#232d35;
+--grid:#1f2830;--axis:#3a4650;--s1:#3987e5;--s2:#d95926;--up:#e66767;--dn:#3987e5;
+--pos:#ff8a6b;--neg:#5fd0a8;--hi:#68b0ff;--warn:#f0b429;--warnbg:#1d1c14}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:0 22px}
+body.data .wrap,body.data .top .wrap{max-width:1080px}
+a{color:var(--hi)}
+.top{position:sticky;top:0;z-index:9;background:var(--bg);
+border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:26px;height:58px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:640;letter-spacing:-.01em;
+text-decoration:none;color:var(--fg);margin-right:auto;font-size:1.02rem}
+.brand svg{width:26px;height:26px;display:block}
+.top nav{display:flex;gap:20px}
+.top nav a{color:var(--mut);text-decoration:none;font-size:.92rem}
+.top nav a:hover{color:var(--fg)}
+.hero{padding:64px 0 8px}
+.eyebrow{color:var(--mut);font-size:.83rem;letter-spacing:.06em;text-transform:uppercase;
+margin:0 0 14px}
+h1{font-size:2.45rem;line-height:1.15;letter-spacing:-.025em;margin:0 0 18px;max-width:16em;
+text-wrap:balance}
+.lede{font-size:1.12rem;color:var(--mut);margin:0;max-width:34em}
+.figure{display:flex;align-items:baseline;gap:16px;margin:38px 0 6px}
+.figure .n{font-size:4.4rem;font-weight:660;letter-spacing:-.04em;line-height:1}
+.figure .u{font-size:1rem;color:var(--mut);max-width:15em;line-height:1.45}
+.shield{border-left:3px solid var(--warn);background:var(--warnbg);padding:12px 16px;
+border-radius:0 8px 8px 0;font-size:.94rem;margin:18px 0 0;max-width:38em}
+.shield b{color:var(--fg)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:40px 0 0}
+.stat{background:var(--card);padding:16px 18px}
+.stat .v{font-size:1.5rem;font-weight:640;letter-spacing:-.02em}
+.stat .l{color:var(--mut);font-size:.8rem;margin-top:3px;line-height:1.35}
+section{padding:52px 0;border-top:1px solid var(--line)}
+h2{font-size:1.55rem;letter-spacing:-.02em;margin:0 0 10px;line-height:1.25;
+text-wrap:balance}
+h3{font-size:1.02rem;margin:0 0 6px;letter-spacing:-.01em}
+p.hint,.sub{color:var(--mut);margin:0 0 26px;max-width:36em;font-size:.96rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:22px 24px;margin:20px 0}
+.card p{margin:0;font-size:.96rem} .card p+p{margin-top:10px}
+.caveat{color:var(--mut);font-size:.9rem}
+.cap{color:var(--mut);font-size:.86rem;margin:14px 0 0}
+.vizwrap{overflow-x:auto}
+.viz{width:100%;min-width:600px;height:auto;display:block;overflow:visible}
+.findings{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.findings .card{margin:0}
+.more{display:inline-block;margin-top:12px;font-size:.9rem;text-decoration:none}
+.more:hover{text-decoration:underline}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:18px 20px;text-decoration:none;color:var(--fg)}
+.dl a:hover{border-color:var(--axis)}
+.dl b{display:block;font-size:.98rem}
+.dl span{color:var(--mut);font-size:.88rem}
+.term{color:inherit;text-decoration:none;border-bottom:1px dotted var(--axis);cursor:help}
+.term:hover{color:var(--hi);border-bottom-color:var(--hi)}
+.howto{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:20px 24px 22px;margin:34px 0 0}
+.howto h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;
+color:var(--mut);font-weight:600;margin:0 0 12px}
+.howto dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;
+font-size:.94rem;align-items:baseline}
+.howto dt{font-weight:640;white-space:nowrap}
+.howto dd{margin:0;color:var(--mut)}
+.howto dd b{color:var(--fg);font-weight:560}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:500;font-size:.72rem;text-transform:uppercase;
+letter-spacing:.06em;background:var(--card)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.big{font-weight:650}
+td.pos{color:var(--pos)} td.neg{color:var(--neg)}
+td.r{font-weight:500;white-space:normal}
+.code{color:var(--mut);font-size:.76rem;margin-left:8px;font-family:ui-monospace,monospace}
+.flag{color:var(--warn);margin-left:6px;cursor:help}
+.note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--hi);
+border-radius:8px;padding:16px 20px;color:var(--mut);font-size:.92rem;margin:20px 0}
+.note.warn{border-left-color:var(--warn)}
+.note b{color:var(--fg)}
+.note p{margin:10px 0}
+.search{width:100%;padding:12px 14px;font-size:1rem;border:1px solid var(--line);
+border-radius:10px;background:var(--card);color:var(--fg);margin-bottom:8px;
+font-family:inherit}
+.count{color:var(--mut);font-size:.85rem;margin:0 0 18px}
+.gloss{display:grid;grid-template-columns:1fr;gap:0}
+.gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
+.gloss div:last-child{border-bottom:none}
+.gloss dt{font-weight:640;margin-bottom:4px}
+.gloss dd{margin:0;color:var(--mut);font-size:.95rem}
+.gloss div:target dt{color:var(--hi)}
+.foot{color:var(--mut);font-size:.85rem;border-top:1px solid var(--line);
+padding:32px 0 60px;margin-top:0}
+@media(max-width:720px){
+ h1{font-size:1.9rem}.figure .n{font-size:3.2rem}
+ .stats,.findings,.dl{grid-template-columns:1fr}
+ .top nav{gap:15px}.top .wrap{gap:14px}.hero{padding-top:40px}
+}
+@media(max-width:560px){
+ .top nav a[href$="#download"]{display:none}
+ .figure{display:block}.figure .u{margin-top:8px;max-width:none}
+}
+</style></head><body>
+<div class=top><div class=wrap>
+<a class=brand href="index.html"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
+<nav><a href="index.html#findings">Findings</a><a href="data.html">Data</a>
+<a href="methodology.html">Method</a><a href="faq.html">FAQ</a><a href="index.html#download">Download</a></nav>
+</div></div>
+<div class=wrap>
+<div class=hero style="padding-bottom:0">
+<p class=eyebrow>Questions and answers</p>
+<h1>What this site does and does not say</h1>
+<p class=lede>The questions a project like this invites, answered before they are
+asked. If yours is not here, <a href="mailto:hello@co2gap.org">write</a> and it will
+be — the list is meant to grow.</p>
+</div>
+<section><h2>Are you saying airlines and airports are wasting fuel?</h2><p><b>No, and the distinction is the whole point of this site.</b> We
+measure the distance between what a flight actually burnt and what the same
+aircraft would have burnt flying the direct route at the most efficient profile,
+in the same real wind. That ideal is a <i>theoretical limit</i>: separation
+between aircraft, route structure, closed airspace and arrival queues put it out
+of reach of every real flight. Published estimates of what is genuinely
+<i>recoverable</i> are far smaller — EUROCONTROL puts about
+39 kg of fuel per flight on continuous climb and descent
+procedures. Of the 14.0 points of vertical gap we measure,
+<b>5.5 remain even for a flight going direct through an empty night
+sky</b>: that is the baseline being unreachable, not anybody's inefficiency.</p></section>
+<section><h2>What does an airport's number actually mean?</h2><p>It describes <b>the flights that touch that airport</b>, not the
+conduct of the airport. Each flight is counted at both ends and its gap is
+measured over the whole flight, so the columns <b>on dep.</b> and <b>on arr.</b>
+split the same figure by the role the airport played. The phase split goes
+further: for arrivals, a median of 84% of an airport's
+deviation was produced within <a class=term href="methodology.html#g-nm" title="1,852 metres, the standard distance unit in aviation. 40 NM is about 74 km.">40 NM</a> of the airport itself.
+<b>That is a location, not a cause.</b> It says where the fuel was burnt; it does
+not say whether the profile was chosen by the operator or imposed by the
+traffic, and nothing here distinguishes the two.</p></section>
+<section><h2>Can I trust the ranking order?</h2><p><b>Only its tails.</b> About half the routes sit within a few points
+of the norm, inside the uncertainty of the method, and their ordering carries no
+information. At the head of the airport table ten positions can be separated by
+as little as 3.1 points within a single month. What is stable is
+the <i>distance from the norm</i>, not the position: read "well above comparable
+flights", never "third worst in Europe".</p></section>
+<section><h2>Is this peer reviewed?</h2><p><b>No.</b> It is an independent open-data project, not an institutional
+or academic publication. What it offers instead is verifiability: the source data
+is public, the method is documented in full, the code is open, and every figure
+can be recomputed from scratch. The organisations named on this site were given
+advance notice before publication, and any reply they send is published here in
+full and unconditionally.</p></section>
+<section><h2>Who pays for this?</h2><p><b>Nobody.</b> There is no funder, client, sponsor or advertising, and
+no organisation has had sight of the figures before publication beyond the
+advance notice given to those named. The rules that keep it that way — including
+what happens if that ever changes — are written down under
+<a href="methodology.html#independence">independence</a>.</p></section>
+<section><h2>What does it leave out?</h2><p><b>CO&#8322; is not the whole climate effect of flying.</b> Contrails
+and nitrogen oxides contribute a large share of aviation's total warming effect —
+by published assessments, the majority of it — and this site measures none of
+them. It also excludes ground operations, and ADS-B coverage does not include
+oceanic sectors. Read the figures here as what they are: fuel burnt in the air
+over Europe, turned into CO&#8322;.</p></section>
+<section><h2>Why only 2026, and why no comparison with last year?</h2><p>Because 197 days of 2026 is what has been processed so far,
+and a year-on-year comparison built on a single period would be an invitation to
+read weather as a trend. Releases come twice a year from now on, each covering
+twelve months, so the first honest comparison becomes possible once two of those
+windows exist.</p></section>
+<section><h2>Does this track individual flights, aircraft or people?</h2><p><b>No.</b> Nothing is published below an aggregate of at least
+10 flights, and rankings need at least 100. The pipeline keeps no
+registration and no callsign — only the aircraft type and the airports — and no
+figure on this site describes an identifiable flight, operator crew or
+passenger.</p></section>
+<section><h2>How accurate is the fuel model?</h2><p>Fuel burn comes from <a href="https://openap.dev">OpenAP</a>, an open
+performance model from TU Delft, anchored per aircraft type to the ICAO Carbon
+Emissions Calculator methodology. The check that matters is on the types the
+model was <i>not</i> corrected for: the most common airliners in the sample land
+within about 5% of a reference the model never saw. Types that needed correction,
+and why, are listed in the <a href="methodology.html">methodology</a> — the
+correction compensates a documented limitation, not an unexplained
+discrepancy.</p></section>
+<section><h2>A route here cannot fly its direct path. Is that counted as inefficiency?</h2><p>It is measured, and it is flagged. 208 ranked routes have a
+great circle crossing closed or systematically avoided airspace, and they carry a
+⚑ wherever they appear. That detour is not recoverable while the closures hold.
+Note also that an overflight ban binds European carriers and not third-country
+ones, so a figure for such a route averages operators that must divert with
+operators that need not.</p></section>
+<section><h2>Can I reuse these figures?</h2><p>Yes, and the terms differ by what you reuse. The <b>text</b> is
+CC BY 4.0. The <b>figures as data</b> derive from
+<a href="https://adsb.lol">adsb.lol</a> trajectories under
+<a class=term href="methodology.html#g-odbl" title="The Open Database Licence covering the source trajectories. Reuse is free, with attribution, but a database derived from it must carry the same licence — which is why the figures on this site do.">ODbL</a>, so a dataset built from them is a derivative database and carries
+the same share-alike obligation. In both cases attribution is required. The
+detail is under <a href="methodology.html#licence">licence and reuse</a>.</p></section>
+<section><h2>I am named here and I disagree with the figure. What happens?</h2><p>Write to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. A
+reply is published on this site <b>in full, unconditionally and next to the
+figure it concerns</b> — not summarised, not answered selectively. If the
+disagreement is about the method rather than the reading, the pipeline is open
+and a reproducible counter-example is the fastest way to change what is
+published.</p></section>
+<section>
+<h2>Still unanswered?</h2>
+<p class=hint><a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections and
+replies are published on this site, in full and unconditionally.</p>
+</section>
+</div>
+<p class=foot><span class=wrap style="display:block">
+Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
+data published here is distributed under the same terms.
+Wind: ERA5, Copernicus. Fuel references: ICAO CEC v13.1. Performance model:
+OpenAP, TU Delft.<br>
+1,833,127 flights · 197 days · release 2026-09-01 · generated 2026-08-18 05:57 UTC.<br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
+<a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/Pengo-fmm/co2gap">source</a>
+</span></p>
+</body></html>
