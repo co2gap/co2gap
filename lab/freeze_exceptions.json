@@ -1,0 +1,6 @@
+[
+ {"match": "co2 and flight inefficiency observatory for europe",
+  "reason": "titolo cambiato di proposito il 18/08: l'h1 dice ora cosa il sito misura (How far European flights sit from a theoretical optimum) invece di cosa il sito e'. Deciso esplicitamente con l'utente come unica eccezione al congelamento."},
+ {"match": "at least 2000 flights",
+  "reason": "solo formattazione: 2000 -> 2,000, era l'unico numero del sito senza separatore delle migliaia. Nessun cambio di valore."}
+]

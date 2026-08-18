@@ -360,6 +360,33 @@ border:1px solid var(--line);border-radius:12px}
 .toc li{margin:5px 0;font-size:.92rem}
 .toc a{text-decoration:none}
 .toc a:hover{text-decoration:underline}
+
+/* Su carta questo sito ci finisce davvero: un analista lo salva in PDF e lo
+   allega a una nota interna. Senza queste regole si porta dietro la testata
+   fissa ripetuta, i fondi scuri e i link come testo cieco — un lettore che
+   stampa perde proprio i rimandi che rendono verificabile ciò che legge. */
+@media print{
+ :root{--bg:#fff;--card:#fff;--fg:#111;--mut:#444;--line:#bbb;--grid:#ddd;
+ --axis:#888;--hi:#111;--warnbg:#fff}
+ .top,.more,.dl,.search,.count,.toc{display:none}
+ body{font-size:10.5pt}
+ .wrap{max-width:none;padding:0}
+ section{padding:14pt 0;break-inside:avoid}
+ .card,.note,.shield,.howto{border:1px solid #bbb;break-inside:avoid}
+ .figure .n{font-size:32pt}
+ h1{font-size:20pt}h2{font-size:13pt}
+ h2,h3{break-after:avoid}
+ .viz{min-width:0}
+ table{font-size:9pt}
+ thead{display:table-header-group}
+ tr{break-inside:avoid}
+ /* l'indirizzo di un link non e' recuperabile da chi legge su carta */
+ a[href^="http"]::after{content:" (" attr(href) ")";font-size:8.5pt;color:#555;
+ word-break:break-all}
+ a[href^="#"]::after,a[href^="mailto"]::after{content:""}
+ .foot{border-top:1px solid #bbb}
+}
+
 @media(max-width:600px){.toc ol{columns:1}}
 .gloss{display:grid;grid-template-columns:1fr;gap:0;margin:18px 0}
 .gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
@@ -503,6 +530,33 @@ padding:32px 0 60px;margin-top:0}
  .top nav a[href$="#download"]{display:none}
  .figure{display:block}.figure .u{margin-top:8px;max-width:none}
 }
+
+/* Su carta questo sito ci finisce davvero: un analista lo salva in PDF e lo
+   allega a una nota interna. Senza queste regole si porta dietro la testata
+   fissa ripetuta, i fondi scuri e i link come testo cieco — un lettore che
+   stampa perde proprio i rimandi che rendono verificabile ciò che legge. */
+@media print{
+ :root{--bg:#fff;--card:#fff;--fg:#111;--mut:#444;--line:#bbb;--grid:#ddd;
+ --axis:#888;--hi:#111;--warnbg:#fff}
+ .top,.more,.dl,.search,.count,.toc{display:none}
+ body{font-size:10.5pt}
+ .wrap{max-width:none;padding:0}
+ section{padding:14pt 0;break-inside:avoid}
+ .card,.note,.shield,.howto{border:1px solid #bbb;break-inside:avoid}
+ .figure .n{font-size:32pt}
+ h1{font-size:20pt}h2{font-size:13pt}
+ h2,h3{break-after:avoid}
+ .viz{min-width:0}
+ table{font-size:9pt}
+ thead{display:table-header-group}
+ tr{break-inside:avoid}
+ /* l'indirizzo di un link non e' recuperabile da chi legge su carta */
+ a[href^="http"]::after{content:" (" attr(href) ")";font-size:8.5pt;color:#555;
+ word-break:break-all}
+ a[href^="#"]::after,a[href^="mailto"]::after{content:""}
+ .foot{border-top:1px solid #bbb}
+}
+
 """
 
 # Il marchio: stessa curva della favicon. Arco ideale tratteggiato, arco reale
@@ -1803,6 +1857,8 @@ validations, stated limitations, independence</span></a>
 pipeline, from raw ADS-B to this page</span></a>
 <a href="mailto:hello@co2gap.org"><b>Ask for your own figures →</b><span>Airports,
 ANSPs and airlines: the detail behind these numbers for your own traffic</span></a>
+<a href="faq.html#weak"><b>Where this method is weak →</b><span>Three known soft
+spots, and an open request to people who work in this field</span></a>
 </div>
 </section>
 
@@ -2029,6 +2085,16 @@ deviation was produced within {term('nm', '40 NM')} of the airport itself.
 <b>That is a location, not a cause.</b> It says where the fuel was burnt; it does
 not say whether the profile was chosen by the operator or imposed by the
 traffic, and nothing here distinguishes the two."""),
+        ("Your figures divide to 18%, not 22%. Which is right?",
+         f"""<b>Both, and the difference is the denominator.</b> Dividing
+{excess_t/1e6:,.2f} Mt of gap by the {co2_t/1e6:,.1f} Mt actually emitted gives
+{excess_t/co2_t*100:.0f}% — the gap as a share of what was <i>burnt</i>. The
+headline {(lat_w+vert_w):.1f}% is the gap as a share of what the <i>ideal
+flight</i> would have burnt, which is the smaller number, so the percentage is
+larger. It is also aggregated per flight rather than taken as a ratio of the two
+totals. Neither figure is wrong; they answer different questions, and this site
+uses the second because every comparison here — route against route, airport
+against airport — is made against the ideal, not against the actual."""),
         ("Can I trust the ranking order?",
          f"""<b>Only its tails.</b> About half the routes sit within a few points
 of the norm, inside the uncertainty of the method, and their ordering carries no
@@ -2127,6 +2193,77 @@ asked. If yours is not here, <a href="mailto:hello@co2gap.org">write</a> and it 
 be — the list is meant to grow.</p>
 </div>
 {qa_html}
+<section id=weak>
+<h2>Where this method is weak</h2>
+<p class=hint>Not a disclaimer. These are the three places where I already know the
+method is soft, written down so that someone who works in this field can tell me how
+wrong I am. <b>Criticism of the method is what is being asked for — not endorsement.</b>
+Whatever comes back is published here, including the parts that do not suit the
+conclusions.</p>
+
+<div class=card>
+<h3>1. The cruise baseline is not as optimal as it claims</h3>
+<p>Measured over the <b>cruise alone</b>, our gap comes out slightly <i>negative</i>:
+the real aircraft burns marginally less than the profile we call optimal. That is not
+a result about aviation, it is a defect in our reference — the optimal cruise altitude
+we compute is not the fuel-optimal one. Published work on cruise efficiency finds a
+clear positive gap on the same perimeter, so the disagreement is ours to explain.</p>
+<p class=caveat>It affects the <b>level</b> of the vertical term, not the attribution:
+cruise contributes very little to what separates one airport from another. Correcting
+it would most likely make the headline figure <i>larger</i>, since a genuinely optimal
+reference burns less.</p>
+</div>
+
+<div class=card>
+<h3>2. CO&#8322; is not the whole climate effect</h3>
+<p>Contrails and nitrogen oxides account for a large share of aviation's warming
+effect — by published assessments the majority of it — and nothing here measures them.
+A route flown at a level that avoids contrail formation could be worse by this site's
+figures and better for the climate.</p>
+<p class=caveat>Anyone who works on non-CO&#8322; effects and can say how badly that
+changes the reading of these rankings would be doing this project a service.</p>
+</div>
+
+<div class=card>
+<h3>3. Fuel modelling for the types the model does not cover</h3>
+<p>The performance model carries calibrated fuel curves for a limited set of aircraft
+types; the rest fall back on a generic model rescaled from a static take-off figure.
+Our per-type correction compensates that, and the check is that the types needing no
+correction land within about 5% of an independent reference — but a correction is
+still a correction.</p>
+<p class=caveat>The diagnosis, including which types are affected and why, is written
+up in the <a href="methodology.html">methodology</a> and has been put to the model's
+authors publicly.</p>
+</div>
+
+<div class=card>
+<h3>And one we found ourselves</h3>
+<p>The quality gate is <b>geometric</b>: it checks that a flight covered the distance
+it should have, and never looks at the fuel. A handful of flights in the published
+period therefore carry burn figures that are physically impossible, the residue of
+degenerate trajectories. They are far too few to move any published statistic —
+correcting them shifts the headline by two ten-thousandths of a point — but they are
+there, and a gate on fuel plausibility is due in the next release.</p>
+</div>
+</section>
+
+<section>
+<h2>How to send something useful</h2>
+<p class=hint>Corrections are welcome and are published. These arrive in a form that
+can actually be acted on:</p>
+<div class=card>
+<p><b>For a figure you think is wrong:</b> the airport or route, the period, which
+number you are disputing, and what you believe it should be. If you hold traffic or
+fuel data of your own, saying <i>how far</i> ours is from yours is more useful than
+saying that it is wrong.</p>
+<p><b>For the method:</b> the step you disagree with, and — if you can — the case that
+breaks it. The pipeline is open, so a reproducible counter-example changes what is
+published faster than any argument.</p>
+<p><b>If you are named here and want to reply:</b> say so, and the reply is published
+in full, next to the figure it concerns, without editing.</p>
+</div>
+</section>
+
 <section>
 <h2>Still unanswered?</h2>
 <p class=hint><a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections and

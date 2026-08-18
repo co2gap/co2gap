@@ -132,6 +132,33 @@ padding:32px 0 60px;margin-top:0}
  .top nav a[href$="#download"]{display:none}
  .figure{display:block}.figure .u{margin-top:8px;max-width:none}
 }
+
+/* Su carta questo sito ci finisce davvero: un analista lo salva in PDF e lo
+   allega a una nota interna. Senza queste regole si porta dietro la testata
+   fissa ripetuta, i fondi scuri e i link come testo cieco — un lettore che
+   stampa perde proprio i rimandi che rendono verificabile ciò che legge. */
+@media print{
+ :root{--bg:#fff;--card:#fff;--fg:#111;--mut:#444;--line:#bbb;--grid:#ddd;
+ --axis:#888;--hi:#111;--warnbg:#fff}
+ .top,.more,.dl,.search,.count,.toc{display:none}
+ body{font-size:10.5pt}
+ .wrap{max-width:none;padding:0}
+ section{padding:14pt 0;break-inside:avoid}
+ .card,.note,.shield,.howto{border:1px solid #bbb;break-inside:avoid}
+ .figure .n{font-size:32pt}
+ h1{font-size:20pt}h2{font-size:13pt}
+ h2,h3{break-after:avoid}
+ .viz{min-width:0}
+ table{font-size:9pt}
+ thead{display:table-header-group}
+ tr{break-inside:avoid}
+ /* l'indirizzo di un link non e' recuperabile da chi legge su carta */
+ a[href^="http"]::after{content:" (" attr(href) ")";font-size:8.5pt;color:#555;
+ word-break:break-all}
+ a[href^="#"]::after,a[href^="mailto"]::after{content:""}
+ .foot{border-top:1px solid #bbb}
+}
+
 </style></head><body>
 <div class=top><div class=wrap>
 <a class=brand href="index.html"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
@@ -375,6 +402,8 @@ validations, stated limitations, independence</span></a>
 pipeline, from raw ADS-B to this page</span></a>
 <a href="mailto:hello@co2gap.org"><b>Ask for your own figures →</b><span>Airports,
 ANSPs and airlines: the detail behind these numbers for your own traffic</span></a>
+<a href="faq.html#weak"><b>Where this method is weak →</b><span>Three known soft
+spots, and an open request to people who work in this field</span></a>
 </div>
 </section>
 

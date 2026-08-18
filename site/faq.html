@@ -132,6 +132,33 @@ padding:32px 0 60px;margin-top:0}
  .top nav a[href$="#download"]{display:none}
  .figure{display:block}.figure .u{margin-top:8px;max-width:none}
 }
+
+/* Su carta questo sito ci finisce davvero: un analista lo salva in PDF e lo
+   allega a una nota interna. Senza queste regole si porta dietro la testata
+   fissa ripetuta, i fondi scuri e i link come testo cieco — un lettore che
+   stampa perde proprio i rimandi che rendono verificabile ciò che legge. */
+@media print{
+ :root{--bg:#fff;--card:#fff;--fg:#111;--mut:#444;--line:#bbb;--grid:#ddd;
+ --axis:#888;--hi:#111;--warnbg:#fff}
+ .top,.more,.dl,.search,.count,.toc{display:none}
+ body{font-size:10.5pt}
+ .wrap{max-width:none;padding:0}
+ section{padding:14pt 0;break-inside:avoid}
+ .card,.note,.shield,.howto{border:1px solid #bbb;break-inside:avoid}
+ .figure .n{font-size:32pt}
+ h1{font-size:20pt}h2{font-size:13pt}
+ h2,h3{break-after:avoid}
+ .viz{min-width:0}
+ table{font-size:9pt}
+ thead{display:table-header-group}
+ tr{break-inside:avoid}
+ /* l'indirizzo di un link non e' recuperabile da chi legge su carta */
+ a[href^="http"]::after{content:" (" attr(href) ")";font-size:8.5pt;color:#555;
+ word-break:break-all}
+ a[href^="#"]::after,a[href^="mailto"]::after{content:""}
+ .foot{border-top:1px solid #bbb}
+}
+
 </style></head><body>
 <div class=top><div class=wrap>
 <a class=brand href="index.html"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
@@ -166,6 +193,15 @@ deviation was produced within <a class=term href="methodology.html#g-nm" title="
 <b>That is a location, not a cause.</b> It says where the fuel was burnt; it does
 not say whether the profile was chosen by the operator or imposed by the
 traffic, and nothing here distinguishes the two.</p></section>
+<section><h2>Your figures divide to 18%, not 22%. Which is right?</h2><p><b>Both, and the difference is the denominator.</b> Dividing
+4.57 Mt of gap by the 25.4 Mt actually emitted gives
+18% — the gap as a share of what was <i>burnt</i>. The
+headline 22.1% is the gap as a share of what the <i>ideal
+flight</i> would have burnt, which is the smaller number, so the percentage is
+larger. It is also aggregated per flight rather than taken as a ratio of the two
+totals. Neither figure is wrong; they answer different questions, and this site
+uses the second because every comparison here — route against route, airport
+against airport — is made against the ideal, not against the actual.</p></section>
 <section><h2>Can I trust the ranking order?</h2><p><b>Only its tails.</b> About half the routes sit within a few points
 of the norm, inside the uncertainty of the method, and their ordering carries no
 information. At the head of the airport table ten positions can be separated by
@@ -225,6 +261,77 @@ figure it concerns</b> — not summarised, not answered selectively. If the
 disagreement is about the method rather than the reading, the pipeline is open
 and a reproducible counter-example is the fastest way to change what is
 published.</p></section>
+<section id=weak>
+<h2>Where this method is weak</h2>
+<p class=hint>Not a disclaimer. These are the three places where I already know the
+method is soft, written down so that someone who works in this field can tell me how
+wrong I am. <b>Criticism of the method is what is being asked for — not endorsement.</b>
+Whatever comes back is published here, including the parts that do not suit the
+conclusions.</p>
+
+<div class=card>
+<h3>1. The cruise baseline is not as optimal as it claims</h3>
+<p>Measured over the <b>cruise alone</b>, our gap comes out slightly <i>negative</i>:
+the real aircraft burns marginally less than the profile we call optimal. That is not
+a result about aviation, it is a defect in our reference — the optimal cruise altitude
+we compute is not the fuel-optimal one. Published work on cruise efficiency finds a
+clear positive gap on the same perimeter, so the disagreement is ours to explain.</p>
+<p class=caveat>It affects the <b>level</b> of the vertical term, not the attribution:
+cruise contributes very little to what separates one airport from another. Correcting
+it would most likely make the headline figure <i>larger</i>, since a genuinely optimal
+reference burns less.</p>
+</div>
+
+<div class=card>
+<h3>2. CO&#8322; is not the whole climate effect</h3>
+<p>Contrails and nitrogen oxides account for a large share of aviation's warming
+effect — by published assessments the majority of it — and nothing here measures them.
+A route flown at a level that avoids contrail formation could be worse by this site's
+figures and better for the climate.</p>
+<p class=caveat>Anyone who works on non-CO&#8322; effects and can say how badly that
+changes the reading of these rankings would be doing this project a service.</p>
+</div>
+
+<div class=card>
+<h3>3. Fuel modelling for the types the model does not cover</h3>
+<p>The performance model carries calibrated fuel curves for a limited set of aircraft
+types; the rest fall back on a generic model rescaled from a static take-off figure.
+Our per-type correction compensates that, and the check is that the types needing no
+correction land within about 5% of an independent reference — but a correction is
+still a correction.</p>
+<p class=caveat>The diagnosis, including which types are affected and why, is written
+up in the <a href="methodology.html">methodology</a> and has been put to the model's
+authors publicly.</p>
+</div>
+
+<div class=card>
+<h3>And one we found ourselves</h3>
+<p>The quality gate is <b>geometric</b>: it checks that a flight covered the distance
+it should have, and never looks at the fuel. A handful of flights in the published
+period therefore carry burn figures that are physically impossible, the residue of
+degenerate trajectories. They are far too few to move any published statistic —
+correcting them shifts the headline by two ten-thousandths of a point — but they are
+there, and a gate on fuel plausibility is due in the next release.</p>
+</div>
+</section>
+
+<section>
+<h2>How to send something useful</h2>
+<p class=hint>Corrections are welcome and are published. These arrive in a form that
+can actually be acted on:</p>
+<div class=card>
+<p><b>For a figure you think is wrong:</b> the airport or route, the period, which
+number you are disputing, and what you believe it should be. If you hold traffic or
+fuel data of your own, saying <i>how far</i> ours is from yours is more useful than
+saying that it is wrong.</p>
+<p><b>For the method:</b> the step you disagree with, and — if you can — the case that
+breaks it. The pipeline is open, so a reproducible counter-example changes what is
+published faster than any argument.</p>
+<p><b>If you are named here and want to reply:</b> say so, and the reply is published
+in full, next to the figure it concerns, without editing.</p>
+</div>
+</section>
+
 <section>
 <h2>Still unanswered?</h2>
 <p class=hint><a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections and
@@ -237,7 +344,7 @@ under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the deri
 data published here is distributed under the same terms.
 Wind: ERA5, Copernicus. Fuel references: ICAO CEC v13.1. Performance model:
 OpenAP, TU Delft.<br>
-1,833,127 flights · 197 days · release 2026-09-01 · generated 2026-08-18 06:16 UTC.<br>
+1,833,127 flights · 197 days · release 2026-09-01 · generated 2026-08-18 06:47 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/Pengo-fmm/co2gap">source</a>
 </span></p>
