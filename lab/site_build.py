@@ -25,6 +25,7 @@ import glob
 import html
 import json
 import os
+import re
 import shutil
 import sys
 from collections import defaultdict
@@ -353,6 +354,13 @@ text-decoration:none;color:var(--fg);margin-right:auto;font-size:1.02rem}
 .top nav{display:flex;gap:20px}
 .top nav a{color:var(--mut);text-decoration:none;font-size:.92rem}
 .top nav a:hover{color:var(--fg)}
+.toc{margin:22px 0 34px;padding:18px 22px;background:var(--card);
+border:1px solid var(--line);border-radius:12px}
+.toc ol{margin:0;padding-left:0;list-style:none;columns:2;column-gap:28px}  /* le sezioni hanno gia' il proprio numero: contarle due volte confonde */
+.toc li{margin:5px 0;font-size:.92rem}
+.toc a{text-decoration:none}
+.toc a:hover{text-decoration:underline}
+@media(max-width:600px){.toc ol{columns:1}}
 .gloss{display:grid;grid-template-columns:1fr;gap:0;margin:18px 0}
 .gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
 .gloss div:last-child{border-bottom:none}
@@ -824,6 +832,35 @@ def viz_airports(ga, aname, nw=10, nb=6):
             f'above and below the European norm">' + "".join(out) + '</svg>')
 
 
+
+def add_toc(html: str) -> str:
+    """Indice della metodologia, derivato dai suoi stessi h2.
+
+    Tredici sezioni e circa tremila parole senza una mappa: chi cerca i limiti
+    dichiarati li cerca scorrendo. Gli id gia' presenti non si rigenerano —
+    #independence, #licence e #glossary sono linkati da altre pagine e da
+    corrispondenza gia' spedita, quindi cambiarli romperebbe rimandi esterni.
+    """
+    items, out = [], []
+    def slug(t):
+        t = re.sub(r"^\d+\.\s*", "", re.sub(r"<[^>]+>", "", t)).lower()
+        return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", t)).strip("-")[:40]
+
+    def repl(m):
+        attrs, text = m.group(1), m.group(2)
+        hid = re.search(r"id=([\w-]+)", attrs)
+        hid = hid.group(1) if hid else slug(text)
+        items.append((hid, re.sub(r"<[^>]+>", "", text)))
+        return f'<h2 id={hid}{attrs if "id=" not in attrs else ""}>{text}</h2>'
+
+    html = re.sub(r"<h2([^>]*)>(.*?)</h2>", repl, html, flags=re.S)
+    if not items:
+        return html
+    toc = ('<nav class=toc aria-label="Sections"><ol>'
+           + "".join(f'<li><a href="#{i}">{esc(t)}</a></li>' for i, t in items)
+           + "</ol></nav>")
+    return html.replace("<h1>Methodology</h1>", "<h1>Methodology</h1>\n" + toc, 1)
+
 def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
                       n_routes_all, n_routes_rank, n_airports, gen,
                       sc_a, sc_b, sc_a_fuel_kt,
@@ -855,7 +892,6 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
 {NAV}
 <div class=wrap>
 
-<p><a href="index.html">← back to the data</a></p>
 <h1>Methodology</h1>
 
 <h2>What the data shows, in full</h2>
@@ -1551,8 +1587,8 @@ size" — and only the second is something these data support."""),
     html_doc = f"""<!doctype html>
 <html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
-<title>co2gap — CO&#8322; and flight inefficiency observatory for Europe</title>
-{meta("co2gap — CO2 and flight inefficiency observatory for Europe", DESC_INDEX)}
+<title>co2gap — how far European flights sit from a theoretical optimum</title>
+{meta("co2gap — how far European flights sit from a theoretical optimum", DESC_INDEX)}
 <style>{STYLE_INDEX}</style></head><body>
 {NAV}
 <div class=wrap>
@@ -1726,7 +1762,7 @@ CO&#8322; totals: <a href="data.html#routes">on the data page</a>.</p>
 
 <section>
 <h2>Airports</h2>
-<p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT} flights.
+<p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT:,} flights.
 The <b>vert.</b> column isolates the profile component — where early descents
 and terminal-area holding show up.</p>
 
@@ -1897,7 +1933,7 @@ or avoided airspace ({n_closed} routes flagged).</p>
 
 <section id=airports style="border-top:none">
 <h3>Airports furthest from the norm</h3>
-<p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT} flights. Each row
+<p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT:,} flights. Each row
 describes the flights that touch this airport, measured over the whole flight — see the
 <a href="index.html#airports">note on the home page</a> for what that does and does not
 say.</p>
@@ -2109,7 +2145,7 @@ replies are published on this site, in full and unconditionally.</p>
                              sc_a, sc_b, sc_a_fuel_kt,
                              vert_floor, vert_fleet, vert_oper, n_floor,
                              finding_sections)
-    OUT_METH.write_text(meth)
+    OUT_METH.write_text(add_toc(meth))
     print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")
     print(f"  voli {len(df):,} · giorni {len(days)} · rotte n>={MIN_N} {len(g_all):,} "
           f"· in classifica n>={RANK_MIN_N} {len(g):,} · aeroporti {len(ga):,}")

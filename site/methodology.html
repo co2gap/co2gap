@@ -39,6 +39,13 @@ text-decoration:none;color:var(--fg);margin-right:auto;font-size:1.02rem}
 .top nav{display:flex;gap:20px}
 .top nav a{color:var(--mut);text-decoration:none;font-size:.92rem}
 .top nav a:hover{color:var(--fg)}
+.toc{margin:22px 0 34px;padding:18px 22px;background:var(--card);
+border:1px solid var(--line);border-radius:12px}
+.toc ol{margin:0;padding-left:0;list-style:none;columns:2;column-gap:28px}  /* le sezioni hanno gia' il proprio numero: contarle due volte confonde */
+.toc li{margin:5px 0;font-size:.92rem}
+.toc a{text-decoration:none}
+.toc a:hover{text-decoration:underline}
+@media(max-width:600px){.toc ol{columns:1}}
 .gloss{display:grid;grid-template-columns:1fr;gap:0;margin:18px 0}
 .gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
 .gloss div:last-child{border-bottom:none}
@@ -75,10 +82,10 @@ padding:1px 5px;border-radius:4px}
 </div></div>
 <div class=wrap>
 
-<p><a href="index.html">← back to the data</a></p>
 <h1>Methodology</h1>
+<nav class=toc aria-label="Sections"><ol><li><a href="#what-the-data-shows-in-full">What the data shows, in full</a></li><li><a href="#the-question-being-answered">1. The question being answered</a></li><li><a href="#what-is-not-being-measured">2. What is NOT being measured</a></li><li><a href="#why-the-comparison-between-routes-still-">3. Why the comparison between routes still holds</a></li><li><a href="#data-and-tools">4. Data and tools</a></li><li><a href="#calibration">5. Calibration</a></li><li><a href="#which-flights-are-included">6. Which flights are included</a></li><li><a href="#validations">7. Validations</a></li><li><a href="#stated-limitations">8. Stated limitations</a></li><li><a href="#privacy">9. Privacy</a></li><li><a href="#who-made-this-and-how-to-report-an-error">10. Who made this, and how to report an error</a></li><li><a href="#independence">11. Independence</a></li><li><a href="#licence">12. Licence and reuse</a></li><li><a href="#glossary">13. Glossary</a></li></ol></nav>
 
-<h2>What the data shows, in full</h2>
+<h2 id=what-the-data-shows-in-full>What the data shows, in full</h2>
 <p>The four findings summarised on the home page, with the qualifications that
 belong to them.</p>
 <h3 id=f1>1. A group of congested hubs sits well above the norm, and their gap is in the profile rather than the route.</h3><p>Flights to and from <b>Amsterdam Schiphol</b> (+10.8 points across 149,605
@@ -133,9 +140,9 @@ aviation wastes X" and "between comparable flights there is a spread of this
 size" — and only the second is something these data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-18 05:57 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-18 06:16 UTC.</p>
 
-<h2>1. The question being answered</h2>
+<h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
 <b>ideal</b> flight: same aircraft type, direct great-circle route, the most
 efficient altitude and speed for that distance, and <b>the same real wind</b>.</p>
@@ -149,7 +156,7 @@ efficient altitude and speed profile.</li>
 track, but an <i>optimal</i> altitude and speed profile. The two components are
 additive by construction, because they share a denominator.</p>
 
-<h2>2. What is NOT being measured</h2>
+<h2 id=what-is-not-being-measured>2. What is NOT being measured</h2>
 <div class="note warn">
 <p><b>This is not wasted, recoverable fuel.</b> The ideal flight is a
 theoretical limit no real flight can reach: separation between aircraft, route
@@ -215,7 +222,7 @@ The figure measures <i>what the observed spread between comparable flights is
 worth</i>, not what is achievable. It is the upper bound of a margin, not a
 target.</p>
 
-<h2>3. Why the comparison between routes still holds</h2>
+<h2 id=why-the-comparison-between-routes-still->3. Why the comparison between routes still holds</h2>
 <p>Because <b>an unreachable reference cancels out in a comparison</b>. Two
 airports measured against the <i>same</i> impossible optimum remain comparable
 with each other: the distance between them does not depend on the
@@ -235,7 +242,7 @@ serving it: the question here is route and profile efficiency, not fleet choice.
 Where a distance–type combination has fewer than 200 flights, the distance-only
 norm is used instead.</p>
 
-<h2>4. Data and tools</h2>
+<h2 id=data-and-tools>4. Data and tools</h2>
 <ul>
 <li><b>Trajectories</b>: public daily dumps from
 <a href="https://adsb.lol">adsb.lol</a>, ODbL licence. Every flight is
@@ -265,7 +272,7 @@ the track is time-sampled, so it is dense where the aircraft is slow, and a
 time-weighted average would over-weight the terminal areas.</li>
 </ul>
 
-<h2>5. Calibration</h2>
+<h2 id=calibration>5. Calibration</h2>
 <p>OpenAP fuel flows are compared per type against values derived from ICAO, and
 corrected with a factor for types deviating by more than 10% with at least 100
 observed flights. The factor multiplies both the real flight and its ideal, so
@@ -276,7 +283,7 @@ tautological — but on the <b>uncalibrated</b> ones: A320, A321, B738 and A319,
 which alone are the majority of flights, land within 5% of the ICAO reference
 with no correction at all.</p>
 
-<h2>6. Which flights are included</h2>
+<h2 id=which-flights-are-included>6. Which flights are included</h2>
 <p>A flight enters the analysis only if its track is sufficiently complete:
 adequate coverage and no large time gaps.</p>
 <p>There is then a criterion that is often misread, so it is worth being
@@ -290,7 +297,7 @@ routes at the top of the rankings.</p>
 <p>Over the published period: <b>1,833,127 flights</b> across 197 days
 and 7 months, ECAC area.</p>
 
-<h2>7. Validations</h2>
+<h2 id=validations>7. Validations</h2>
 
 <h3>Is the wind modelled correctly?</h3>
 <p>If it were not, the same route would come out different in the two
@@ -343,7 +350,7 @@ EUROCONTROL reference area, we use ADS-B over a quality-filtered subset, with
 our own baseline and criteria. The comparison says "consistent", not
 "identical", and it should not be read as reproducing their number.</p>
 
-<h2>8. Stated limitations</h2>
+<h2 id=stated-limitations>8. Stated limitations</h2>
 <ul>
 <li>We measure the gap from a <b>theoretical</b> optimum, not avoidable
 inefficiency (§2).</li>
@@ -387,13 +394,13 @@ wind, which understated the baseline's fuel and inflated the published gap by
 about 0.35%; the figures on this site are computed after that correction.</li>
 </ul>
 
-<h2>9. Privacy</h2>
+<h2 id=privacy>9. Privacy</h2>
 <p>Every published row aggregates <b>at least 10 flights</b>. We do not
 publish, and will not publish, data about an individual flight, aircraft or
 operator. The rankings concern routes and airports, never people or
 identifiable aircraft.</p>
 
-<h2>10. Who made this, and how to report an error</h2>
+<h2 id=who-made-this-and-how-to-report-an-error>10. Who made this, and how to report an error</h2>
 <div class=note>
 <p><b>Everything here is reproducible.</b> The trajectory data is public, the
 performance model is open source, and the code that turns one into the other is
@@ -480,7 +487,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026.<br>
 1,833,127 flights · 197 days · 5,520 publishable routes ·
-2,788 ranked · 152 airports · generated 2026-08-18 05:57 UTC.<br>
+2,788 ranked · 152 airports · generated 2026-08-18 06:16 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/Pengo-fmm/co2gap">source</a>
 </p>
