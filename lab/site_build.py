@@ -340,13 +340,15 @@ DESC_DATA = (
 )
 
 STYLE = """
+@font-face{font-family:Inter;src:url(inter.woff2) format('woff2');
+font-weight:100 900;font-style:normal;font-display:swap}
 :root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
 --pos:#ff8a6b;--neg:#5fd0a8;--hi:#5ac8fa;--warn:#f0b429}
 @media(prefers-color-scheme:light){:root{--bg:#fbfcfd;--card:#fff;--fg:#16212b;
 --mut:#5b6b78;--line:#e2e8ee;--pos:#c2410c;--neg:#0f766e}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);
-font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+font:15px/1.65 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 .wrap{max-width:760px;margin:0 auto;padding:36px 20px 90px}
 .top{position:sticky;top:0;z-index:9;background:var(--bg);
 border-bottom:1px solid var(--line)}
@@ -423,6 +425,8 @@ padding:1px 5px;border-radius:4px}
 """
 
 STYLE_INDEX = """
+@font-face{font-family:Inter;src:url(inter.woff2) format('woff2');
+font-weight:100 900;font-style:normal;font-display:swap}
 :root{color-scheme:light dark;
 --bg:#fbfcfd;--card:#ffffff;--fg:#111c25;--mut:#5b6b78;--line:#e4e9ee;
 --grid:#eceff3;--axis:#c8d1d9;--s1:#2a78d6;--s2:#eb6834;--up:#e34948;--dn:#2a78d6;
@@ -433,7 +437,7 @@ STYLE_INDEX = """
 --pos:#ff8a6b;--neg:#5fd0a8;--hi:#68b0ff;--warn:#f0b429;--warnbg:#1d1c14}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);
-font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 -webkit-font-smoothing:antialiased}
 .wrap{max-width:820px;margin:0 auto;padding:0 22px}
 body.data .wrap,body.data .top .wrap{max-width:1080px}
