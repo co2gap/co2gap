@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Data — co2gap</title>
+<meta name=description content="Every route, airport and distance band behind the co2gap figures, searchable by airport name or ICAO code. Aggregate data only.">
+<link rel=canonical href="https://co2gap.org/data.html">
+<meta property=og:type content=website>
+<meta property=og:site_name content=co2gap>
+<meta property=og:url content="https://co2gap.org/data.html">
+<meta property=og:title content="Data — co2gap">
+<meta property=og:description content="Every route, airport and distance band behind the co2gap figures, searchable by airport name or ICAO code. Aggregate data only.">
+<meta property=og:image content="https://co2gap.org/og.png">
+<meta property=og:image:width content=1200>
+<meta property=og:image:height content=630>
+<meta property=og:image:alt content="co2gap — 1,833,127 flights, 25.4 Mt CO2 emitted, 4.57 Mt gap from the theoretical optimum">
+<meta name=twitter:card content=summary_large_image>
+<meta name=twitter:title content="Data — co2gap">
+<meta name=twitter:description content="Every route, airport and distance band behind the co2gap figures, searchable by airport name or ICAO code. Aggregate data only.">
+<meta name=twitter:image content="https://co2gap.org/og.png">
+<link rel=icon href=favicon.svg type="image/svg+xml">
+<link rel=icon href=favicon-32.png sizes=32x32>
+<link rel=apple-touch-icon href=apple-touch-icon.png>
+<style>
+:root{color-scheme:light dark;
+--bg:#fbfcfd;--card:#ffffff;--fg:#111c25;--mut:#5b6b78;--line:#e4e9ee;
+--grid:#eceff3;--axis:#c8d1d9;--s1:#2a78d6;--s2:#eb6834;--up:#e34948;--dn:#2a78d6;
+--pos:#c2410c;--neg:#0f766e;--hi:#1b64c0;--warn:#b45309;--warnbg:#fdf6ec}
+@media(prefers-color-scheme:dark){:root{
+--bg:#0d1216;--card:#161d23;--fg:#e9eef2;--mut:#93a4b1;--line:#232d35;
+--grid:#1f2830;--axis:#3a4650;--s1:#3987e5;--s2:#d95926;--up:#e66767;--dn:#3987e5;
+--pos:#ff8a6b;--neg:#5fd0a8;--hi:#68b0ff;--warn:#f0b429;--warnbg:#1d1c14}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:0 22px}
+body.data .wrap,body.data .top .wrap{max-width:1080px}
+a{color:var(--hi)}
+.top{position:sticky;top:0;z-index:9;background:var(--bg);
+border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:26px;height:58px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:640;letter-spacing:-.01em;
+text-decoration:none;color:var(--fg);margin-right:auto;font-size:1.02rem}
+.brand svg{width:26px;height:26px;display:block}
+.top nav{display:flex;gap:20px}
+.top nav a{color:var(--mut);text-decoration:none;font-size:.92rem}
+.top nav a:hover{color:var(--fg)}
+.hero{padding:64px 0 8px}
+.eyebrow{color:var(--mut);font-size:.83rem;letter-spacing:.06em;text-transform:uppercase;
+margin:0 0 14px}
+h1{font-size:2.45rem;line-height:1.15;letter-spacing:-.025em;margin:0 0 18px;max-width:16em;
+text-wrap:balance}
+.lede{font-size:1.12rem;color:var(--mut);margin:0;max-width:34em}
+.figure{display:flex;align-items:baseline;gap:16px;margin:38px 0 6px}
+.figure .n{font-size:4.4rem;font-weight:660;letter-spacing:-.04em;line-height:1}
+.figure .u{font-size:1rem;color:var(--mut);max-width:15em;line-height:1.45}
+.shield{border-left:3px solid var(--warn);background:var(--warnbg);padding:12px 16px;
+border-radius:0 8px 8px 0;font-size:.94rem;margin:18px 0 0;max-width:38em}
+.shield b{color:var(--fg)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:40px 0 0}
+.stat{background:var(--card);padding:16px 18px}
+.stat .v{font-size:1.5rem;font-weight:640;letter-spacing:-.02em}
+.stat .l{color:var(--mut);font-size:.8rem;margin-top:3px;line-height:1.35}
+section{padding:52px 0;border-top:1px solid var(--line)}
+h2{font-size:1.55rem;letter-spacing:-.02em;margin:0 0 10px;line-height:1.25;
+text-wrap:balance}
+h3{font-size:1.02rem;margin:0 0 6px;letter-spacing:-.01em}
+p.hint,.sub{color:var(--mut);margin:0 0 26px;max-width:36em;font-size:.96rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:22px 24px;margin:20px 0}
+.card p{margin:0;font-size:.96rem} .card p+p{margin-top:10px}
+.caveat{color:var(--mut);font-size:.9rem}
+.cap{color:var(--mut);font-size:.86rem;margin:14px 0 0}
+.vizwrap{overflow-x:auto}
+.viz{width:100%;min-width:600px;height:auto;display:block;overflow:visible}
+.findings{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.findings .card{margin:0}
+.more{display:inline-block;margin-top:12px;font-size:.9rem;text-decoration:none}
+.more:hover{text-decoration:underline}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:18px 20px;text-decoration:none;color:var(--fg)}
+.dl a:hover{border-color:var(--axis)}
+.dl b{display:block;font-size:.98rem}
+.dl span{color:var(--mut);font-size:.88rem}
+.term{color:inherit;text-decoration:none;border-bottom:1px dotted var(--axis);cursor:help}
+.term:hover{color:var(--hi);border-bottom-color:var(--hi)}
+.howto{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:20px 24px 22px;margin:34px 0 0}
+.howto h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;
+color:var(--mut);font-weight:600;margin:0 0 12px}
+.howto dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;
+font-size:.94rem;align-items:baseline}
+.howto dt{font-weight:640;white-space:nowrap}
+.howto dd{margin:0;color:var(--mut)}
+.howto dd b{color:var(--fg);font-weight:560}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:500;font-size:.72rem;text-transform:uppercase;
+letter-spacing:.06em;background:var(--card)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.big{font-weight:650}
+td.pos{color:var(--pos)} td.neg{color:var(--neg)}
+td.r{font-weight:500;white-space:normal}
+.code{color:var(--mut);font-size:.76rem;margin-left:8px;font-family:ui-monospace,monospace}
+.flag{color:var(--warn);margin-left:6px;cursor:help}
+.note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--hi);
+border-radius:8px;padding:16px 20px;color:var(--mut);font-size:.92rem;margin:20px 0}
+.note.warn{border-left-color:var(--warn)}
+.note b{color:var(--fg)}
+.note p{margin:10px 0}
+.search{width:100%;padding:12px 14px;font-size:1rem;border:1px solid var(--line);
+border-radius:10px;background:var(--card);color:var(--fg);margin-bottom:8px;
+font-family:inherit}
+.count{color:var(--mut);font-size:.85rem;margin:0 0 18px}
+.gloss{display:grid;grid-template-columns:1fr;gap:0}
+.gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
+.gloss div:last-child{border-bottom:none}
+.gloss dt{font-weight:640;margin-bottom:4px}
+.gloss dd{margin:0;color:var(--mut);font-size:.95rem}
+.gloss div:target dt{color:var(--hi)}
+.foot{color:var(--mut);font-size:.85rem;border-top:1px solid var(--line);
+padding:32px 0 60px;margin-top:0}
+@media(max-width:720px){
+ h1{font-size:1.9rem}.figure .n{font-size:3.2rem}
+ .stats,.findings,.dl{grid-template-columns:1fr}
+ .top nav{gap:15px}.top .wrap{gap:14px}.hero{padding-top:40px}
+}
+@media(max-width:560px){
+ .top nav a[href$="#download"]{display:none}
+ .figure{display:block}.figure .u{margin-top:8px;max-width:none}
+}
+</style></head><body class=data>
+<div class=top><div class=wrap>
+<a class=brand href="index.html"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
+<nav><a href="index.html#findings">Findings</a><a href="data.html">Data</a>
+<a href="methodology.html">Method</a><a href="index.html#download">Download</a></nav>
+</div></div>
+<div class=wrap>
+<section style="border-top:none;padding-bottom:0">
+<h2>Data</h2>
+<p class=hint>Everything behind the charts, for the ECAC area over
+2026-01-01 → 2026-07-20. Type to filter by airport name or ICAO code — the
+tables narrow as you type. Column headings are dotted: each one is defined in the
+<a href="methodology.html#glossary">glossary</a>.</p>
+<input class=search id=q aria-label="Filter tables"
+ placeholder="Filter by airport or ICAO code — e.g. Schiphol, EHAM, Madrid">
+<p class=count id=cnt></p>
+</section>
+
+<section id=routes style="border-top:none">
+<h3>Routes furthest from the norm</h3>
+<p class=hint>Δ norm in points against flights of the same length and type. Rankings use
+only routes with at least <b>100</b> flights. ⚑ = the direct path crosses closed
+or avoided airspace (208 routes flagged).</p>
+<div class=scroll><table><thead><tr><th>Route</th><th class=num>flights</th><th class=num>km</th><th class=num><a class=term href="methodology.html#g-norm" title="The median of flights of the same length and the same aircraft type. The raw gap grows as flights get shorter, so ranking it would sort by shortness; every ranking here measures the distance from the norm instead.">Δ norm</a></th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">lat.</a></th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">vert.</a></th><th class=num><a class=term href="methodology.html#g-mt" title="Million tonnes and thousand tonnes. Burning one kg of jet fuel releases about 3.16 kg of CO2.">t CO&#8322;</a></th></tr></thead><tbody class=f>
+<tr><td class=r>London Stansted ↔ Amsterdam Schiphol<span class=code>EGSS–EHAM</span></td><td class=num>485</td><td class=num>311</td><td class='num big pos'>+62</td><td class=num>14%</td><td class=num>84%</td><td class=num>4,042</td></tr>
+<tr><td class=r>Václav Havel Prague ↔ Brno-Tuřany<span class=code>LKPR–LKTB</span></td><td class=num>118</td><td class=num>204</td><td class='num big pos'>+50</td><td class=num>23%</td><td class=num>75%</td><td class=num>703</td></tr>
+<tr><td class=r>Manchester ↔ London Heathrow<span class=code>EGCC–EGLL</span></td><td class=num>1,757</td><td class=num>243</td><td class='num big pos'>+44</td><td class=num>23%</td><td class=num>77%</td><td class=num>12,865</td></tr>
+<tr><td class=r>London City ↔ Amsterdam Schiphol<span class=code>EGLC–EHAM</span></td><td class=num>3,693</td><td class=num>335</td><td class='num big pos'>+42</td><td class=num>12%</td><td class=num>82%</td><td class=num>23,578</td></tr>
+<tr><td class=r>London Gatwick ↔ Amsterdam Schiphol<span class=code>EGKK–EHAM</span></td><td class=num>1,649</td><td class=num>363</td><td class='num big pos'>+41</td><td class=num>13%</td><td class=num>78%</td><td class=num>15,177</td></tr>
+<tr><td class=r>London Southend ↔ Amsterdam Schiphol<span class=code>EGMC–EHAM</span></td><td class=num>248</td><td class=num>290</td><td class='num big pos'>+39</td><td class=num>17%</td><td class=num>82%</td><td class=num>2,007</td></tr>
+<tr><td class=r>Munich ↔ Venice Marco Polo<span class=code>EDDM–LIPZ</span></td><td class=num>1,227</td><td class=num>319</td><td class='num big pos'>+38</td><td class=num>28%</td><td class=num>56%</td><td class=num>7,549</td></tr>
+<tr><td class=r>Norwich ↔ Amsterdam Schiphol<span class=code>EGSH–EHAM</span></td><td class=num>1,200</td><td class=num>239</td><td class='num big pos'>+38</td><td class=num>23%</td><td class=num>88%</td><td class=num>5,447</td></tr>
+<tr><td class=r>Alicante-Elche Miguel Hernández ↔ Adolfo Suárez Madrid–Barajas<span class=code>LEAL–LEMD</span></td><td class=num>351</td><td class=num>359</td><td class='num big pos'>+36</td><td class=num>16%</td><td class=num>51%</td><td class=num>2,825</td></tr>
+<tr><td class=r>Brussels ↔ Amsterdam Schiphol<span class=code>EBBR–EHAM</span></td><td class=num>851</td><td class=num>157</td><td class='num big pos'>+35</td><td class=num>18%</td><td class=num>109%</td><td class=num>3,917</td></tr>
+<tr><td class=r>Manchester ↔ London Gatwick<span class=code>EGCC–EGKK</span></td><td class=num>132</td><td class=num>284</td><td class='num big pos'>+34</td><td class=num>30%</td><td class=num>62%</td><td class=num>1,664</td></tr>
+<tr><td class=r>London Heathrow ↔ Amsterdam Schiphol<span class=code>EGLL–EHAM</span></td><td class=num>4,908</td><td class=num>371</td><td class='num big pos'>+33</td><td class=num>15%</td><td class=num>84%</td><td class=num>44,781</td></tr>
+<tr><td class=r>Bilbao ↔ Adolfo Suárez Madrid–Barajas<span class=code>LEBB–LEMD</span></td><td class=num>2,202</td><td class=num>319</td><td class='num big pos'>+33</td><td class=num>31%</td><td class=num>39%</td><td class=num>16,672</td></tr>
+<tr><td class=r>Liverpool John Lennon ↔ Amsterdam Schiphol<span class=code>EGGP–EHAM</span></td><td class=num>361</td><td class=num>523</td><td class='num big pos'>+32</td><td class=num>11%</td><td class=num>55%</td><td class=num>3,805</td></tr>
+<tr><td class=r>Frankfurt Main ↔ Stuttgart<span class=code>EDDF–EDDS</span></td><td class=num>1,072</td><td class=num>157</td><td class='num big pos'>+32</td><td class=num>23%</td><td class=num>81%</td><td class=num>5,244</td></tr>
+<tr><td class=r>Newcastle ↔ Dublin<span class=code>EGNT–EIDW</span></td><td class=num>690</td><td class=num>345</td><td class='num big pos'>+32</td><td class=num>23%</td><td class=num>49%</td><td class=num>5,230</td></tr>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas ↔ Bordeaux–Mérignac<span class=code>LEMD–LFBD</span></td><td class=num>128</td><td class=num>538</td><td class='num big pos'>+32</td><td class=num>10%</td><td class=num>59%</td><td class=num>1,392</td></tr>
+<tr><td class=r>Birmingham ↔ Dublin<span class=code>EGBB–EIDW</span></td><td class=num>2,563</td><td class=num>321</td><td class='num big pos'>+32</td><td class=num>21%</td><td class=num>53%</td><td class=num>19,165</td></tr>
+<tr><td class=r>Newcastle ↔ Amsterdam Schiphol<span class=code>EGNT–EHAM</span></td><td class=num>1,757</td><td class=num>523</td><td class='num big pos'>+31</td><td class=num>17%</td><td class=num>56%</td><td class=num>16,983</td></tr>
+<tr><td class=r>Manchester ↔ Amsterdam Schiphol<span class=code>EGCC–EHAM</span></td><td class=num>3,534</td><td class=num>487</td><td class='num big pos'>+30</td><td class=num>10%</td><td class=num>69%</td><td class=num>37,607</td></tr>
+<tr><td class=r>East Midlands ↔ Dublin<span class=code>EGNX–EIDW</span></td><td class=num>605</td><td class=num>335</td><td class='num big pos'>+30</td><td class=num>16%</td><td class=num>51%</td><td class=num>4,461</td></tr>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas ↔ Turin<span class=code>LEMD–LIMF</span></td><td class=num>283</td><td class=num>1,053</td><td class='num big pos'>+29</td><td class=num>12%</td><td class=num>32%</td><td class=num>4,565</td></tr>
+<tr><td class=r>Cardiff ↔ Dublin<span class=code>EGFF–EIDW</span></td><td class=num>359</td><td class=num>300</td><td class='num big pos'>+29</td><td class=num>19%</td><td class=num>50%</td><td class=num>2,419</td></tr>
+<tr><td class=r>Munich ↔ Zürich<span class=code>EDDM–LSZH</span></td><td class=num>1,555</td><td class=num>262</td><td class='num big pos'>+28</td><td class=num>25%</td><td class=num>68%</td><td class=num>8,761</td></tr>
+<tr><td class=r>Brussels ↔ London Heathrow<span class=code>EBBR–EGLL</span></td><td class=num>1,944</td><td class=num>351</td><td class='num big pos'>+28</td><td class=num>15%</td><td class=num>56%</td><td class=num>15,704</td></tr>
+</tbody></table></div>
+</section>
+
+<section style="border-top:none">
+<h3>Routes closest to the optimum</h3>
+<div class=scroll><table><thead><tr><th>Route</th><th class=num>flights</th><th class=num>km</th><th class=num><a class=term href="methodology.html#g-norm" title="The median of flights of the same length and the same aircraft type. The raw gap grows as flights get shorter, so ranking it would sort by shortness; every ranking here measures the distance from the norm instead.">Δ norm</a></th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">lat.</a></th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">vert.</a></th><th class=num><a class=term href="methodology.html#g-mt" title="Million tonnes and thousand tonnes. Burning one kg of jet fuel releases about 3.16 kg of CO2.">t CO&#8322;</a></th></tr></thead><tbody class=f>
+<tr><td class=r>Verona Villafranca Valerio Catullo ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>LIPX–LIRF</span></td><td class=num>118</td><td class=num>411</td><td class='num big neg'>-72</td><td class=num>5%</td><td class=num>-1%</td><td class=num>1,395</td></tr>
+<tr><td class=r>Palma de Mallorca ↔ Valencia<span class=code>LEPA–LEVC</span></td><td class=num>269</td><td class=num>277</td><td class='num big neg'>-51</td><td class=num>3%</td><td class=num>0%</td><td class=num>1,150</td></tr>
+<tr><td class=r>Oslo-Gardermoen ↔ Göteborg Landvetter<span class=code>ENGM–ESGG</span></td><td class=num>169</td><td class=num>288</td><td class='num big neg'>-48</td><td class=num>6%</td><td class=num>1%</td><td class=num>886</td></tr>
+<tr><td class=r>Athens Eleftherios Venizelos ↔ Corfu Ioannis Kapodistrias<span class=code>LGAV–LGKR</span></td><td class=num>278</td><td class=num>392</td><td class='num big neg'>-38</td><td class=num>7%</td><td class=num>8%</td><td class=num>1,660</td></tr>
+<tr><td class=r>Il Caravaggio ↔ Marche<span class=code>LIME–LIPY</span></td><td class=num>151</td><td class=num>368</td><td class='num big neg'>-38</td><td class=num>9%</td><td class=num>-0%</td><td class=num>1,709</td></tr>
+<tr><td class=r>Athens Eleftherios Venizelos ↔ Thessaloniki Macedonia<span class=code>LGAV–LGTS</span></td><td class=num>1,295</td><td class=num>298</td><td class='num big neg'>-38</td><td class=num>14%</td><td class=num>8%</td><td class=num>6,763</td></tr>
+<tr><td class=r>Billund ↔ Copenhagen Kastrup<span class=code>EKBI–EKCH</span></td><td class=num>141</td><td class=num>218</td><td class='num big neg'>-37</td><td class=num>10%</td><td class=num>9%</td><td class=num>664</td></tr>
+<tr><td class=r>Stockholm-Arlanda ↔ Ängelholm-Helsingborg<span class=code>ESSA–ESTA</span></td><td class=num>542</td><td class=num>479</td><td class='num big neg'>-37</td><td class=num>5%</td><td class=num>6%</td><td class=num>2,633</td></tr>
+<tr><td class=r>Åre Östersund ↔ Stockholm-Arlanda<span class=code>ESNZ–ESSA</span></td><td class=num>145</td><td class=num>434</td><td class='num big neg'>-35</td><td class=num>7%</td><td class=num>17%</td><td class=num>895</td></tr>
+<tr><td class=r>Copenhagen Kastrup ↔ Göteborg Landvetter<span class=code>EKCH–ESGG</span></td><td class=num>1,291</td><td class=num>228</td><td class='num big neg'>-34</td><td class=num>11%</td><td class=num>8%</td><td class=num>5,107</td></tr>
+<tr><td class=r>Tirana Mother Teresa ↔ Naples<span class=code>LATI–LIRN</span></td><td class=num>140</td><td class=num>452</td><td class='num big neg'>-33</td><td class=num>6%</td><td class=num>9%</td><td class=num>999</td></tr>
+<tr><td class=r>Stockholm-Arlanda ↔ Riga<span class=code>ESSA–EVRA</span></td><td class=num>532</td><td class=num>465</td><td class='num big neg'>-33</td><td class=num>7%</td><td class=num>3%</td><td class=num>3,366</td></tr>
+<tr><td class=r>Faro - Gago Coutinho ↔ Francisco de Sá Carneiro<span class=code>LPFR–LPPR</span></td><td class=num>479</td><td class=num>476</td><td class='num big neg'>-32</td><td class=num>7%</td><td class=num>4%</td><td class=num>3,092</td></tr>
+<tr><td class=r>Trieste ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>LIPQ–LIRF</span></td><td class=num>248</td><td class=num>458</td><td class='num big neg'>-32</td><td class=num>7%</td><td class=num>6%</td><td class=num>1,713</td></tr>
+<tr><td class=r>Örebro ↔ Stockholm-Arlanda<span class=code>ESOE–ESSA</span></td><td class=num>123</td><td class=num>170</td><td class='num big neg'>-32</td><td class=num>8%</td><td class=num>12%</td><td class=num>395</td></tr>
+</tbody></table></div>
+</section>
+
+<section id=airports style="border-top:none">
+<h3>Airports furthest from the norm</h3>
+<p class=hint>Arrivals and departures combined, at least 2000 flights. Each row
+describes the flights that touch this airport, measured over the whole flight — see the
+<a href="index.html#airports">note on the home page</a> for what that does and does not
+say.</p>
+<div class=scroll><table><thead><tr><th>Airport</th><th class=num><a class=term href="methodology.html#g-movements" title="Take-offs and landings counted together. A flight counts once at the airport it leaves and once at the airport it reaches.">Movements</a></th><th class=num><a class=term href="methodology.html#g-norm" title="The median of flights of the same length and the same aircraft type. The raw gap grows as flights get shorter, so ranking it would sort by shortness; every ranking here measures the distance from the norm instead.">Δ norm</a></th><th class=num>on dep.</th><th class=num>on arr.</th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">Δ lat.</a></th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">Δ vert.</a></th></tr></thead><tbody class=f>
+<tr><td class=r>Amsterdam Schiphol<span class=code>EHAM</span></td><td class=num>149,605</td><td class='num big pos'>+10.8</td><td class=num>+7.4</td><td class=num>+15.0</td><td class=num>-0.2</td><td class='num big pos'>+11.1</td></tr>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas<span class=code>LEMD</span></td><td class=num>100,759</td><td class='num big pos'>+10.1</td><td class=num>+9.1</td><td class=num>+10.9</td><td class=num>+0.4</td><td class='num big pos'>+9.3</td></tr>
+<tr><td class=r>Dublin<span class=code>EIDW</span></td><td class=num>79,859</td><td class='num big pos'>+8.0</td><td class=num>+6.6</td><td class=num>+9.1</td><td class=num>+1.1</td><td class='num big pos'>+7.0</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat<span class=code>LEBL</span></td><td class=num>122,426</td><td class='num big pos'>+7.3</td><td class=num>+17.2</td><td class=num>+0.3</td><td class=num>+1.5</td><td class='num big pos'>+5.7</td></tr>
+<tr><td class=r>A Coruña<span class=code>LECO</span></td><td class=num>4,098</td><td class='num big pos'>+7.3</td><td class=num>+6.6</td><td class=num>+8.2</td><td class=num>-0.1</td><td class='num big pos'>+7.0</td></tr>
+<tr><td class=r>Munich<span class=code>EDDM</span></td><td class=num>94,685</td><td class='num big pos'>+7.0</td><td class=num>+9.5</td><td class=num>+5.0</td><td class=num>+0.0</td><td class='num big pos'>+7.5</td></tr>
+<tr><td class=r>Graz<span class=code>LOWG</span></td><td class=num>3,310</td><td class='num big pos'>+6.8</td><td class=num>+10.6</td><td class=num>+2.7</td><td class=num>-0.9</td><td class='num big pos'>+7.7</td></tr>
+<tr><td class=r>London Heathrow<span class=code>EGLL</span></td><td class=num>113,135</td><td class='num big pos'>+6.1</td><td class=num>+5.0</td><td class=num>+7.0</td><td class=num>+1.1</td><td class='num big pos'>+5.0</td></tr>
+<tr><td class=r>Stuttgart<span class=code>EDDS</span></td><td class=num>19,421</td><td class='num big pos'>+5.7</td><td class=num>+6.9</td><td class=num>+4.7</td><td class=num>-0.5</td><td class='num big pos'>+6.7</td></tr>
+<tr><td class=r>Venice Marco Polo<span class=code>LIPZ</span></td><td class=num>30,274</td><td class='num big pos'>+5.6</td><td class=num>+7.5</td><td class=num>+3.8</td><td class=num>+1.3</td><td class='num big pos'>+4.2</td></tr>
+<tr><td class=r>Bilbao<span class=code>LEBB</span></td><td class=num>16,631</td><td class='num big pos'>+5.0</td><td class=num>+7.5</td><td class=num>+2.6</td><td class=num>+2.1</td><td class='num big pos'>+2.9</td></tr>
+<tr><td class=r>London Stansted<span class=code>EGSS</span></td><td class=num>64,037</td><td class='num big pos'>+4.9</td><td class=num>+1.0</td><td class=num>+7.8</td><td class=num>+0.6</td><td class='num big pos'>+4.5</td></tr>
+<tr><td class=r>Václav Havel Prague<span class=code>LKPR</span></td><td class=num>39,635</td><td class='num big pos'>+4.9</td><td class=num>+6.1</td><td class=num>+3.7</td><td class=num>+0.5</td><td class='num big pos'>+4.7</td></tr>
+<tr><td class=r>Jersey<span class=code>EGJJ</span></td><td class=num>4,206</td><td class='num big pos'>+4.9</td><td class=num>+8.0</td><td class=num>+1.3</td><td class=num>+3.0</td><td class='num big pos'>+1.8</td></tr>
+<tr><td class=r>Brussels<span class=code>EBBR</span></td><td class=num>55,870</td><td class='num big pos'>+4.9</td><td class=num>+4.4</td><td class=num>+5.3</td><td class=num>-0.0</td><td class='num big pos'>+4.9</td></tr>
+</tbody></table></div>
+</section>
+
+<section style="border-top:none">
+<h3>Airports closest to the norm</h3>
+<div class=scroll><table><thead><tr><th>Airport</th><th class=num><a class=term href="methodology.html#g-movements" title="Take-offs and landings counted together. A flight counts once at the airport it leaves and once at the airport it reaches.">Movements</a></th><th class=num><a class=term href="methodology.html#g-norm" title="The median of flights of the same length and the same aircraft type. The raw gap grows as flights get shorter, so ranking it would sort by shortness; every ranking here measures the distance from the norm instead.">Δ norm</a></th><th class=num>on dep.</th><th class=num>on arr.</th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">Δ lat.</a></th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">Δ vert.</a></th></tr></thead><tbody class=f>
+<tr><td class=r>Stavanger, Sola<span class=code>ENZV</span></td><td class=num>8,588</td><td class='num big neg'>-20.1</td><td class=num>-20.0</td><td class=num>-20.1</td><td class=num>-3.8</td><td class='num big neg'>-15.5</td></tr>
+<tr><td class=r>Malmö Sturup<span class=code>ESMS</span></td><td class=num>2,594</td><td class='num big neg'>-15.2</td><td class=num>-14.4</td><td class=num>-16.6</td><td class=num>-3.4</td><td class='num big neg'>-11.6</td></tr>
+<tr><td class=r>Ajaccio Napoléon Bonaparte airport<span class=code>LFKJ</span></td><td class=num>2,876</td><td class='num big neg'>-14.1</td><td class=num>-14.1</td><td class=num>-14.0</td><td class=num>-2.8</td><td class='num big neg'>-11.5</td></tr>
+<tr><td class=r>Kristiansand<span class=code>ENCN</span></td><td class=num>2,357</td><td class='num big neg'>-13.4</td><td class=num>-10.4</td><td class=num>-15.6</td><td class=num>-2.6</td><td class='num big neg'>-10.2</td></tr>
+<tr><td class=r>Luleå<span class=code>ESPA</span></td><td class=num>4,058</td><td class='num big neg'>-13.1</td><td class=num>-14.3</td><td class=num>-12.0</td><td class=num>-4.0</td><td class='num big neg'>-7.9</td></tr>
+<tr><td class=r>Belfast<span class=code>EGAA</span></td><td class=num>14,093</td><td class='num big neg'>-13.0</td><td class=num>-13.2</td><td class=num>-12.7</td><td class=num>-2.5</td><td class='num big neg'>-9.2</td></tr>
+<tr><td class=r>Lamezia Terme Sant&#x27;Eufemia<span class=code>LICA</span></td><td class=num>4,380</td><td class='num big neg'>-11.7</td><td class=num>-11.0</td><td class=num>-15.3</td><td class=num>-3.0</td><td class='num big neg'>-8.3</td></tr>
+<tr><td class=r>Ålesund<span class=code>ENAL</span></td><td class=num>2,888</td><td class='num big neg'>-10.6</td><td class=num>-8.7</td><td class=num>-12.8</td><td class=num>-2.6</td><td class='num big neg'>-7.4</td></tr>
+<tr><td class=r>Montpellier-Méditerranée<span class=code>LFMT</span></td><td class=num>3,987</td><td class='num big neg'>-10.5</td><td class=num>-7.0</td><td class=num>-14.2</td><td class=num>-0.6</td><td class='num big neg'>-9.8</td></tr>
+<tr><td class=r>Abruzzo<span class=code>LIBP</span></td><td class=num>3,532</td><td class='num big neg'>-10.4</td><td class=num>-7.7</td><td class=num>-12.4</td><td class=num>-1.6</td><td class='num big neg'>-8.2</td></tr>
+</tbody></table></div>
+</section>
+
+<section id=co2 style="border-top:none">
+<h3>Routes by total CO&#8322;</h3>
+<p class=hint>The routes that weigh most in absolute terms, regardless of efficiency.</p>
+<div class=scroll><table><thead><tr><th>Route</th><th class=num>flights</th><th class=num>km</th><th class=num><a class=term href="methodology.html#g-norm" title="The median of flights of the same length and the same aircraft type. The raw gap grows as flights get shorter, so ranking it would sort by shortness; every ranking here measures the distance from the norm instead.">Δ norm</a></th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">lat.</a></th><th class=num><a class=term href="methodology.html#g-lateral" title="The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.">vert.</a></th><th class=num><a class=term href="methodology.html#g-mt" title="Million tonnes and thousand tonnes. Burning one kg of jet fuel releases about 3.16 kg of CO2.">t CO&#8322;</a></th></tr></thead><tbody class=f>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas ↔ Rome–Fiumicino Leonardo da Vinci<span class=code>LEMD–LIRF</span></td><td class=num>5,314</td><td class=num>1,332</td><td class='num big pos'>+10</td><td class=num>6%</td><td class=num>20%</td><td class=num>100,325</td></tr>
+<tr><td class=r>London Heathrow ↔ Adolfo Suárez Madrid–Barajas<span class=code>EGLL–LEMD</span></td><td class=num>4,819</td><td class=num>1,243</td><td class='num big pos'>+9</td><td class=num>9%</td><td class=num>18%</td><td class=num>98,613</td></tr>
+<tr><td class=r>Amsterdam Schiphol ↔ Adolfo Suárez Madrid–Barajas<span class=code>EHAM–LEMD</span></td><td class=num>3,559</td><td class=num>1,460</td><td class='num big pos'>+15</td><td class=num>5%</td><td class=num>28%</td><td class=num>84,232</td></tr>
+<tr><td class=r>Amsterdam Schiphol ↔ Josep Tarradellas Barcelona-El Prat<span class=code>EHAM–LEBL</span></td><td class=num>4,476</td><td class=num>1,241</td><td class='num big pos'>+15</td><td class=num>8%</td><td class=num>24%</td><td class=num>82,603</td></tr>
+<tr><td class=r>Paris-Orly ↔ Lisbon Humberto Delgado<span class=code>LFPO–LPPT</span></td><td class=num>4,600</td><td class=num>1,438</td><td class='num big neg'>-1</td><td class=num>7%</td><td class=num>10%</td><td class=num>81,575</td></tr>
+<tr><td class=r>Adolfo Suárez Madrid–Barajas ↔ Paris-Orly<span class=code>LEMD–LFPO</span></td><td class=num>5,366</td><td class=num>1,028</td><td class='num big pos'>+7</td><td class=num>7%</td><td class=num>20%</td><td class=num>80,298</td></tr>
+<tr><td class=r>London Gatwick ↔ Málaga-Costa del Sol<span class=code>EGKK–LEMG</span></td><td class=num>3,689</td><td class=num>1,646</td><td class='num big pos'>+5</td><td class=num>6%</td><td class=num>12%</td><td class=num>77,842</td></tr>
+<tr><td class=r>London Heathrow ↔ Lisbon Humberto Delgado<span class=code>EGLL–LPPT</span></td><td class=num>3,851</td><td class=num>1,565</td><td class='num big pos'>+6</td><td class=num>6%</td><td class=num>14%</td><td class=num>76,609</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat ↔ Adolfo Suárez Madrid–Barajas<span class=code>LEBL–LEMD</span></td><td class=num>5,436</td><td class=num>483</td><td class='num big pos'>+22</td><td class=num>11%</td><td class=num>66%</td><td class=num>70,263</td></tr>
+<tr><td class=r>Amsterdam Schiphol ↔ Lisbon Humberto Delgado<span class=code>EHAM–LPPT</span></td><td class=num>2,810</td><td class=num>1,847</td><td class='num big pos'>+9</td><td class=num>5%</td><td class=num>17%</td><td class=num>68,077</td></tr>
+<tr><td class=r>London Gatwick ↔ Josep Tarradellas Barcelona-El Prat<span class=code>EGKK–LEBL</span></td><td class=num>4,129</td><td class=num>1,110</td><td class='num big pos'>+14</td><td class=num>10%</td><td class=num>25%</td><td class=num>68,058</td></tr>
+<tr><td class=r>Munich ↔ London Heathrow<span class=code>EDDM–EGLL</span></td><td class=num>4,553</td><td class=num>941</td><td class='num big pos'>+12</td><td class=num>8%</td><td class=num>29%</td><td class=num>64,942</td></tr>
+<tr><td class=r>Amsterdam Schiphol ↔ Málaga-Costa del Sol<span class=code>EHAM–LEMG</span></td><td class=num>2,737</td><td class=num>1,883</td><td class='num big pos'>+6</td><td class=num>4%</td><td class=num>14%</td><td class=num>64,525</td></tr>
+<tr><td class=r>Brussels ↔ Adolfo Suárez Madrid–Barajas<span class=code>EBBR–LEMD</span></td><td class=num>3,430</td><td class=num>1,315</td><td class='num big pos'>+13</td><td class=num>6%</td><td class=num>25%</td><td class=num>63,889</td></tr>
+<tr><td class=r>Josep Tarradellas Barcelona-El Prat ↔ Lisbon Humberto Delgado<span class=code>LEBL–LPPT</span></td><td class=num>4,491</td><td class=num>995</td><td class='num big pos'>+4</td><td class=num>7%</td><td class=num>21%</td><td class=num>62,744</td></tr>
+</tbody></table></div>
+</section>
+
+<section id=bands style="border-top:none">
+<h3>European norm by distance band</h3>
+<div class=scroll><table><thead><tr><th>Band</th><th class=num>flights</th>
+<th class=num>median gap</th></tr></thead><tbody>
+<tr><td>(0, 200] km</td><td class=num>13,516</td><td class=num>+72%</td></tr>
+<tr><td>(200, 300] km</td><td class=num>66,475</td><td class=num>+58%</td></tr>
+<tr><td>(300, 400] km</td><td class=num>120,679</td><td class=num>+47%</td></tr>
+<tr><td>(400, 500] km</td><td class=num>132,052</td><td class=num>+48%</td></tr>
+<tr><td>(500, 650] km</td><td class=num>228,362</td><td class=num>+34%</td></tr>
+<tr><td>(650, 800] km</td><td class=num>198,519</td><td class=num>+28%</td></tr>
+<tr><td>(800, 1000] km</td><td class=num>223,872</td><td class=num>+23%</td></tr>
+<tr><td>(1000, 1200] km</td><td class=num>214,609</td><td class=num>+19%</td></tr>
+<tr><td>(1200, 1500] km</td><td class=num>255,801</td><td class=num>+17%</td></tr>
+<tr><td>(1500, 2000] km</td><td class=num>255,367</td><td class=num>+13%</td></tr>
+<tr><td>(2000, 3000] km</td><td class=num>112,871</td><td class=num>+9%</td></tr>
+<tr><td>(3000, 99999] km</td><td class=num>11,004</td><td class=num>+3%</td></tr>
+</tbody></table></div>
+</section>
+</div>
+
+<p class=foot><span class=wrap style="display:block">
+Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
+data published here is distributed under the same terms.
+1,833,127 flights · 197 days · generated 2026-08-18 05:31 UTC.<br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
+<a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/Pengo-fmm/co2gap">source</a>
+</span></p>
+<script>
+var q=document.getElementById('q'),cnt=document.getElementById('cnt'),
+    bodies=[].slice.call(document.querySelectorAll('tbody.f')),
+    rows=[].slice.call(document.querySelectorAll('tbody.f tr'));
+function run(){
+  var s=q.value.trim().toLowerCase(),k=0;
+  rows.forEach(function(r){
+    var hit=!s||r.textContent.toLowerCase().indexOf(s)>-1;
+    r.style.display=hit?'':'none'; if(hit)k++;
+  });
+  bodies.forEach(function(b){
+    var any=[].slice.call(b.rows).some(function(r){return r.style.display!=='none';});
+    b.closest('section').style.display=any?'':'none';
+  });
+  cnt.textContent=s?k+' of '+rows.length+' rows match \u201c'+q.value+'\u201d':'';
+}
+q.addEventListener('input',run);
+</script>
+</body></html>

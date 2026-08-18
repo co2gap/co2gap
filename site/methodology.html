@@ -29,6 +29,22 @@
 body{margin:0;background:var(--bg);color:var(--fg);
 font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 .wrap{max-width:760px;margin:0 auto;padding:36px 20px 90px}
+.top{position:sticky;top:0;z-index:9;background:var(--bg);
+border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:26px;height:58px;
+max-width:760px;padding:0 20px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:640;letter-spacing:-.01em;
+text-decoration:none;color:var(--fg);margin-right:auto;font-size:1.02rem}
+.brand svg{width:26px;height:26px;display:block}
+.top nav{display:flex;gap:20px}
+.top nav a{color:var(--mut);text-decoration:none;font-size:.92rem}
+.top nav a:hover{color:var(--fg)}
+.gloss{display:grid;grid-template-columns:1fr;gap:0;margin:18px 0}
+.gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
+.gloss div:last-child{border-bottom:none}
+.gloss dt{font-weight:640;margin-bottom:4px}
+.gloss dd{margin:0;color:var(--mut);font-size:.95rem}
+.gloss div:target dt{color:var(--hi)}
 h1{font-size:1.7rem;margin:0 0 8px;letter-spacing:-.02em}
 h2{font-size:1.12rem;margin:40px 0 8px;letter-spacing:-.01em}
 h3{font-size:.98rem;margin:24px 0 6px;color:var(--fg)}
@@ -51,13 +67,73 @@ padding-top:16px}
 a{color:var(--hi)}
 code{font-family:ui-monospace,monospace;font-size:.85em;background:var(--card);
 padding:1px 5px;border-radius:4px}
-</style></head><body><div class=wrap>
+</style></head><body>
+<div class=top><div class=wrap>
+<a class=brand href="index.html"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
+<nav><a href="index.html#findings">Findings</a><a href="data.html">Data</a>
+<a href="methodology.html">Method</a><a href="index.html#download">Download</a></nav>
+</div></div>
+<div class=wrap>
 
 <p><a href="index.html">← back to the data</a></p>
 <h1>Methodology</h1>
+
+<h2>What the data shows, in full</h2>
+<p>The four findings summarised on the home page, with the qualifications that
+belong to them.</p>
+<h3 id=f1>1. A group of congested hubs sits well above the norm, and their gap is in the profile rather than the route.</h3><p>Flights to and from <b>Amsterdam Schiphol</b> (+10.8 points across 149,605
+movements) and <b>Adolfo Suárez Madrid–Barajas</b> (+10.1 across 100,759)
+deviate from comparable flights more than those of any other airport with
+substantial traffic, followed by Dublin at +8.0, against a
+median across all 152 airports of -2.4. A point is one percentage
+point of CO&#8322; relative to the ideal flight.<br><b>These are not places in a league table.</b> At the head of the ranking ten
+positions can be separated by as little as 3.1 points within a
+single month, so an individual position there is not resolvable — the same
+caution the methodology applies to the middle of the ranking applies to its top.
+What is stable is the distance from the norm: across the 7 months
+Adolfo Suárez Madrid–Barajas never leaves the top 8% of airports and
+stays at least 7.7 points above the median, even while its
+nominal position moves between 1 and 12. Its
+magnitude is seasonal (+16.0 in the strongest month, +5.1 in
+the weakest); Amsterdam Schiphol is steadier, never falling below rank
+4.<br>
+In both cases the deviation is not in the route — Amsterdam Schiphol flies routes of
+normal length (-0.2 lateral) — but in how the flights climb, cruise and
+descend (+11.1 vertical). The vertical component still dominates under
+the alternative decomposition convention described in the methodology, so it is
+not an artefact of that choice.<br>
+10 of the twenty routes furthest from the norm have Amsterdam Schiphol at one
+end, against a base rate of 4% of all ranked routes — a real
+concentration, though a hub with many routes is over-represented in any tail.
+Profiles of this shape are what dense terminal areas produce: early descents,
+level segments, sequencing. ADS-B shows the profiles flown, not the noise
+abatement rules, sequencing constraints or capacity limits that require them.
+<b>This describes what these flights fly. It does not measure what the airports,
+their airlines or their controllers could do differently.</b></p>
+<h3 id=f2>2. Closed airspace has a cost, and it is large where it bites.</h3><p>The clearest example is <b>Gdańsk Lech Wałęsa ↔ Riga</b>, flying <b>+29%</b>
+further en route because the straight line between the two airports crosses
+Kaliningrad. It runs 38 flights over the period — below the 100
+needed to enter the rankings, and quoted here as an illustration of the
+mechanism rather than as a placing.<br>The detour is geometric: it does not depend
+on sample size. Baltic connections
+towards Turkey route around Belarus and Ukraine for the same reason. In total
+208 ranked routes have a direct path through closed airspace. None of
+this is recoverable while those closures hold — and the overflight ban binds
+European carriers but not third-country ones, so each figure is an average
+across operators that must divert and operators that need not.</p>
+<h3 id=f3>3. The efficient end of the ranking is small and peripheral.</h3><p>Stavanger, Sola sits at <b>-20.1 points</b>, followed by other Nordic and
+island airports, more than thirty points away from the congested hubs.<br>Light
+traffic buys continuous descents and direct clearances. It is a measure of how
+much congestion costs, not a target a hub could adopt.</p>
+<h3 id=f4>4. Most of this gap cannot be compressed — the part usually left out.</h3><p>Of the 14.0 points of vertical gap, <b>5.5 remain for a
+flight going direct through an empty night sky</b>: that is the baseline staying
+out of reach, not inefficiency.<br>Only 8.5 points move with traffic,
+routing and profile. The distinction is the difference between "European
+aviation wastes X" and "between comparable flights there is a spread of this
+size" — and only the second is something these data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-17 22:20 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-18 05:31 UTC.</p>
 
 <h2>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -388,6 +464,12 @@ Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release
 is archived with a DOI so that a figure can be cited against the version that
 produced it.</p>
 
+<h2 id=glossary>13. Glossary</h2>
+<p>Every term used on this site, in one sentence each. No prior knowledge of aviation
+is assumed — if something here is still unclear, that is a fault of this page and worth
+an email.</p>
+<dl class=gloss><div id=g-ecac><dt>ECAC area</dt><dd>The European Civil Aviation Conference: 44 member states, from Iceland and Norway to Turkey, Armenia and Azerbaijan — a wider Europe than the European Union. It is the area this site covers, and the same one EUROCONTROL uses for its own published figures.</dd></div><div id=g-point><dt>Point</dt><dd>One percentage point of the ideal flight's CO&#8322;. An airport at +10 points emits about 10% more than comparable flights. Points are always relative: they never say how much fuel was burnt, only how far from the reference it is.</dd></div><div id=g-norm><dt>The norm (Δ norm)</dt><dd>The median of flights of the same length and the same aircraft type. The raw gap grows as flights get shorter, so ranking it would sort by shortness; every ranking here measures the distance from the norm instead.</dd></div><div id=g-lateral><dt>Lateral and vertical</dt><dd>The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.</dd></div><div id=g-movements><dt>Movements</dt><dd>Take-offs and landings counted together. A flight counts once at the airport it leaves and once at the airport it reaches.</dd></div><div id=g-adsb><dt>ADS-B</dt><dd>The position, altitude and speed each aircraft broadcasts about twice a second. Anyone with a receiver can pick it up; every trajectory here comes from those messages, collected by volunteers and published by adsb.lol.</dd></div><div id=g-gc><dt>Great circle</dt><dd>The shortest path between two points on the globe. It is the direct route each flight is compared against — a geometric reference, not a route anyone is allowed to fly.</dd></div><div id=g-enroute><dt>En route</dt><dd>The part of a flight beyond 40 NM from either airport, outside the terminal areas where departures and arrivals are sequenced. EUROCONTROL's efficiency indicator covers only this portion, so our comparison with it does too.</dd></div><div id=g-nm><dt>NM (nautical mile)</dt><dd>1,852 metres, the standard distance unit in aviation. 40 NM is about 74 km.</dd></div><div id=g-kea><dt>KEA</dt><dd>EUROCONTROL's indicator of horizontal en-route flight inefficiency: how much further flights actually fly than the direct route, over the en-route portion only. It is built from radar data, as a rolling 12-month average discarding the ten best and ten worst days of each area; ours is not. Same construction, not the same number.</dd></div><div id=g-cco><dt>Continuous climb and descent (CCO/CDO)</dt><dd>Climbing or descending without level-off segments. Level segments burn extra fuel, and removing them is one of the few savings the industry quantifies publicly: EUROCONTROL puts the network-wide potential at about 4 kg of fuel per departure and 35 kg per arrival.</dd></div><div id=g-mt><dt>Mt and kt</dt><dd>Million tonnes and thousand tonnes. Burning one kg of jet fuel releases about 3.16 kg of CO&#8322;.</dd></div><div id=g-era5><dt>ERA5</dt><dd>The weather reanalysis published by the European Centre for Medium-Range Weather Forecasts: the wind that was actually blowing, hour by hour. Without it the same route measures differently in the two directions.</dd></div><div id=g-openap><dt>OpenAP</dt><dd>An open aircraft performance model from TU Delft. It turns a trajectory and an aircraft type into fuel burnt; it is what makes this computable without any airline data.</dd></div><div id=g-odbl><dt>ODbL</dt><dd>The Open Database Licence covering the source trajectories. Reuse is free, with attribution, but a database derived from it must carry the same licence — which is why the figures on this site do.</dd></div></dl>
+
 <p class=foot>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
@@ -398,7 +480,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026.<br>
 1,833,127 flights · 197 days · 5,520 publishable routes ·
-2,788 ranked · 152 airports · generated 2026-08-17 22:20 UTC.<br>
+2,788 ranked · 152 airports · generated 2026-08-18 05:31 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/Pengo-fmm/co2gap">source</a>
 </p>

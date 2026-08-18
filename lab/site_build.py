@@ -324,6 +324,10 @@ DESC_METHOD = (
     "trajectory processing, OpenAP fuel model, wind-corrected baseline, "
     "lateral/vertical decomposition, and the limits of what the figures mean."
 )
+DESC_DATA = (
+    "Every route, airport and distance band behind the co2gap figures, "
+    "searchable by airport name or ICAO code. Aggregate data only."
+)
 
 STYLE = """
 :root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
@@ -334,6 +338,22 @@ STYLE = """
 body{margin:0;background:var(--bg);color:var(--fg);
 font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 .wrap{max-width:760px;margin:0 auto;padding:36px 20px 90px}
+.top{position:sticky;top:0;z-index:9;background:var(--bg);
+border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:26px;height:58px;
+max-width:760px;padding:0 20px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:640;letter-spacing:-.01em;
+text-decoration:none;color:var(--fg);margin-right:auto;font-size:1.02rem}
+.brand svg{width:26px;height:26px;display:block}
+.top nav{display:flex;gap:20px}
+.top nav a{color:var(--mut);text-decoration:none;font-size:.92rem}
+.top nav a:hover{color:var(--fg)}
+.gloss{display:grid;grid-template-columns:1fr;gap:0;margin:18px 0}
+.gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
+.gloss div:last-child{border-bottom:none}
+.gloss dt{font-weight:640;margin-bottom:4px}
+.gloss dd{margin:0;color:var(--mut);font-size:.95rem}
+.gloss div:target dt{color:var(--hi)}
 h1{font-size:1.7rem;margin:0 0 8px;letter-spacing:-.02em}
 h2{font-size:1.12rem;margin:40px 0 8px;letter-spacing:-.01em}
 h3{font-size:.98rem;margin:24px 0 6px;color:var(--fg)}
@@ -359,53 +379,383 @@ padding:1px 5px;border-radius:4px}
 """
 
 STYLE_INDEX = """
-:root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
---pos:#ff8a6b;--neg:#5fd0a8;--hi:#5ac8fa;--warn:#f0b429}
-@media(prefers-color-scheme:light){:root{--bg:#fbfcfd;--card:#fff;--fg:#16212b;
---mut:#5b6b78;--line:#e2e8ee;--pos:#c2410c;--neg:#0f766e}}
+:root{color-scheme:light dark;
+--bg:#fbfcfd;--card:#ffffff;--fg:#111c25;--mut:#5b6b78;--line:#e4e9ee;
+--grid:#eceff3;--axis:#c8d1d9;--s1:#2a78d6;--s2:#eb6834;--up:#e34948;--dn:#2a78d6;
+--pos:#c2410c;--neg:#0f766e;--hi:#1b64c0;--warn:#b45309;--warnbg:#fdf6ec}
+@media(prefers-color-scheme:dark){:root{
+--bg:#0d1216;--card:#161d23;--fg:#e9eef2;--mut:#93a4b1;--line:#232d35;
+--grid:#1f2830;--axis:#3a4650;--s1:#3987e5;--s2:#d95926;--up:#e66767;--dn:#3987e5;
+--pos:#ff8a6b;--neg:#5fd0a8;--hi:#68b0ff;--warn:#f0b429;--warnbg:#1d1c14}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);
-font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:960px;margin:0 auto;padding:36px 20px 90px}
-h1{font-size:1.8rem;margin:0 0 8px;letter-spacing:-.02em}
-h2{font-size:1.12rem;margin:44px 0 6px;letter-spacing:-.01em}
-h2+p.hint{margin:0 0 14px;color:var(--mut);font-size:.88rem}
-.sub{color:var(--mut);margin:0 0 22px}
-.stats{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;
-padding:13px 16px;flex:1;min-width:150px}
-.stat .v{font-size:1.45rem;font-weight:650;letter-spacing:-.02em}
-.stat .l{color:var(--mut);font-size:.8rem;margin-top:2px}
-.scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;margin:4px 0;font-size:.9rem}
-th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
-th{color:var(--mut);font-weight:500;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:0 22px}
+body.data .wrap,body.data .top .wrap{max-width:1080px}
+a{color:var(--hi)}
+.top{position:sticky;top:0;z-index:9;background:var(--bg);
+border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:26px;height:58px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:640;letter-spacing:-.01em;
+text-decoration:none;color:var(--fg);margin-right:auto;font-size:1.02rem}
+.brand svg{width:26px;height:26px;display:block}
+.top nav{display:flex;gap:20px}
+.top nav a{color:var(--mut);text-decoration:none;font-size:.92rem}
+.top nav a:hover{color:var(--fg)}
+.hero{padding:64px 0 8px}
+.eyebrow{color:var(--mut);font-size:.83rem;letter-spacing:.06em;text-transform:uppercase;
+margin:0 0 14px}
+h1{font-size:2.45rem;line-height:1.15;letter-spacing:-.025em;margin:0 0 18px;max-width:16em;
+text-wrap:balance}
+.lede{font-size:1.12rem;color:var(--mut);margin:0;max-width:34em}
+.figure{display:flex;align-items:baseline;gap:16px;margin:38px 0 6px}
+.figure .n{font-size:4.4rem;font-weight:660;letter-spacing:-.04em;line-height:1}
+.figure .u{font-size:1rem;color:var(--mut);max-width:15em;line-height:1.45}
+.shield{border-left:3px solid var(--warn);background:var(--warnbg);padding:12px 16px;
+border-radius:0 8px 8px 0;font-size:.94rem;margin:18px 0 0;max-width:38em}
+.shield b{color:var(--fg)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:40px 0 0}
+.stat{background:var(--card);padding:16px 18px}
+.stat .v{font-size:1.5rem;font-weight:640;letter-spacing:-.02em}
+.stat .l{color:var(--mut);font-size:.8rem;margin-top:3px;line-height:1.35}
+section{padding:52px 0;border-top:1px solid var(--line)}
+h2{font-size:1.55rem;letter-spacing:-.02em;margin:0 0 10px;line-height:1.25;
+text-wrap:balance}
+h3{font-size:1.02rem;margin:0 0 6px;letter-spacing:-.01em}
+p.hint,.sub{color:var(--mut);margin:0 0 26px;max-width:36em;font-size:.96rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:22px 24px;margin:20px 0}
+.card p{margin:0;font-size:.96rem} .card p+p{margin-top:10px}
+.caveat{color:var(--mut);font-size:.9rem}
+.cap{color:var(--mut);font-size:.86rem;margin:14px 0 0}
+.vizwrap{overflow-x:auto}
+.viz{width:100%;min-width:600px;height:auto;display:block;overflow:visible}
+.findings{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.findings .card{margin:0}
+.more{display:inline-block;margin-top:12px;font-size:.9rem;text-decoration:none}
+.more:hover{text-decoration:underline}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:18px 20px;text-decoration:none;color:var(--fg)}
+.dl a:hover{border-color:var(--axis)}
+.dl b{display:block;font-size:.98rem}
+.dl span{color:var(--mut);font-size:.88rem}
+.term{color:inherit;text-decoration:none;border-bottom:1px dotted var(--axis);cursor:help}
+.term:hover{color:var(--hi);border-bottom-color:var(--hi)}
+.howto{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:20px 24px 22px;margin:34px 0 0}
+.howto h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;
+color:var(--mut);font-weight:600;margin:0 0 12px}
+.howto dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;
+font-size:.94rem;align-items:baseline}
+.howto dt{font-weight:640;white-space:nowrap}
+.howto dd{margin:0;color:var(--mut)}
+.howto dd b{color:var(--fg);font-weight:560}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:500;font-size:.72rem;text-transform:uppercase;
+letter-spacing:.06em;background:var(--card)}
 td.num{text-align:right;font-variant-numeric:tabular-nums}
 td.big{font-weight:650}
 td.pos{color:var(--pos)} td.neg{color:var(--neg)}
 td.r{font-weight:500;white-space:normal}
-.code{color:var(--mut);font-size:.75rem;margin-left:7px;font-family:ui-monospace,monospace}
+.code{color:var(--mut);font-size:.76rem;margin-left:8px;font-family:ui-monospace,monospace}
 .flag{color:var(--warn);margin-left:6px;cursor:help}
 .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--hi);
-border-radius:8px;padding:14px 18px;color:var(--mut);font-size:.89rem;margin:16px 0}
+border-radius:8px;padding:16px 20px;color:var(--mut);font-size:.92rem;margin:20px 0}
 .note.warn{border-left-color:var(--warn)}
 .note b{color:var(--fg)}
 .note p{margin:10px 0}
-.foot{color:var(--mut);font-size:.8rem;margin-top:44px;border-top:1px solid var(--line);padding-top:16px}
-a{color:var(--hi)}
+.search{width:100%;padding:12px 14px;font-size:1rem;border:1px solid var(--line);
+border-radius:10px;background:var(--card);color:var(--fg);margin-bottom:8px;
+font-family:inherit}
+.count{color:var(--mut);font-size:.85rem;margin:0 0 18px}
+.gloss{display:grid;grid-template-columns:1fr;gap:0}
+.gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
+.gloss div:last-child{border-bottom:none}
+.gloss dt{font-weight:640;margin-bottom:4px}
+.gloss dd{margin:0;color:var(--mut);font-size:.95rem}
+.gloss div:target dt{color:var(--hi)}
+.foot{color:var(--mut);font-size:.85rem;border-top:1px solid var(--line);
+padding:32px 0 60px;margin-top:0}
+@media(max-width:720px){
+ h1{font-size:1.9rem}.figure .n{font-size:3.2rem}
+ .stats,.findings,.dl{grid-template-columns:1fr}
+ .top nav{gap:15px}.top .wrap{gap:14px}.hero{padding-top:40px}
+}
+@media(max-width:560px){
+ .top nav a[href$="#download"]{display:none}
+ .figure{display:block}.figure .u{margin-top:8px;max-width:none}
+}
 """
+
+# Il marchio: stessa curva della favicon. Arco ideale tratteggiato, arco reale
+# pieno, l'area fra i due e' il gap.
+LOGO = ('<svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true">'
+        '<path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/>'
+        '<path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6"'
+        ' stroke-linecap="round" stroke-dasharray="6.5 5.5"/>'
+        '<path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4"'
+        ' stroke-linecap="round"/>'
+        '<circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/>'
+        '<circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>')
+
+NAV = f"""<div class=top><div class=wrap>
+<a class=brand href="index.html">{LOGO}co2gap</a>
+<nav><a href="index.html#findings">Findings</a><a href="data.html">Data</a>
+<a href="methodology.html">Method</a><a href="index.html#download">Download</a></nav>
+</div></div>"""
+
+# ---------------------------------------------------------------- glossario --
+# Il lettore che decide se questo sito viene capito non e' il controllore di
+# volo: e' il giornalista che ha due ore. Ogni voce e' UNA frase e non usa gergo
+# di secondo livello. Verificate alla fonte il 2026-08-17: ECAC 44 stati
+# (ecac-ceac.org); i 39 kg CCO/CDO sono CARBURANTE (4,3 per partenza + 35 per
+# arrivo, EUROCONTROL); di KEA EUROCONTROL non pubblica lo scioglimento
+# dell'acronimo, quindi si da' la definizione e non l'espansione.
+GLOSSARY = [
+    ("ecac", "ECAC area",
+     "The European Civil Aviation Conference: 44 member states, from Iceland and "
+     "Norway to Turkey, Armenia and Azerbaijan — a wider Europe than the European "
+     "Union. It is the area this site covers, and the same one EUROCONTROL uses "
+     "for its own published figures."),
+    ("point", "Point",
+     "One percentage point of the ideal flight's CO&#8322;. An airport at +10 points "
+     "emits about 10% more than comparable flights. Points are always relative: they "
+     "never say how much fuel was burnt, only how far from the reference it is."),
+    ("norm", "The norm (Δ norm)",
+     "The median of flights of the same length and the same aircraft type. The raw "
+     "gap grows as flights get shorter, so ranking it would sort by shortness; every "
+     "ranking here measures the distance from the norm instead."),
+    ("lateral", "Lateral and vertical",
+     "The two parts the gap splits into, which add up to the total. Lateral is the "
+     "cost of flying more kilometres than the direct route; vertical is the cost of "
+     "flying the same route on a less efficient climb, cruise and descent profile."),
+    ("movements", "Movements",
+     "Take-offs and landings counted together. A flight counts once at the airport it "
+     "leaves and once at the airport it reaches."),
+    ("adsb", "ADS-B",
+     "The position, altitude and speed each aircraft broadcasts about twice a second. "
+     "Anyone with a receiver can pick it up; every trajectory here comes from those "
+     "messages, collected by volunteers and published by adsb.lol."),
+    ("gc", "Great circle",
+     "The shortest path between two points on the globe. It is the direct route each "
+     "flight is compared against — a geometric reference, not a route anyone is "
+     "allowed to fly."),
+    ("enroute", "En route",
+     "The part of a flight beyond 40 NM from either airport, outside the terminal "
+     "areas where departures and arrivals are sequenced. EUROCONTROL's efficiency "
+     "indicator covers only this portion, so our comparison with it does too."),
+    ("nm", "NM (nautical mile)",
+     "1,852 metres, the standard distance unit in aviation. 40 NM is about 74 km."),
+    ("kea", "KEA",
+     "EUROCONTROL's indicator of horizontal en-route flight inefficiency: how much "
+     "further flights actually fly than the direct route, over the en-route portion "
+     "only. It is built from radar data, as a rolling 12-month average discarding the "
+     "ten best and ten worst days of each area; ours is not. Same construction, not "
+     "the same number."),
+    ("cco", "Continuous climb and descent (CCO/CDO)",
+     "Climbing or descending without level-off segments. Level segments burn extra "
+     "fuel, and removing them is one of the few savings the industry quantifies "
+     "publicly: EUROCONTROL puts the network-wide potential at about 4 kg of fuel per "
+     "departure and 35 kg per arrival."),
+    ("mt", "Mt and kt",
+     "Million tonnes and thousand tonnes. Burning one kg of jet fuel releases about "
+     "3.16 kg of CO&#8322;."),
+    ("era5", "ERA5",
+     "The weather reanalysis published by the European Centre for Medium-Range Weather "
+     "Forecasts: the wind that was actually blowing, hour by hour. Without it the same "
+     "route measures differently in the two directions."),
+    ("openap", "OpenAP",
+     "An open aircraft performance model from TU Delft. It turns a trajectory and an "
+     "aircraft type into fuel burnt; it is what makes this computable without any "
+     "airline data."),
+    ("odbl", "ODbL",
+     "The Open Database Licence covering the source trajectories. Reuse is free, with "
+     "attribution, but a database derived from it must carry the same licence — which "
+     "is why the figures on this site do."),
+]
+GTERMS = {k: (t, d) for k, t, d in GLOSSARY}
+
+
+def term(slug, text=None, page="methodology.html"):
+    """Termine collegato al glossario: punteggiato, non azzurro.
+
+    Dentro una frase un collegamento azzurro invita ad andarsene; il punteggiato
+    dice "puoi insistere qui" senza rompere la lettura.
+    """
+    t, d = GTERMS[slug]
+    return (f'<a class=term href="{page}#g-{slug}" '
+            f'title="{esc(d.replace("&#8322;", "2"))}">{text or t}</a>')
+
+
+# ----------------------------------------------------------------- grafici ---
+# SVG generati qui: nessuna libreria, nessuna richiesta esterna, e i numeri sono
+# gli stessi delle tabelle perche' vengono dallo stesso dataframe.
+# Regole applicate: marchi sottili, griglia hairline solida, 2px di superficie
+# fra segmenti che si toccano, etichette diritte solo sugli estremi, il testo
+# non porta mai il colore della serie, e ogni grafico ha il suo gemello in
+# tabella su data.html. Arancio e rosso non compaiono mai insieme: la coppia
+# fallisce i controlli per daltonismo (blu-arancio e blu-rosso li passano).
+
+def viz_split(lat_w, vert_w):
+    """Anatomia del numero di testa: quanto e' percorso e quanto e' profilo."""
+    W, H = 700, 104
+    tot = lat_w + vert_w
+    w1 = W * lat_w / tot
+    w2 = W - w1 - 2
+    y, h, r = 6, 26, 4
+    return f'''<svg class=viz viewBox="0 0 {W} {H}" role="img"
+ aria-label="The {tot:.1f} point gap splits into {lat_w:.1f} lateral and {vert_w:.1f} vertical">
+<title>Lateral {lat_w:.1f} points · vertical {vert_w:.1f} points</title>
+<rect x="0" y="{y}" width="{w1:.1f}" height="{h}" rx="{r}" fill="var(--s1)"/>
+<rect x="{w1+2:.1f}" y="{y}" width="{w2:.1f}" height="{h}" rx="{r}" fill="var(--s2)"/>
+<g font-size="13">
+ <text x="0" y="{y+h+24}" fill="var(--fg)" font-weight="600">{lat_w:.1f} pts lateral</text>
+ <text x="0" y="{y+h+42}" fill="var(--mut)">extra kilometres flown</text>
+ <text x="{w1+14:.1f}" y="{y+h+24}" fill="var(--fg)" font-weight="600">{vert_w:.1f} pts vertical</text>
+ <text x="{w1+14:.1f}" y="{y+h+42}" fill="var(--mut)">climb, cruise and descent profile</text>
+</g></svg>'''
+
+
+def viz_bands(band):
+    """Colonne: gap mediano per fascia di distanza. Serie unica, niente legenda."""
+    rows = [(str(i), int(r.n), float(r.med)) for i, r in band.iterrows()]
+    W, H = 700, 300
+    L, R, TOP, BOT = 34, 8, 16, 62
+    pw, ph = W - L - R, H - TOP - BOT
+    ymax = max(80, max(v for _, _, v in rows) + 8)
+    sy = lambda v: TOP + ph - ph * v / ymax
+    slot = pw / len(rows)
+    bw = min(24, slot - 14)
+    out = []
+    for v in range(0, int(ymax) + 1, 20):
+        out.append(f'<line x1="{L}" x2="{W-R}" y1="{sy(v):.1f}" y2="{sy(v):.1f}" '
+                   f'stroke="var(--grid)"/>'
+                   f'<text x="{L-8}" y="{sy(v)+4:.1f}" text-anchor="end" font-size="11" '
+                   f'fill="var(--mut)" style="font-variant-numeric:tabular-nums">{v}%</text>')
+    for i, (lab, n, v) in enumerate(rows):
+        x = L + slot * i + (slot - bw) / 2
+        out.append(f'<g><title>{esc(lab)} km · {n:,} flights · median gap +{v:.0f}%</title>'
+                   f'<path d="M{x:.1f} {sy(0):.1f} V{sy(v)+4:.1f} a4 4 0 0 1 4 -4 '
+                   f'h{bw-8:.1f} a4 4 0 0 1 4 4 V{sy(0):.1f} Z" fill="var(--s1)"/></g>'
+                   f'<text x="{x+bw/2:.1f}" y="{H-44}" text-anchor="middle" font-size="10.5" '
+                   f'fill="var(--mut)" style="font-variant-numeric:tabular-nums">'
+                   f'{esc(lab.split(",")[0].strip("( "))}</text>')
+    for i in (0, len(rows) - 1):
+        lab, n, v = rows[i]
+        out.append(f'<text x="{L+slot*i+slot/2:.1f}" y="{sy(v)-8:.1f}" text-anchor="middle" '
+                   f'font-size="12" font-weight="600" fill="var(--fg)">+{v:.0f}%</text>')
+    return (f'<svg class=viz viewBox="0 0 {W} {H}" role="img" aria-label="Median gap by '
+            f'distance band: +{rows[0][2]:.0f}% on the shortest sectors, falling to '
+            f'+{rows[-1][2]:.0f}% on the longest">' + "".join(out) +
+            f'<line x1="{L}" x2="{W-R}" y1="{sy(0):.1f}" y2="{sy(0):.1f}" stroke="var(--axis)"/>'
+            f'<text x="{L}" y="{H-16}" font-size="11" fill="var(--mut)">'
+            f'lower bound of the great-circle distance band, km</text></svg>')
+
+
+def viz_routes(g, aname, n=12):
+    """Barre orizzontali: le rotte piu' lontane dalla norma."""
+    rows = list(g.sort_values("d", ascending=False).head(n).iterrows())
+    W, LAB, VAL, row_h, bw = 700, 266, 46, 26, 14
+    H = row_h * len(rows) + 34
+    pw = W - LAB - VAL
+    vmax = max(float(r.d) for _, r in rows)
+    out = []
+    for i, (pair, r) in enumerate(rows):
+        a, b = pair
+        y = 8 + row_h * i
+        w = pw * float(r.d) / vmax
+        name = f"{aname(a)} ↔ {aname(b)}"
+        short = name if len(name) <= 34 else name[:33] + "…"
+        out.append(
+            f'<g><title>{esc(name)} ({esc(a)}–{esc(b)}) · {int(r.n):,} flights · '
+            f'{r.d:+.0f} points vs the norm · lateral {r.lat:.0f}% · '
+            f'vertical {r.vert:.0f}%</title>'
+            f'<text x="0" y="{y+bw/2+4}" font-size="12" fill="var(--fg)">{esc(short)}'
+            f'{" ⚑" if r.closed else ""}</text>'
+            f'<path d="M{LAB} {y} h{max(w-4,1):.1f} a4 4 0 0 1 4 4 v{bw-8} '
+            f'a4 4 0 0 1 -4 4 H{LAB} Z" fill="var(--up)"/>'
+            f'<text x="{LAB+w+8:.1f}" y="{y+bw/2+4}" font-size="12" font-weight="600" '
+            f'fill="var(--fg)" style="font-variant-numeric:tabular-nums">{r.d:+.0f}</text></g>')
+    out.append(f'<text x="{LAB}" y="{H-8}" font-size="11" fill="var(--mut)">'
+               f'points above the norm for flights of the same length and aircraft type</text>')
+    return (f'<svg class=viz viewBox="0 0 {W} {H}" role="img" aria-label="The {len(rows)} '
+            f'routes furthest above the European norm">' + "".join(out) + '</svg>')
+
+
+def viz_airports(ga, aname, nw=10, nb=6):
+    """Dot plot divergente attorno alla norma: rosso sopra, blu sotto."""
+    top = ga.sort_values("d", ascending=False)
+    rows = ([(i, r) for i, r in top.head(nw).iterrows()] + [None] +
+            [(i, r) for i, r in top.tail(nb).iterrows()])
+    W, LAB, MOV, row_h, TOP = 700, 210, 62, 24, 26
+    H = row_h * len(rows) + 46 + TOP
+    pw = W - LAB - MOV
+    vals = [float(r.d) for x in rows if x for _, r in [x]]
+    lo, hi = min(vals) - 2, max(vals) + 2
+    sx = lambda v: LAB + pw * (v - lo) / (hi - lo)
+    out = []
+    for v in range(int(lo // 5) * 5, int(hi) + 5, 5):
+        if lo < v < hi:
+            out.append(f'<line x1="{sx(v):.1f}" x2="{sx(v):.1f}" y1="{TOP}" y2="{H-40}" '
+                       f'stroke="var(--grid)"/>'
+                       f'<text x="{sx(v):.1f}" y="{H-24}" text-anchor="middle" font-size="11" '
+                       f'fill="var(--mut)" style="font-variant-numeric:tabular-nums">'
+                       f'{v:+d}</text>')
+    out.append(f'<line x1="{sx(0):.1f}" x2="{sx(0):.1f}" y1="{TOP}" y2="{H-40}" '
+               f'stroke="var(--axis)"/>'
+               f'<text x="{sx(0)-8:.1f}" y="{TOP-9}" text-anchor="end" font-size="11" '
+               f'fill="var(--mut)">← closer to the norm</text>'
+               f'<text x="{sx(0)+8:.1f}" y="{TOP-9}" font-size="11" fill="var(--mut)">'
+               f'further above it →</text>'
+               f'<text x="{W}" y="{TOP-9}" text-anchor="end" font-size="11" '
+               f'fill="var(--mut)">movements</text>')
+    for i, item in enumerate(rows):
+        y = 18 + TOP + row_h * i
+        if item is None:
+            out.append(f'<line x1="0" x2="{W}" y1="{y-6}" y2="{y-6}" stroke="var(--line)"/>')
+            continue
+        icao, r = item
+        d = float(r.d)
+        name = aname(icao)
+        short = name if len(name) <= 26 else name[:25] + "…"
+        col = "var(--up)" if d > 0 else "var(--dn)"
+        out.append(
+            f'<g><title>{esc(name)} ({esc(icao)}) · {int(r.n):,} movements · '
+            f'{d:+.1f} points vs the norm · {r.dep:+.1f} on departure · '
+            f'{r.arr:+.1f} on arrival</title>'
+            f'<rect x="0" y="{y-11}" width="{W}" height="{row_h}" fill="transparent"/>'
+            f'<text x="0" y="{y+4}" font-size="12" fill="var(--fg)">{esc(short)}</text>'
+            f'<line x1="{sx(0):.1f}" x2="{sx(d):.1f}" y1="{y}" y2="{y}" stroke="{col}" '
+            f'stroke-width="2" opacity=".45"/>'
+            f'<circle cx="{sx(d):.1f}" cy="{y}" r="5" fill="{col}" stroke="var(--card)" '
+            f'stroke-width="2"/>'
+            f'<text x="{W}" y="{y+4}" text-anchor="end" font-size="11.5" fill="var(--mut)" '
+            f'style="font-variant-numeric:tabular-nums">{int(r.n):,}</text></g>')
+    out.append(f'<text x="{LAB}" y="{H-6}" font-size="11" fill="var(--mut)">'
+               f'points from the European norm</text>')
+    return (f'<svg class=viz viewBox="0 0 {W} {H}" role="img" aria-label="Airports furthest '
+            f'above and below the European norm">' + "".join(out) + '</svg>')
 
 
 def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
                       n_routes_all, n_routes_rank, n_airports, gen,
                       sc_a, sc_b, sc_a_fuel_kt,
-                      vert_floor, vert_fleet, vert_oper, n_floor) -> str:
+                      vert_floor, vert_fleet, vert_oper, n_floor,
+                      finding_sections="") -> str:
     """The page that has to be right even when nobody reads it.
 
     Written comparative-first: the defensible product of this work is that one
     route deviates more than comparable ones, not that European aviation wastes
     N megatonnes. The absolute figure is context and is labelled as such.
     """
+    glossary_rows = "".join(
+        f"<div id=g-{k}><dt>{t}</dt><dd>{d}</dd></div>"
+        for k, t, d in GLOSSARY)
     gate_rows = "\n".join(
         f"<tr><td>{m}</td><td class=num>{r:,}</td><td class=num>{wf:.1f}</td>"
         f"<td class=num><b>{wa:.1f}</b></td></tr>"
@@ -419,10 +769,17 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Methodology — co2gap</title>
 {meta("Methodology — co2gap", DESC_METHOD, "methodology.html")}
-<style>{STYLE}</style></head><body><div class=wrap>
+<style>{STYLE}</style></head><body>
+{NAV}
+<div class=wrap>
 
 <p><a href="index.html">← back to the data</a></p>
 <h1>Methodology</h1>
+
+<h2>What the data shows, in full</h2>
+<p>The four findings summarised on the home page, with the qualifications that
+belong to them.</p>
+{finding_sections}
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
 <b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · generated {esc(gen)}.</p>
@@ -754,6 +1111,12 @@ Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release
 is archived with a DOI so that a figure can be cited against the version that
 produced it.</p>
 
+<h2 id=glossary>13. Glossary</h2>
+<p>Every term used on this site, in one sentence each. No prior knowledge of aviation
+is assumed — if something here is still unclear, that is a fault of this page and worth
+an email.</p>
+<dl class=gloss>{glossary_rows}</dl>
+
 <p class=foot>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
@@ -1025,66 +1388,22 @@ def main():
         f"<td class=num>{r.med:+.0f}%</td></tr>" for i, r in band.iterrows())
     n_closed = int((g.closed != "").sum())
 
-    html_doc = f"""<!doctype html>
-<html lang=en><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width, initial-scale=1">
-<title>co2gap — CO&#8322; and flight inefficiency observatory for Europe</title>
-{meta("co2gap — CO2 and flight inefficiency observatory for Europe", DESC_INDEX)}
-<style>{STYLE_INDEX}</style></head><body><div class=wrap>
-
-<h1>co2gap — CO&#8322; and flight inefficiency observatory for Europe</h1>
-<p class=sub>Actual emissions and the <b>gap against an ideal flight</b>, computed
-from the ADS-B trajectory of every flight, with a great-circle baseline
-<b>corrected for wind</b> and split into a <b>lateral</b> component (the route)
-and a <b>vertical</b> one (the profile).
-ECAC area · {esc(days[0])} → {esc(days[-1])} · {len(days)} days.<br>
-<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · updated twice a year over a 12-month window ·
-next update {NEXT_RELEASE}, covering {NEXT_WINDOW} ·
-generated {esc(gen)}.</p>
-
-<div class=stats>
-  <div class=stat><div class=v>{len(df):,}</div><div class=l>flights analysed</div></div>
-  <div class=stat><div class=v>{co2_t/1e6:,.1f} Mt</div><div class=l>CO&#8322; emitted</div></div>
-  <div class=stat><div class=v>{excess_t/1e6:,.2f} Mt</div><div class=l>gap from the theoretical optimum</div></div>
-  <div class=stat><div class=v>{len(g_all):,}</div><div class=l>routes with n≥{MIN_N}</div></div>
-</div>
-
-<div class=note>
-<b>What this site measures.</b> For every flight we compare the CO&#8322; actually
-emitted with that of an ideal flight: same aircraft type, direct great-circle
-route, the most efficient altitude and speed for that distance, and <b>the same
-real wind</b>. The difference splits into two additive parts: the
-<b>lateral</b> one (having flown more kilometres) and the <b>vertical</b> one
-(having flown the same route on a less efficient altitude and speed profile).
-Over the period observed: total <b>{(lat_w+vert_w):.1f}%</b>, of which
-lateral <b>{lat_w:.1f}%</b> and vertical <b>{vert_w:.1f}%</b>.
-</div>
-
-<div class="note warn">
-<b>This is not fuel that could be saved.</b> The ideal great-circle flight at a
-perfect profile is a theoretical limit no real flight can reach: separation
-between aircraft, route structure, constrained airspace and arrival queues put
-it out of reach. Published estimates of <i>recoverable</i> inefficiency are much
-smaller — EUROCONTROL puts at roughly 39 kg per flight what continuous climb and
-descent procedures would recover, against the roughly 520 kg of total gap
-measured here. <b>This site measures the distance from a theoretical optimum,
-not avoidable waste.</b> The full comparison is in the methodology.
-</div>
-
-<h2>What the data shows</h2>
-<p class=hint>Four things visible in the data, with what is known about why —
-and what remains unknown.</p>
-
-<div class=note>
-<p><b>1. A group of congested hubs sits well above the norm, and their gap is
-in the profile rather than the route.</b><br>
-Flights to and from <b>{ap1_name}</b> ({ap1_d:+.1f} points across {ap1_n:,}
+    # ---- i quattro risultati, scritti UNA volta e usati in DUE posti --------
+    # In home va il titolo con l'attacco; il seguito, che e' dove stanno i
+    # caveat, va nella metodologia sotto la propria ancora. Scriverli due volte
+    # significherebbe vederli divergere al primo aggiornamento, e sarebbe il
+    # caveat quello che resta indietro.
+    FINDINGS = [
+        ("f1",
+         "A group of congested hubs sits well above the norm, and their gap is "
+         "in the profile rather than the route.",
+         f"""Flights to and from <b>{ap1_name}</b> ({ap1_d:+.1f} points across {ap1_n:,}
 movements) and <b>{esc(aname(ap2))}</b> ({ap2r.d:+.1f} across {int(ap2r.n):,})
 deviate from comparable flights more than those of any other airport with
 substantial traffic, followed by {esc(aname(ap3))} at {ap3r.d:+.1f}, against a
 median across all {len(ga)} airports of {ap_med:+.1f}. A point is one percentage
-point of CO&#8322; relative to the ideal flight.<br>
-<b>These are not places in a league table.</b> At the head of the ranking ten
+point of CO&#8322; relative to the ideal flight.""",
+         f"""<b>These are not places in a league table.</b> At the head of the ranking ten
 positions can be separated by as little as {head_span_min:.1f} points within a
 single month, so an individual position there is not resolvable — the same
 caution the methodology applies to the middle of the ranking applies to its top.
@@ -1107,42 +1426,130 @@ Profiles of this shape are what dense terminal areas produce: early descents,
 level segments, sequencing. ADS-B shows the profiles flown, not the noise
 abatement rules, sequencing constraints or capacity limits that require them.
 <b>This describes what these flights fly. It does not measure what the airports,
-their airlines or their controllers could do differently.</b></p>
-</div>
-
-<div class=note>
-<p><b>2. Closed airspace has a cost, and it is large where it bites.</b><br>
-The clearest example is <b>{kal_a} ↔ {kal_b}</b>, flying <b>+{kal_pct:.0f}%</b>
+their airlines or their controllers could do differently.</b>"""),
+        ("f2",
+         "Closed airspace has a cost, and it is large where it bites.",
+         f"""The clearest example is <b>{kal_a} ↔ {kal_b}</b>, flying <b>+{kal_pct:.0f}%</b>
 further en route because the straight line between the two airports crosses
 Kaliningrad. It runs {kal_n:,} flights over the period — below the {RANK_MIN_N}
 needed to enter the rankings, and quoted here as an illustration of the
-mechanism rather than as a placing. The detour is geometric: it does not depend
+mechanism rather than as a placing.""",
+         f"""The detour is geometric: it does not depend
 on sample size. Baltic connections
 towards Turkey route around Belarus and Ukraine for the same reason. In total
 {n_closed} ranked routes have a direct path through closed airspace. None of
 this is recoverable while those closures hold — and the overflight ban binds
 European carriers but not third-country ones, so each figure is an average
-across operators that must divert and operators that need not.</p>
-</div>
-
-<div class=note>
-<p><b>3. The efficient end of the ranking is small and peripheral.</b><br>
-{apb_name} sits at <b>{apb_d:+.1f} points</b>, followed by other Nordic and
-island airports, more than thirty points away from the congested hubs. Light
+across operators that must divert and operators that need not."""),
+        ("f3",
+         "The efficient end of the ranking is small and peripheral.",
+         f"""{apb_name} sits at <b>{apb_d:+.1f} points</b>, followed by other Nordic and
+island airports, more than thirty points away from the congested hubs.""",
+         """Light
 traffic buys continuous descents and direct clearances. It is a measure of how
-much congestion costs, not a target a hub could adopt.</p>
-</div>
-
-<div class=note>
-<p><b>4. Most of this gap cannot be compressed — the part usually left out.</b><br>
-Of the {vert_fleet:.1f} points of vertical gap, <b>{vert_floor:.1f} remain for a
+much congestion costs, not a target a hub could adopt."""),
+        ("f4",
+         "Most of this gap cannot be compressed — the part usually left out.",
+         f"""Of the {vert_fleet:.1f} points of vertical gap, <b>{vert_floor:.1f} remain for a
 flight going direct through an empty night sky</b>: that is the baseline staying
-out of reach, not inefficiency. Only {vert_oper:.1f} points move with traffic,
+out of reach, not inefficiency.""",
+         f"""Only {vert_oper:.1f} points move with traffic,
 routing and profile. The distinction is the difference between "European
 aviation wastes X" and "between comparable flights there is a spread of this
-size" — and only the second is something these data support.</p>
+size" — and only the second is something these data support."""),
+    ]
+    finding_cards = "\n".join(
+        f'<div class=card><h3>{i}. {t}</h3><p>{lead}</p>'
+        f'<a class=more href="methodology.html#{slug}">The full reading →</a></div>'
+        for i, (slug, t, lead, _) in enumerate(FINDINGS, 1))
+    finding_sections = "\n".join(
+        f'<h3 id={slug}>{i}. {t}</h3><p>{lead}<br>{rest}</p>'
+        for i, (slug, t, lead, rest) in enumerate(FINDINGS, 1))
+
+    html_doc = f"""<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>co2gap — CO&#8322; and flight inefficiency observatory for Europe</title>
+{meta("co2gap — CO2 and flight inefficiency observatory for Europe", DESC_INDEX)}
+<style>{STYLE_INDEX}</style></head><body>
+{NAV}
+<div class=wrap>
+
+<div class=hero>
+<p class=eyebrow>{term('ecac', 'ECAC area')} · {esc(days[0])} → {esc(days[-1])} · {len(days)} days</p>
+<h1>How far European flights sit from a theoretical optimum</h1>
+<p class=lede>Actual emissions and the <b>gap against an ideal flight</b>, computed
+from the ADS-B trajectory of every flight, with a {term('gc', 'great-circle')} baseline
+<b>corrected for wind</b> and split into a <b>lateral</b> component (the route)
+and a <b>vertical</b> one (the profile).</p>
+
+<div class=figure>
+  <div class=n>{(lat_w+vert_w):.1f}%</div>
+  <div class=u>more CO&#8322; than that ideal flight, across {len(df):,} flights</div>
 </div>
 
+<p class=shield>
+<b>This is not fuel that could be saved.</b> The ideal great-circle flight at a
+perfect profile is a theoretical limit no real flight can reach: separation
+between aircraft, route structure, constrained airspace and arrival queues put
+it out of reach. Published estimates of <i>recoverable</i> inefficiency are much
+smaller — EUROCONTROL puts at roughly {BENCH['cco_cdo_kg']} kg per flight what continuous climb and
+descent procedures would recover, against the roughly 520 kg of total gap
+measured here. <b>This site measures the distance from a theoretical optimum,
+not avoidable waste.</b> The full comparison is in the methodology.
+</p>
+
+<div class=stats>
+  <div class=stat><div class=v>{len(df):,}</div><div class=l>flights analysed</div></div>
+  <div class=stat><div class=v>{co2_t/1e6:,.1f} Mt</div><div class=l>CO&#8322; emitted</div></div>
+  <div class=stat><div class=v>{excess_t/1e6:,.2f} Mt</div><div class=l>gap from the theoretical optimum</div></div>
+  <div class=stat><div class=v>{len(g_all):,}</div><div class=l>routes with n≥{MIN_N}</div></div>
+</div>
+
+<div class=howto>
+<h3>How to read these numbers</h3>
+<dl>
+<dt>A {term('point', 'point')}</dt><dd>is one percentage point of the ideal flight's
+CO&#8322;. An airport at <b>+10</b> emits about <b>10% more</b> than comparable flights.</dd>
+<dt>Comparable</dt><dd>means <b>same length, same aircraft type</b>. That median is the
+<b>{term('norm', 'norm')}</b>, and every ranking here measures distance from it — never
+the raw gap.</dd>
+<dt>{term('lateral', 'Lateral')}</dt><dd>is <b>extra kilometres flown</b>; <b>vertical</b>
+is a less efficient climb, cruise and descent along the same route. The two add up to
+the total.</dd>
+<dt>{term('movements', 'Movements')}</dt><dd>are <b>take-offs and landings together</b>: a
+flight counts once at each end.</dd>
+<dt>Where and when</dt><dd>the ECAC area — Europe wider than the EU — from
+{esc(days[0])} to {esc(days[-1])}, {len(days)} days. <b>Release {RELEASE}</b>,
+methodology v{METHOD_VERSION}, updated twice a year over a 12-month window; next update
+{NEXT_RELEASE}, covering {NEXT_WINDOW}.</dd>
+</dl>
+</div>
+</div>
+
+<section>
+<h2>What the gap is made of</h2>
+<p class=hint>For every flight we compare the CO&#8322; actually
+emitted with that of an ideal flight: same aircraft type, direct great-circle
+route, the most efficient altitude and speed for that distance, and <b>the same
+real wind</b>. The difference splits into two additive parts: the
+<b>lateral</b> one (having flown more kilometres) and the <b>vertical</b> one
+(having flown the same route on a less efficient altitude and speed profile).
+Over the period observed: total <b>{(lat_w+vert_w):.1f}%</b>, of which
+lateral <b>{lat_w:.1f}%</b> and vertical <b>{vert_w:.1f}%</b>.</p>
+<div class=card><div class=vizwrap>{viz_split(lat_w, vert_w)}</div></div>
+<p class=cap>The vertical component is about twice the lateral one: the gap is mostly in
+how flights climb, cruise and descend, not in how far they go.</p>
+</section>
+
+<section id=findings>
+<h2>What the data shows</h2>
+<p class=hint>Four things visible in the data, with what is known about why —
+and what remains unknown. Each opens in full in the methodology.</p>
+<div class=findings>{finding_cards}</div>
+</section>
+
+<section>
 <h2>How much of this gap is compressible</h2>
 <p class=hint>Derived from the data itself, not assumed.</p>
 <div class=note>
@@ -1167,7 +1574,10 @@ cruise by comparing each flight with the <i>best profile actually observed</i> �
 a reference that already embeds those constraints. Two independent routes to the
 same point.</p>
 </div>
+</section>
 
+
+<section>
 <h2>What the spread between comparable flights is worth</h2>
 <p class=hint>Not against the theoretical optimum, which nobody can reach, but
 against what flights of the same length <b>already achieve</b>.</p>
@@ -1186,7 +1596,10 @@ median because of structural constraints — closed airspace, terrain, congestio
 — that no procedure removes. It measures what the <i>observed spread</i> between
 comparable flights is worth, not what is achievable.</p>
 </div>
+</section>
 
+
+<section>
 <h2>Comparison with the EUROCONTROL indicator</h2>
 <p class=hint>Built the same way as KEA: a ratio of sums, over the en-route
 portion only, beyond 40 NM from the airports.</p>
@@ -1198,36 +1611,35 @@ but <b>not</b> the same number: they use radar data over the EUROCONTROL
 reference area, we use ADS-B over a quality-filtered subset, with our own
 baseline and criteria.
 </div>
+</section>
 
-<h2>European norm by distance band</h2>
+
+<section>
+<h2>Why a raw ranking would be wrong</h2>
 <p class=hint>The raw gap grows as distance shrinks, so a raw ranking would sort
 by shortness rather than by inefficiency. Every ranking below uses the deviation
 from the median of <b>flights of the same length and the same aircraft
 type</b>.</p>
-<div class=scroll><table><thead><tr><th>Band</th><th class=num>flights</th>
-<th class=num>median gap</th></tr></thead><tbody>
-{bandrows}
-</tbody></table></div>
+<div class=card><div class=vizwrap>{viz_bands(band)}</div></div>
+<p class=cap>The same figures as a table, with the flight counts, are on the
+<a href="data.html#bands">data page</a>.</p>
+</section>
 
+
+<section>
 <h2>Routes furthest from the norm</h2>
 <p class=hint>Δ norm in percentage points against flights of the same length and
 type. Rankings use only routes with at least <b>{RANK_MIN_N}</b> flights: below
 that the sample is too small for an ordering to mean anything.
 ⚑ = the direct path crosses closed or avoided airspace ({n_closed} routes
 flagged).</p>
-<div class=scroll><table><thead><tr><th>Route</th><th class=num>flights</th>
-<th class=num>km</th><th class=num>Δ norm</th><th class=num>lat.</th>
-<th class=num>vert.</th><th class=num>t CO&#8322;</th></tr></thead><tbody>
-{worst}
-</tbody></table></div>
+<div class=card><div class=vizwrap>{viz_routes(g, aname)}</div></div>
+<p class=cap>All {len(g):,} ranked routes, those closest to the optimum, and the
+CO&#8322; totals: <a href="data.html#routes">on the data page</a>.</p>
+</section>
 
-<h2>Routes closest to the optimum</h2>
-<div class=scroll><table><thead><tr><th>Route</th><th class=num>flights</th>
-<th class=num>km</th><th class=num>Δ norm</th><th class=num>lat.</th>
-<th class=num>vert.</th><th class=num>t CO&#8322;</th></tr></thead><tbody>
-{best}
-</tbody></table></div>
 
+<section>
 <h2>Airports</h2>
 <p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT} flights.
 The <b>vert.</b> column isolates the profile component — where early descents
@@ -1251,29 +1663,30 @@ partners. <b>{esc(aname(asym_ap))}</b> stands at {asymr.dep:+.1f} and
 {phase_note}
 </div>
 
-<div class=scroll><table><thead><tr><th>Airport</th><th class=num>movements</th>
-<th class=num>Δ norm</th><th class=num>on dep.</th><th class=num>on arr.</th>
-<th class=num>Δ lat.</th><th class=num>Δ vert.</th>
-</tr></thead><tbody>
-{ap_worst}
-</tbody></table></div>
-<p class=hint style="margin-top:18px">Airports closest to the norm:</p>
-<div class=scroll><table><thead><tr><th>Airport</th><th class=num>movements</th>
-<th class=num>Δ norm</th><th class=num>on dep.</th><th class=num>on arr.</th>
-<th class=num>Δ lat.</th><th class=num>Δ vert.</th>
-</tr></thead><tbody>
-{ap_best}
-</tbody></table></div>
+<div class=card><div class=vizwrap>{viz_airports(ga, aname)}</div></div>
+<p class=cap>All {len(ga):,} airports, with the departure and arrival columns:
+<a href="data.html#airports">on the data page</a>.</p>
+</section>
 
-<h2>Routes by total CO&#8322;</h2>
-<p class=hint>The routes that weigh most in absolute terms, regardless of
-efficiency.</p>
-<div class=scroll><table><thead><tr><th>Route</th><th class=num>flights</th>
-<th class=num>km</th><th class=num>Δ norm</th><th class=num>lat.</th>
-<th class=num>vert.</th><th class=num>t CO&#8322;</th></tr></thead><tbody>
-{by_co2}
-</tbody></table></div>
 
+<section>
+<h2 id=download>Check it yourself</h2>
+<p class=hint>Every figure here can be recomputed from scratch: the data is public,
+the method is documented in full and the code is open.</p>
+<div class=dl>
+<a href="data.html"><b>Browse the data →</b><span>Every route, airport and distance
+band, searchable by name or ICAO code</span></a>
+<a href="methodology.html"><b>Methodology →</b><span>What is not measured,
+validations, stated limitations, independence</span></a>
+<a href="https://github.com/Pengo-fmm/co2gap"><b>Source code →</b><span>The whole
+pipeline, from raw ADS-B to this page</span></a>
+<a href="mailto:hello@co2gap.org"><b>Ask for your own figures →</b><span>Airports,
+ANSPs and airlines: the detail behind these numbers for your own traffic</span></a>
+</div>
+</section>
+
+
+<section>
 <h2>Method and limitations</h2>
 <div class=note>
 <b>Data.</b> ADS-B trajectories from the public daily dumps of
@@ -1324,7 +1737,7 @@ exists in the pipeline and is not published here. Same address. The rules that
 keep that separate from what appears on this page are written down under
 <a href="methodology.html#independence">independence</a>.
 </div>
-
+</section>
 <p class=foot>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
@@ -1346,10 +1759,129 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
     OUT.write_text(html_doc)
     print(f"scritto {OUT}  ({len(html_doc)/1024:.0f} KB)")
 
+    # ---- pagina Dati -------------------------------------------------------
+    # Qui arriva chi cerca il proprio nome, e prima non poteva: le tabelle
+    # complete piu' un filtro dal vivo. Le intestazioni sono sigle, quindi ogni
+    # sigla porta alla sua voce di glossario — chi arriva qui puo' aver saltato
+    # la home del tutto.
+    RH = (f'<tr><th>Route</th><th class=num>flights</th><th class=num>km</th>'
+          f'<th class=num>{term("norm", "Δ norm")}</th>'
+          f'<th class=num>{term("lateral", "lat.")}</th>'
+          f'<th class=num>{term("lateral", "vert.")}</th>'
+          f'<th class=num>{term("mt", "t CO&#8322;")}</th></tr>')
+    AH = (f'<tr><th>Airport</th><th class=num>{term("movements")}</th>'
+          f'<th class=num>{term("norm", "Δ norm")}</th>'
+          f'<th class=num>on dep.</th><th class=num>on arr.</th>'
+          f'<th class=num>{term("lateral", "Δ lat.")}</th>'
+          f'<th class=num>{term("lateral", "Δ vert.")}</th></tr>')
+    data_doc = f"""<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Data — co2gap</title>
+{meta("Data — co2gap", DESC_DATA, "data.html")}
+<style>{STYLE_INDEX}</style></head><body class=data>
+{NAV}
+<div class=wrap>
+<section style="border-top:none;padding-bottom:0">
+<h2>Data</h2>
+<p class=hint>Everything behind the charts, for the ECAC area over
+{esc(days[0])} → {esc(days[-1])}. Type to filter by airport name or ICAO code — the
+tables narrow as you type. Column headings are dotted: each one is defined in the
+<a href="methodology.html#glossary">glossary</a>.</p>
+<input class=search id=q aria-label="Filter tables"
+ placeholder="Filter by airport or ICAO code — e.g. Schiphol, EHAM, Madrid">
+<p class=count id=cnt></p>
+</section>
+
+<section id=routes style="border-top:none">
+<h3>Routes furthest from the norm</h3>
+<p class=hint>Δ norm in points against flights of the same length and type. Rankings use
+only routes with at least <b>{RANK_MIN_N}</b> flights. ⚑ = the direct path crosses closed
+or avoided airspace ({n_closed} routes flagged).</p>
+<div class=scroll><table><thead>{RH}</thead><tbody class=f>
+{worst}
+</tbody></table></div>
+</section>
+
+<section style="border-top:none">
+<h3>Routes closest to the optimum</h3>
+<div class=scroll><table><thead>{RH}</thead><tbody class=f>
+{best}
+</tbody></table></div>
+</section>
+
+<section id=airports style="border-top:none">
+<h3>Airports furthest from the norm</h3>
+<p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT} flights. Each row
+describes the flights that touch this airport, measured over the whole flight — see the
+<a href="index.html#airports">note on the home page</a> for what that does and does not
+say.</p>
+<div class=scroll><table><thead>{AH}</thead><tbody class=f>
+{ap_worst}
+</tbody></table></div>
+</section>
+
+<section style="border-top:none">
+<h3>Airports closest to the norm</h3>
+<div class=scroll><table><thead>{AH}</thead><tbody class=f>
+{ap_best}
+</tbody></table></div>
+</section>
+
+<section id=co2 style="border-top:none">
+<h3>Routes by total CO&#8322;</h3>
+<p class=hint>The routes that weigh most in absolute terms, regardless of efficiency.</p>
+<div class=scroll><table><thead>{RH}</thead><tbody class=f>
+{by_co2}
+</tbody></table></div>
+</section>
+
+<section id=bands style="border-top:none">
+<h3>European norm by distance band</h3>
+<div class=scroll><table><thead><tr><th>Band</th><th class=num>flights</th>
+<th class=num>median gap</th></tr></thead><tbody>
+{bandrows}
+</tbody></table></div>
+</section>
+</div>
+
+<p class=foot><span class=wrap style="display:block">
+Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
+data published here is distributed under the same terms.
+{len(df):,} flights · {len(days)} days · generated {esc(gen)}.<br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
+{SOCIAL}
+</span></p>
+<script>
+var q=document.getElementById('q'),cnt=document.getElementById('cnt'),
+    bodies=[].slice.call(document.querySelectorAll('tbody.f')),
+    rows=[].slice.call(document.querySelectorAll('tbody.f tr'));
+function run(){{
+  var s=q.value.trim().toLowerCase(),k=0;
+  rows.forEach(function(r){{
+    var hit=!s||r.textContent.toLowerCase().indexOf(s)>-1;
+    r.style.display=hit?'':'none'; if(hit)k++;
+  }});
+  bodies.forEach(function(b){{
+    var any=[].slice.call(b.rows).some(function(r){{return r.style.display!=='none';}});
+    b.closest('section').style.display=any?'':'none';
+  }});
+  cnt.textContent=s?k+' of '+rows.length+' rows match \\u201c'+q.value+'\\u201d':'';
+}}
+q.addEventListener('input',run);
+</script>
+</body></html>
+"""
+    OUT_DATA = OUT.parent / "data.html"
+    OUT_DATA.write_text(data_doc)
+    print(f"scritto {OUT_DATA}  ({len(data_doc)/1024:.0f} KB)")
+
     meth = build_methodology(df, days, months, lat_w, vert_w, kea,
                              co2_t, excess_t, len(g_all), len(g), len(ga), gen,
                              sc_a, sc_b, sc_a_fuel_kt,
-                             vert_floor, vert_fleet, vert_oper, n_floor)
+                             vert_floor, vert_fleet, vert_oper, n_floor,
+                             finding_sections)
     OUT_METH.write_text(meth)
     print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")
     print(f"  voli {len(df):,} · giorni {len(days)} · rotte n>={MIN_N} {len(g_all):,} "
