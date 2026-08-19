@@ -163,6 +163,10 @@ BENCH = {"cco_cdo_kg": 39, "cco_cdo_pct": 1.1,
          # che sulle tratte corte il riferimento NON pretende l'infattibile, e
          # ammettere dove sbaglia sulle lunghe.
          "alt_short_below_ft": 2000, "alt_long_below_ft": 1000,
+         # GAIA, l'inventario globale di emissioni da ADS-B piu' vicino a questo
+         # lavoro: ACP 24, 725 (2024), UCL, peer-reviewed, dati su Zenodo.
+         # Citarlo non ci indebolisce, ci colloca: risponde a una domanda diversa.
+         "gaia_flights_m": 103.7, "gaia_year": 2024,
          # SES performance scheme, reference period 4. These are TARGETS, not
          # measurements: the binding Union-wide values Member States are held
          # to, which measured performance has been exceeding. Kept distinct
@@ -2264,6 +2268,20 @@ windows exist."""),
 registration and no callsign — only the aircraft type and the airports — and no
 figure on this site describes an identifiable flight, operator crew or
 passenger."""),
+        ("Is this an emissions inventory?",
+         f"""<b>No, and the difference is the point.</b> An inventory answers
+<i>how much, and where</i>. The most complete one built from the same raw material
+as this site — <a href="https://acp.copernicus.org/articles/24/725/2024/">GAIA</a>,
+published in <i>Atmospheric Chemistry and Physics</i> in {BENCH['gaia_year']} —
+reconstructs {BENCH['gaia_flights_m']} million ADS-B trajectories worldwide and
+gives CO&#8322;, nitrogen oxides and particulate on a grid, for atmospheric
+research. It is the reference for what aviation emits.<br><br>
+This site answers a narrower question: <b>how far from a reference</b>. It does
+not try to count Europe's aviation emissions — it compares each flight with an
+ideal version of itself, and reports the difference by route and by airport. An
+inventory tells you what was emitted; this tells you how much comparable flights
+differ from one another. The two are complementary, and where they overlap the
+inventory is the better source."""),
         ("How accurate is the fuel model?",
          """Fuel burn comes from <a href="https://openap.dev">OpenAP</a>, an open
 performance model from TU Delft, anchored per aircraft type to the ICAO Carbon
