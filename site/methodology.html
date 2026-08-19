@@ -169,7 +169,7 @@ aviation wastes X" and "between comparable flights there is a spread of this
 size" — and only the second is something these data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-18 08:18 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-19 19:27 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -429,6 +429,24 @@ publish, and will not publish, data about an individual flight, aircraft or
 operator. The rankings concern routes and airports, never people or
 identifiable aircraft.</p>
 
+<p><b>That floor counts flights, not aircraft — and on one class of traffic the
+difference matters.</b> This site covers commercial air transport. Business and
+general aviation are not its subject, and only two such aircraft types survive
+the performance model at all (C550, GLF6, together 0.16% of
+flights). But on a thin route a row made of those flights can describe one or two
+aircraft — that is, one operator or one owner — even while clearing a floor of
+10 flights.</p>
+
+<p>We cannot rule that out by counting aircraft, because <b>we deliberately do
+not store aircraft identity</b>: the same choice that makes this dataset unable
+to identify a flight also removes the check that would prove those rows safe. So
+the class is removed instead. <b>37 routes whose traffic is majority
+business aviation are excluded from every table and chart on this site.</b> Their
+flights remain in the European totals, where they are diluted across 1,833,127
+flights and identify nobody; what is suppressed is the row that would have
+singled them out. No airport comes close to the same threshold — the most exposed
+sits below 6%.</p>
+
 <h2 id=who-made-this-and-how-to-report-an-error>10. Who made this, and how to report an error</h2>
 <div class=note>
 <p><b>Everything here is reproducible.</b> The trajectory data is public, the
@@ -515,8 +533,8 @@ Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026.<br>
-1,833,127 flights · 197 days · 5,520 publishable routes ·
-2,788 ranked · 152 airports · generated 2026-08-18 08:18 UTC.<br>
+1,833,127 flights · 197 days · 5,483 publishable routes ·
+2,787 ranked · 152 airports · generated 2026-08-19 19:27 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>

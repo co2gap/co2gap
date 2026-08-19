@@ -183,6 +183,23 @@ MIN_N_CELL = 200
 # Floor for the closed-airspace claim in the findings section.
 MIN_N_CLOSED = 30
 
+# Tipi NON di linea presenti nel dataset: aviazione d'affari. Sono lo 0,16% dei
+# voli e il modello di prestazioni ne copre solo due, quindi la loro presenza e'
+# gia' accidentale — ma su una rotta sottile una riga fatta di questi voli puo'
+# descrivere UNO O DUE aeromobili, cioe' un operatore o un proprietario.
+#
+# La soglia di pubblicazione conta i VOLI, non gli aeromobili, e non possiamo
+# contare gli aeromobili perche' per scelta non conserviamo `icao24`: la
+# garanzia strutturale sulla privacy toglie proprio la verifica che
+# dimostrerebbe sicure quelle righe. L'unica leva rimasta e' escludere la classe
+# dove il rischio si concentra.
+#
+# Si escludono le ROTTE a maggioranza non di linea, non i voli dagli aggregati:
+# lo 0,16% non e' un rischio di privacy quando e' diluito in una somma europea,
+# e togliere voli muoverebbe cifre gia' comunicate a chi e' stato preavvisato.
+NON_AIRLINER = {"GLF6", "C550"}
+NON_AIRLINER_MAX = 0.5
+
 # Fine distance bins for the norm. The raw excess correlates about -0.74 with
 # distance, so a raw ranking sorts by shortness, not by inefficiency; every
 # ranking below is on the deviation from the median of flights of comparable
@@ -927,13 +944,15 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
                       n_routes_all, n_routes_rank, n_airports, gen,
                       sc_a, sc_b, sc_a_fuel_kt,
                       vert_floor, vert_fleet, vert_oper, n_floor,
-                      finding_sections="") -> str:
+                      finding_sections="", n_biz_routes=0,
+                      non_airliner_pct=0.0) -> str:
     """The page that has to be right even when nobody reads it.
 
     Written comparative-first: the defensible product of this work is that one
     route deviates more than comparable ones, not that European aviation wastes
     N megatonnes. The absolute figure is context and is labelled as such.
     """
+    biz_types = ", ".join(sorted(NON_AIRLINER))
     glossary_rows = "".join(
         f"<div id=g-{k}><dt>{t}</dt><dd>{d}</dd></div>"
         for k, t, d in GLOSSARY)
@@ -1214,11 +1233,29 @@ wind, which understated the baseline's fuel and inflated the published gap by
 about 0.35%; the figures on this site are computed after that correction.</li>
 </ul>
 
-<h2>9. Privacy</h2>
+<h2 id=privacy>9. Privacy</h2>
 <p>Every published row aggregates <b>at least {MIN_N} flights</b>. We do not
 publish, and will not publish, data about an individual flight, aircraft or
 operator. The rankings concern routes and airports, never people or
 identifiable aircraft.</p>
+
+<p><b>That floor counts flights, not aircraft — and on one class of traffic the
+difference matters.</b> This site covers commercial air transport. Business and
+general aviation are not its subject, and only two such aircraft types survive
+the performance model at all ({biz_types}, together {non_airliner_pct:.2f}% of
+flights). But on a thin route a row made of those flights can describe one or two
+aircraft — that is, one operator or one owner — even while clearing a floor of
+{MIN_N} flights.</p>
+
+<p>We cannot rule that out by counting aircraft, because <b>we deliberately do
+not store aircraft identity</b>: the same choice that makes this dataset unable
+to identify a flight also removes the check that would prove those rows safe. So
+the class is removed instead. <b>{n_biz_routes} routes whose traffic is majority
+business aviation are excluded from every table and chart on this site.</b> Their
+flights remain in the European totals, where they are diluted across {len(df):,}
+flights and identify nobody; what is suppressed is the row that would have
+singled them out. No airport comes close to the same threshold — the most exposed
+sits below 6%.</p>
 
 <h2>10. Who made this, and how to report an error</h2>
 <div class=note>
@@ -1390,6 +1427,12 @@ def main():
         d=("d_tot", "median"), lat=("excess_lateral_pct", "median"),
         vert=("excess_vertical_pct", "median"), co2_t=("co2_real_kg", "sum"),
     )
+    # Rotte a maggioranza aviazione d'affari: si sopprimono le RIGHE, non i voli.
+    df["_nb"] = df.typecode.isin(NON_AIRLINER)
+    g["biz"] = df.groupby("pair")._nb.mean()
+    n_biz_routes = int(((g.biz >= NON_AIRLINER_MAX) & (g.n >= MIN_N)).sum())
+    non_airliner_pct = float(df._nb.mean() * 100)
+    g = g[g.biz < NON_AIRLINER_MAX]
     g_all = g[g.n >= MIN_N]      # everything publishable (privacy floor)
     g = g[g.n >= RANK_MIN_N]     # only these enter the rankings
     g["co2_t"] /= 1000
@@ -1813,7 +1856,9 @@ type</b>.</p>
 <h2>Routes furthest from the norm</h2>
 <p class=hint>Δ norm in percentage points against flights of the same length and
 type. Rankings use only routes with at least <b>{RANK_MIN_N}</b> flights: below
-that the sample is too small for an ordering to mean anything.
+that the sample is too small for an ordering to mean anything. Routes whose
+traffic is majority business aviation are excluded — see
+<a href="methodology.html#privacy">privacy</a>.
 ⚑ = the direct path crosses closed or avoided airspace ({n_closed} routes
 flagged).</p>
 <div class=card><div class=vizwrap>{viz_routes(g, aname)}</div></div>
@@ -2340,7 +2385,7 @@ replies are published on this site, in full and unconditionally.</p>
                              co2_t, excess_t, len(g_all), len(g), len(ga), gen,
                              sc_a, sc_b, sc_a_fuel_kt,
                              vert_floor, vert_fleet, vert_oper, n_floor,
-                             finding_sections)
+                             finding_sections, n_biz_routes, non_airliner_pct)
     OUT_METH.write_text(add_toc(meth))
     print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")
     print(f"  voli {len(df):,} · giorni {len(days)} · rotte n>={MIN_N} {len(g_all):,} "

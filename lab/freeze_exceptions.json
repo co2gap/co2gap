@@ -1,6 +1,14 @@
 [
- {"match": "co2 and flight inefficiency observatory for europe",
-  "reason": "titolo cambiato di proposito il 18/08: l'h1 dice ora cosa il sito misura (How far European flights sit from a theoretical optimum) invece di cosa il sito e'. Deciso esplicitamente con l'utente come unica eccezione al congelamento."},
- {"match": "at least 2000 flights",
-  "reason": "solo formattazione: 2000 -> 2,000, era l'unico numero del sito senza separatore delle migliaia. Nessun cambio di valore."}
+ {
+  "match": "co2 and flight inefficiency observatory for europe",
+  "reason": "titolo cambiato di proposito il 18/08: l'h1 dice ora cosa il sito misura (How far European flights sit from a theoretical optimum) invece di cosa il sito e'. Deciso esplicitamente con l'utente come unica eccezione al congelamento."
+ },
+ {
+  "match": "at least 2000 flights",
+  "reason": "solo formattazione: 2000 -> 2,000, era l'unico numero del sito senza separatore delle migliaia. Nessun cambio di valore."
+ },
+ {
+  "match": "rankings use only routes with at least 100 flights",
+  "reason": "18/08: aggiunta la clausola sull'esclusione delle rotte a maggioranza aviazione d'affari (37 rotte soppresse per privacy). ⚠️ NOTA: nello stesso cambio il conteggio delle rotte pubblicabili passa da 5.520 a 5.483, ma il cancello NON lo vede perche' le stat card sono coppie etichetta+numero sotto i 40 caratteri e non entrano nella fotografia. Limite noto dello strumento."
+ }
 ]
