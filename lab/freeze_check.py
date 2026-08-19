@@ -93,8 +93,12 @@ def check(new_dir: Path):
         exc = json.loads(f.read_text())
 
     def approved(s):
+        # I criteri si confrontano su testo normalizzato: uno scritto a mano con
+        # un a capo dentro non aggancerebbe mai, e l'eccezione resterebbe muta
+        # senza che nessuno capisca perche'.
         n = norm(s)
-        return next((e for e in exc if e["match"] in n), None)
+        return next((e for e in exc
+                     if " ".join(e["match"].split()).lower() in n), None)
 
     missing_num, missing_txt, waived = [], [], []
     for page, sents in base.items():

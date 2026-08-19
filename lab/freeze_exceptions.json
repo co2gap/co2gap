@@ -32,7 +32,7 @@
   "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. clausola d'apertura troppo generale: il TOTALE non dipende dalla convenzione, la scomposizione si' — e le righe successive gia' lo quantificavano."
  },
  {
-  "match": "that is where the\nfuel goes",
+  "match": "that is where the fuel goes",
   "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. riscritta: fisicamente falsa, negli ultimi 40 NM i motori sono quasi al minimo. Li' si concentra lo SCARTO, non il consumo."
  },
  {
@@ -48,7 +48,7 @@
   "reason": "18/08, SECONDO giro di revisione incrociata: coerenza: la metodologia era gia' stata corretta a 'interpretazione, non seconda misura', ma FAQ e risultato 4 lo affermavano ancora come fatto derivato. Incoerenza che avevo creato io correggendo una delle tre occorrenze."
  },
  {
-  "match": "that is the baseline staying\nout of reach, not inefficiency",
+  "match": "that is the baseline staying out of reach, not inefficiency",
   "reason": "18/08, SECONDO giro di revisione incrociata: stessa correzione della precedente, terza occorrenza."
  }
 ]
