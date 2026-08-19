@@ -156,6 +156,13 @@ BENCH = {"cco_cdo_kg": 39, "cco_cdo_pct": 1.1,
          # verticale che cade in discesa e arrivo. E' il riferimento
          # esterno indipendente per la nostra scomposizione per fase.
          "alcabin_desc_pct": 80,
+         # Quota massima realmente raggiunta contro quella che il baseline chiede,
+         # per fascia di distanza. Riproducibile con:
+         #   PYTHONPATH=pipeline:ingest lab-venv/bin/python lab/altitude_check.py
+         # 51 giorni campionati, 558.883 voli. Serve a due cose opposte: mostrare
+         # che sulle tratte corte il riferimento NON pretende l'infattibile, e
+         # ammettere dove sbaglia sulle lunghe.
+         "alt_short_below_ft": 2000, "alt_long_below_ft": 1000,
          # SES performance scheme, reference period 4. These are TARGETS, not
          # measurements: the binding Union-wide values Member States are held
          # to, which measured performance has been exceeding. Kept distinct
@@ -1852,6 +1859,12 @@ by shortness rather than by inefficiency. Every ranking below uses the deviation
 from the median of <b>flights of the same length and the same aircraft
 type</b>.</p>
 <div class=card><div class=vizwrap>{viz_bands(band)}</div></div>
+<p class=cap>The baseline does not fly every sector at airline cruise level: it
+picks the altitude that minimises its own fuel for that distance. Checked against
+what aircraft actually do, on the shortest sectors it asks for about
+<b>{BENCH['alt_short_below_ft']:,} ft less</b> climb than the median real flight
+reaches — whatever drives that {band.iloc[0].med:.0f}%, it is not a reference
+demanding the impossible.</p>
 <p class=cap>The same figures as a table, with the flight counts, are on the
 <a href="data.html#bands">data page</a>.</p>
 </section>
@@ -2325,6 +2338,11 @@ the real aircraft burns marginally less than the profile we call optimal. That i
 a result about aviation, it is a defect in our reference — the optimal cruise altitude
 we compute is not the fuel-optimal one. Published work on cruise efficiency finds a
 clear positive gap on the same perimeter, so the disagreement is ours to explain.</p>
+<p>We now know where it comes from. Compared with the altitude aircraft actually
+reach, our baseline cruises about <b>{BENCH['alt_long_below_ft']:,} ft below</b>
+them on the longest sectors — and lower, up there, is not better. The reference is
+burning more than it should exactly where cruise dominates, which is enough to
+swallow the gap and turn it negative.</p>
 <p class=caveat>It affects the <b>level</b> of the vertical term, not the attribution:
 cruise contributes very little to what separates one airport from another. Correcting
 it would most likely make the headline figure <i>larger</i>, since a genuinely optimal
