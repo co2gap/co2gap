@@ -1678,8 +1678,9 @@ much congestion costs, not a target a hub could adopt."""),
         ("f4",
          "Most of this gap cannot be compressed — the part usually left out.",
          f"""Of the {vert_fleet:.1f} points of vertical gap, <b>{vert_floor:.1f} remain for a
-flight going direct through an empty night sky</b>: that is the baseline staying
-out of reach, not inefficiency.""",
+flight going direct through an empty night sky</b> — which we read as the baseline
+staying out of reach rather than inefficiency, though nothing here separates the
+two.""",
          f"""Only {vert_oper:.1f} points move with traffic,
 routing and profile. The distinction is the difference between "European
 aviation wastes X" and "between comparable flights there is a spread of this
@@ -1881,8 +1882,9 @@ and terminal-area holding show up.</p>
 <b>Read this before reading the table.</b> Each row describes <b>the flights that
 touch this airport</b>. It is not a measure of the airport's own conduct. A flight
 is counted at both of its ends, and its gap is measured over the <b>whole flight</b>
-— so a share of what appears under one airport was produced at the other, and a
-share of it in cruise, far from either.<br><br>
+— so part of what appears under one airport may have been produced at the other, or
+in the cruise between them. <b>How much?</b> Until the gap could be split by phase,
+that question had no answer here; it does now, below.<br><br>
 That is why <b>on dep.</b> and <b>on arr.</b> are shown separately: the same figure,
 split by the role the airport played. If it were inherited from the airports at the
 far end, one of the two sides would sit near the norm. Both readings occur here.
@@ -2188,7 +2190,8 @@ of reach of every real flight. Published estimates of what is genuinely
 {BENCH['cco_cdo_kg']} kg of fuel per flight on continuous climb and descent
 procedures. Of the {vert_fleet:.1f} points of vertical gap we measure,
 <b>{vert_floor:.1f} remain even for a flight going direct through an empty night
-sky</b>: that is the baseline being unreachable, not anybody's inefficiency."""),
+sky</b>. We read that as the baseline being unreachable rather than anybody's
+inefficiency — a reading, not a second measurement."""),
         ("What does an airport's number actually mean?",
          f"""It describes <b>the flights that touch that airport</b>, not the
 conduct of the airport. Each flight is counted at both ends and its gap is

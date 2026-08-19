@@ -38,5 +38,17 @@
  {
   "match": "i did not expect a receiver on",
   "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. la provenienza: i dati vengono dalla rete di adsb.lol, da ERA5 e da OpenAP, non dal ricevitore dell'autore."
+ },
+ {
+  "match": "so a share of what appears under one airport was produced at the other",
+  "reason": "18/08, SECONDO giro di revisione incrociata: CONTRADDIZIONE INTERNA trovata da 4 modelli su 4, dentro lo stesso riquadro. Questa frase, scritta prima che esistesse lo split per fase, diceva che una parte del gap nasce all'altro capo e in crociera; tre paragrafi sotto la fase 3 misura che l'altro capo e la crociera contano pochissimo (79-84% entro 40 NM). Riscritta come DOMANDA, cosi' il paragrafo successivo la risponde invece di smentirla."
+ },
+ {
+  "match": "that is the baseline being unreachable, not anybody's inefficiency",
+  "reason": "18/08, SECONDO giro di revisione incrociata: coerenza: la metodologia era gia' stata corretta a 'interpretazione, non seconda misura', ma FAQ e risultato 4 lo affermavano ancora come fatto derivato. Incoerenza che avevo creato io correggendo una delle tre occorrenze."
+ },
+ {
+  "match": "that is the baseline staying\nout of reach, not inefficiency",
+  "reason": "18/08, SECONDO giro di revisione incrociata: stessa correzione della precedente, terza occorrenza."
  }
 ]
