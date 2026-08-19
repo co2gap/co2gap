@@ -66,22 +66,34 @@ def main():
                      "pressure_level": "level", "valid_time": "time"})
     met = MetDataset(met.transpose("longitude", "latitude", "level", "time"))
 
-    for cls_name in ("ExponentialBoostHumidityScaling",
-                     "HistogramMatching",
-                     "ConstantHumidityScaling"):
+    # I parametri prescritti dalla RSTS (DLR/DWD, marzo 2025) per il MRV UE,
+    # sezione 2.4.2, validi esplicitamente "only for usage of ECMWF data" —
+    # cioe' esattamente ERA5. I default di pycontrails sono altri
+    # (0.97 / 1.7 / 1.7): il primo giro della sonda aveva usato quelli, quindi
+    # misurava la libreria e non la convenzione ufficiale.
+    RSTS = dict(rhi_adj=0.9779, rhi_boost_exponent=1.635, clip_upper=1.65)
+
+    for cls_name, kwargs, etichetta in (
+            ("ExponentialBoostHumidityScaling", {}, "default pycontrails"),
+            ("ExponentialBoostHumidityScaling", RSTS, "PRESCRITTA RSTS"),
+            ("HistogramMatching", {}, "alternativa empirica"),
+            ("ConstantHumidityScaling", {}, "riferimento"),
+    ):
         cls = getattr(hs, cls_name, None)
         if cls is None:
             continue
         try:
-            model = cls()
+            model = cls(**kwargs) if kwargs else cls()
             out = model.eval(met.copy())
             qc = out["specific_humidity"].data.sel(level=LEVEL)
             tc = out["air_temperature"].data.sel(level=LEVEL)
             corr = rhi_from(tc, qc, LEVEL * 100.0)
-            print(f"\n{cls_name:34s} RHi mediana {float(corr.median()):5.1f}%   "
-                  f"celle sovrasature {float((corr > 100).mean())*100:5.2f}%")
+            print(f"\n{cls_name:34s} [{etichetta}]"
+                  f"\n  RHi mediana {float(corr.median()):5.1f}%   "
+                  f"celle sovrasature {float((corr > 100).mean())*100:5.2f}%"
+                  + (f"   {kwargs}" if kwargs else ""))
         except Exception as exc:
-            print(f"\n{cls_name:34s} non applicabile qui: "
+            print(f"\n{cls_name:34s} [{etichetta}] non applicabile qui: "
                   f"{type(exc).__name__}: {str(exc)[:120]}")
 
 

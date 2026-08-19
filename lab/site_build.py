@@ -1029,11 +1029,13 @@ done.</p>
 sector, is about as close to the ideal trajectory as an airliner actually gets.
 Across {n_floor:,} such flights the vertical gap still stands at
 <b>{vert_floor:.1f}%</b>, against a fleet median of <b>{vert_fleet:.1f}%</b>.</p>
-<p>That yields an attribution derived from the data: <b>{vert_floor:.1f} points
-are floor</b> — the baseline remaining out of reach because of cost index, step
-climbs imposed by weight and discrete flight levels — and
-<b>{vert_oper:.1f} points are operational margin</b>, related to traffic,
-routing and profile.</p>
+<p><b>What is measured is that the gap does not disappear under near-ideal
+conditions.</b> The reading we place on it — that {vert_floor:.1f} points are a
+floor set by cost index, step climbs imposed by weight and discrete flight levels,
+and that the remaining {vert_oper:.1f} move with traffic, routing and profile — is
+an interpretation of that measurement, not a second measurement. Nothing here
+separates those causes from one another, and the residual may also carry
+variability of the model itself.</p>
 <p>The floor nearly coincides with the value a EUROCONTROL study obtains for
 cruise by comparing each flight with the <i>best observed profile</i>, a
 reference that already contains those constraints. Two independent routes, the
@@ -1044,8 +1046,10 @@ best-in-class reference.</p>
 <h3>A number that can be given</h3>
 <p>There is a way to quantify the margin without leaning on an unreachable
 optimum: compare each flight not with perfection but with <b>what flights of the
-same length already achieve</b>. That level is reachable by definition, because
-half of comparable flights reach it.</p>
+same length already achieve</b>. Half of comparable flights already fly at or
+below that level, which shows it is attainable by some — not that it is attainable
+by all. The flights above it may differ systematically in mass, type, airport, hour
+or constraint.</p>
 <ul>
 <li>If flights above the median of comparable ones flew like that median:
 <b>{sc_a:.1f} Mt of CO&#8322; a year</b> ({sc_a_fuel_kt:,.0f} kt of fuel).</li>
@@ -1216,8 +1220,8 @@ measured by the floor in §2.</li>
 on purpose, to meet schedules: that is an economic choice, not an inefficiency,
 and it still ends up counted in the vertical component. It is one of the items
 making up the incompressible floor.</li>
-<li><b>The split between lateral and vertical is a convention, but the result
-does not depend on it.</b> We correct the route first and the profile second,
+<li><b>The split between lateral and vertical is a convention. The total does not
+depend on it; the split itself does.</b> We correct the route first and the profile second,
 charging the extra kilometres at the <i>optimal</i> profile. The opposite
 convention charges them at the flight's <i>actual</i> efficiency, which moves
 weight towards the lateral component: across the fleet the split goes from
@@ -1883,8 +1887,9 @@ That is why <b>on dep.</b> and <b>on arr.</b> are shown separately: the same fig
 split by the role the airport played. If it were inherited from the airports at the
 far end, one of the two sides would sit near the norm. Both readings occur here.
 <b>{esc(aname(sym_ap))}</b> stands at {symr.dep:+.1f} on departure and
-{symr.arr:+.1f} on arrival: the deviation travels with the airport, not with its
-partners. <b>{esc(aname(asym_ap))}</b> stands at {asymr.dep:+.1f} and
+{symr.arr:+.1f} on arrival: whatever produces that gap is not confined to one end
+of its flights, so it is not an artefact of which airports it connects to. That is
+a statement about where the deviation appears, not about what causes it. <b>{esc(aname(asym_ap))}</b> stands at {asymr.dep:+.1f} and
 {asymr.arr:+.1f}: nearly all of it appears on one side, and its combined figure of
 {asymr.d:+.1f} alone would not have told you which. The median across all
 {len(ga)} airports is {ap_med:+.1f}.<br><br>
@@ -1903,7 +1908,9 @@ partners. <b>{esc(aname(asym_ap))}</b> stands at {asymr.dep:+.1f} and
 is signed. Anyone named here has the right of reply, published in full.</p>
 
 <div class=note>
-<p>Nobody commissioned this. I have an ADS-B receiver, the daily dumps are public,
+<p>Nobody commissioned this. I run an ADS-B receiver, which is how I got
+interested; the flights here are not its own, but the daily dumps that thousands of
+receivers feed. Those dumps are public,
 the performance model is open, and I wanted to know what those trajectories would
 say if you asked them something harder than <i>where is that plane</i>.</p>
 
@@ -1912,13 +1919,16 @@ own indicator, this comes out at <b>+{kea:.2f}%</b> against the
 ~{BENCH['kea_published']:.0f}% they publish. Split by phase,
 <b>{pa['arr_desc']:.0f}% of an airport's arrival deviation is burnt in the descent
 into it</b> — and a 2009 study of US traffic, which I found afterwards, put
-{BENCH['alcabin_desc_pct']}% in descent and arrival. I did not expect a receiver on
-a roof to land that close to institutions that do this for a living.</p>
+{BENCH['alcabin_desc_pct']}% in descent and arrival. I did not expect open data, an open
+performance model and a laptop to land that close to institutions that do this for
+a living.</p>
 
 <p>Five things I will say as opinions rather than findings.</p>
 
-<p><b>If there is room anywhere, it is in the last forty miles.</b> That is where the
-fuel goes. A descent profile is not something an airline decides on its own.</p>
+<p><b>If there is room anywhere, it is in the last forty miles.</b> Not because
+most fuel is burnt there — it is burnt climbing and cruising — but because that is
+where most of the <i>gap</i> accumulates. A descent profile is not something an
+airline decides on its own.</p>
 
 <p><b>The shorter the flight, the worse the arithmetic.</b> Below 200 km a flight
 burns about {band.iloc[0].med:.0f}% more than its ideal; on the longest sectors it

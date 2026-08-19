@@ -10,5 +10,33 @@
  {
   "match": "rankings use only routes with at least 100 flights",
   "reason": "18/08: aggiunta la clausola sull'esclusione delle rotte a maggioranza aviazione d'affari (37 rotte soppresse per privacy). ⚠️ NOTA: nello stesso cambio il conteggio delle rotte pubblicabili passa da 5.520 a 5.483, ma il cancello NON lo vede perche' le stat card sono coppie etichetta+numero sotto i 40 caratteri e non entrano nella fotografia. Limite noto dello strumento."
+ },
+ {
+  "match": "the deviation travels with the airport",
+  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. segnalata da 4 modelli su 4: fa il passo dal DOVE al CHI che la frase successiva nega. Il dato regge 'non spiegabile con l'altro capo', non 'propria dell'aeroporto'."
+ },
+ {
+  "match": "attribution derived from the data",
+  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. 3 modelli su 4: il confronto coi voli quasi ideali mostra che il gap RESTA, non che il residuo sia margine operativo. Riscritta come interpretazione dichiarata."
+ },
+ {
+  "match": "points are operational margin",
+  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. stessa correzione della precedente: la scomposizione causale non e' misurata."
+ },
+ {
+  "match": "that level is reachable by definition",
+  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. osservato non e' replicabile: i voli sopra la mediana possono differire per massa, tipo, aeroporto, ora, vincoli."
+ },
+ {
+  "match": "the split between lateral and vertical is a convention, but the result",
+  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. clausola d'apertura troppo generale: il TOTALE non dipende dalla convenzione, la scomposizione si' — e le righe successive gia' lo quantificavano."
+ },
+ {
+  "match": "that is where the\nfuel goes",
+  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. riscritta: fisicamente falsa, negli ultimi 40 NM i motori sono quasi al minimo. Li' si concentra lo SCARTO, non il consumo."
+ },
+ {
+  "match": "i did not expect a receiver on",
+  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. la provenienza: i dati vengono dalla rete di adsb.lol, da ERA5 e da OpenAP, non dal ricevitore dell'autore."
  }
 ]
