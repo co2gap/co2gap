@@ -2312,7 +2312,7 @@ be — the list is meant to grow.</p>
 {qa_html}
 <section id=weak>
 <h2>Where this method is weak</h2>
-<p class=hint>Not a disclaimer. These are the three places where I already know the
+<p class=hint>Not a disclaimer. These are the places where I already know the
 method is soft, written down so that someone who works in this field can tell me how
 wrong I am. <b>Criticism of the method is what is being asked for — not endorsement.</b>
 Whatever comes back is published here, including the parts that do not suit the
@@ -2351,6 +2351,21 @@ still a correction.</p>
 <p class=caveat>The diagnosis, including which types are affected and why, is written
 up in the <a href="methodology.html">methodology</a> and has been put to the model's
 authors publicly.</p>
+</div>
+
+<div class=card>
+<h3>4. The uncertainty of the figures is not quantified</h3>
+<p>Aircraft mass is estimated, not known, and it is the largest physical
+uncertainty in the model. We say so, but we do not say <b>how much</b> it moves
+the result — there is no ± on any number here.</p>
+<p class=caveat>And the honest version of that is harder than it sounds. This
+metric is a <b>difference between two model runs</b>, the real flight and the
+ideal one. An error that is systematic cancels out in the subtraction; one that
+varies with altitude, weight or phase of flight does not, and lands squarely on
+the gap. Showing that the model reproduces published fuel burn to within a few
+per cent says nothing about either case. Until that sensitivity is measured, only
+the extremes of these rankings should be read as meaning anything — which is why
+that caution appears wherever a ranking does.</p>
 </div>
 
 <div class=card>
