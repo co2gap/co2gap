@@ -50,5 +50,25 @@
  {
   "match": "that is the baseline staying out of reach, not inefficiency",
   "reason": "18/08, SECONDO giro di revisione incrociata: stessa correzione della precedente, terza occorrenza."
+ },
+ {
+  "match": "against a fleet median of 14.0",
+  "reason": "20/08: sola disambiguazione, valore identico (14,0). «fleet median» diceva mediana, ma «fleet» e' la parola che altrove indica l'aggregato pesato: ora «median across all flights». Nessun numero cambiato."
+ },
+ {
+  "match": "across the fleet the split goes from",
+  "reason": "20/08: le quattro cifre della convenzione alternativa erano DIGITATE a mano; ora sono derivate da convention_medians() e riproducono esattamente 7.2/14.0 e 9.4/11.6 sul dataset pubblicato. Aggiunta la frase che distingue queste mediane per volo dal 7.5/14.6 aggregato del titolo, e precisato che la convenzione alternativa addebita i km in piu' alla CO2 per chilometro reale."
+ },
+ {
+  "match": "12.2 / 28.3 on raw medians",
+  "reason": "20/08: stessa modifica della riga precedente, per la coppia dell'aeroporto. Valori identici (7.9/33.0 -> 12.2/28.3), ora derivati; precisato che sono mediane grezze e non scarti dalla norma."
+ },
+ {
+  "match": "the baseline remaining out of reach because of cost index",
+  "reason": "Terzo frammento della stessa frase riscritta in 8e0fb13 (19/08, rilievo 3 della revisione incrociata): il divisore taglia sui trattini lunghi, la frase originale produceva TRE frammenti e solo due furono registrati allora — «attribution derived from the data» e «points are operational margin». Questo e' il terzo, rimasto orfano per sviste di contabilita', non per perdita di contenuto: le tre cause (cost index, step climbs imposed by weight, discrete flight levels) sono ancora in pagina alla lettera, dentro «that N points are a floor set by cost index, step climbs imposed by weight and discrete flight levels». Cio' che e' stato tolto di proposito e' solo la pretesa che fosse «an attribution derived from the data» invece di una lettura. Registrato il 20/08 dopo verifica in git."
+ },
+ {
+  "match": "the full comparison is in the methodology",
+  "reason": "20/08: la frase non e' stata tolta, e' stata ALLUNGATA. Il riquadro sotto il titolo e' il punto in cui nasce l'equivoco fra scarto teorico e spreco recuperabile, quindi da li' parte il primo dei tre rimandi alla nuova pagina di contesto (gli altri due sono nella FAQ e nella sezione firmata). Nessun numero cambiato."
  }
 ]

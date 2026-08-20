@@ -78,6 +78,25 @@ def phase_attribution(df):
                                MIN_N_AIRPORT))
 
 
+def convention_medians(df):
+    """The two decomposition conventions, for the median flight.
+
+    Convention A is the one this site publishes: the route is corrected first
+    and the extra kilometres are charged at the IDEAL profile. Convention B
+    charges them at the flight's own CO2 per kilometre, which moves weight
+    towards the lateral term. The total is identical under both by construction,
+    so only the split moves.
+
+    Derived here rather than typed. A sentence whose whole job is to show how
+    sensitive the split is to a modelling choice is the last place in the site
+    where a number should be allowed to go stale without anything failing.
+    """
+    lat_b = (df.co2_kg_v0 / df.ideal_gc_co2_kg) * (1 - df.gc_km / df.flown_km) * 100
+    vert_b = df.excess_total_pct - lat_b
+    return (float(df.excess_lateral_pct.median()), float(df.excess_vertical_pct.median()),
+            float(lat_b.median()), float(vert_b.median()))
+
+
 def coverage_note(days) -> str:
     """The days inside the published period whose source data is incomplete.
 
@@ -608,7 +627,8 @@ LOGO = ('<svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true">'
 
 NAV = f"""<div class=top><div class=wrap>
 <a class=brand href="index.html">{LOGO}co2gap</a>
-<nav><a href="index.html#findings">Findings</a><a href="data.html">Data</a>
+<nav><a href="index.html#findings">Findings</a><a href="context.html">Context</a>
+<a href="data.html">Data</a>
 <a href="methodology.html">Method</a><a href="faq.html">FAQ</a><a href="index.html#download">Download</a></nav>
 </div></div>"""
 
@@ -955,6 +975,7 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
                       n_routes_all, n_routes_rank, n_airports, gen,
                       sc_a, sc_b, sc_a_fuel_kt,
                       vert_floor, vert_fleet, vert_oper, n_floor,
+                      conv_fleet, conv_ap1,
                       finding_sections="", n_biz_routes=0,
                       non_airliner_pct=0.0) -> str:
     """The page that has to be right even when nobody reads it.
@@ -1039,7 +1060,8 @@ done.</p>
 <p>A flight going direct, departing at night into an empty sky, on a long
 sector, is about as close to the ideal trajectory as an airliner actually gets.
 Across {n_floor:,} such flights the vertical gap still stands at
-<b>{vert_floor:.1f}%</b>, against a fleet median of <b>{vert_fleet:.1f}%</b>.</p>
+<b>{vert_floor:.1f}%</b>, against a median across all flights of
+<b>{vert_fleet:.1f}%</b>.</p>
 <p><b>What is measured is that the gap does not disappear under near-ideal
 conditions.</b> The reading we place on it — that {vert_floor:.1f} points are a
 floor set by cost index, step climbs imposed by weight and discrete flight levels,
@@ -1234,11 +1256,19 @@ making up the incompressible floor.</li>
 <li><b>The split between lateral and vertical is a convention. The total does not
 depend on it; the split itself does.</b> We correct the route first and the profile second,
 charging the extra kilometres at the <i>optimal</i> profile. The opposite
-convention charges them at the flight's <i>actual</i> efficiency, which moves
-weight towards the lateral component: across the fleet the split goes from
-7.2 / 14.0 to 9.4 / 11.6 points. <b>The vertical component still dominates</b>,
-including for the airport named in the findings (7.9 / 33.0 becomes
-12.2 / 28.3 on raw medians). The total is identical under both by construction.
+convention charges them at the flight's <i>actual</i> CO<sub>2</sub> per kilometre,
+which moves weight towards the lateral component: for the <b>median flight</b> the
+split goes from {conv_fleet[0]:.1f} / {conv_fleet[1]:.1f} to
+{conv_fleet[2]:.1f} / {conv_fleet[3]:.1f} points. <b>The vertical component still
+dominates</b>, including for the airport named in the findings
+({conv_ap1[0]:.1f} / {conv_ap1[1]:.1f} becomes {conv_ap1[2]:.1f} / {conv_ap1[3]:.1f},
+on raw medians rather than deviations from the norm). The total is identical under
+both by construction.<br>
+<b>Those four pairs describe the median flight, and are not the
+{lat_w:.1f} / {vert_w:.1f} of the headline.</b> The headline is a ratio of sums over
+the whole period, where a long flight weighs more than a short one; the median
+flight is a different quantity and comes out lower. Both appear on this site, and
+every comparison in the rankings uses the aggregate.
 Anything resting on the <i>size</i> of the split should be read with this
 sensitivity in mind; the ordering does not change.</li>
 <li>The ideal trajectory's flight time uses the <b>harmonic mean of ground
@@ -1419,6 +1449,7 @@ def main():
     vert_floor = float(df.loc[floor_mask, "excess_vertical_pct"].median())
     vert_fleet = float(df.excess_vertical_pct.median())
     vert_oper = vert_fleet - vert_floor
+    conv_fleet = convention_medians(df)
     n_floor = int(floor_mask.sum())
 
     # ---- peer-based counterfactual --------------------------------------
@@ -1519,6 +1550,7 @@ def main():
     # ANY tail, so the count above means nothing without the share it starts from.
     ap1_all_routes = sum(1 for a, b in g.index if ap1 in (a, b))
     ap1_share = 100.0 * ap1_all_routes / len(g) if len(g) else 0.0
+    conv_ap1 = convention_medians(df[(df.origin_icao == ap1) | (df.dest_icao == ap1)])
     ap2, ap2r = top_ap.index[1], top_ap.iloc[1]
     ap3, ap3r = top_ap.index[2], top_ap.iloc[2]
     ap_med = float(ga.d.median())
@@ -1688,7 +1720,8 @@ traffic buys continuous descents and direct clearances. It is a measure of how
 much congestion costs, not a target a hub could adopt."""),
         ("f4",
          "Most of this gap cannot be compressed — the part usually left out.",
-         f"""Of the {vert_fleet:.1f} points of vertical gap, <b>{vert_floor:.1f} remain for a
+         f"""Of the median flight's {vert_fleet:.1f} points of vertical gap,
+<b>{vert_floor:.1f} remain for a
 flight going direct through an empty night sky</b> — which we read as the baseline
 staying out of reach rather than inefficiency, though nothing here separates the
 two.""",
@@ -1735,7 +1768,10 @@ it out of reach. Published estimates of <i>recoverable</i> inefficiency are much
 smaller — EUROCONTROL puts at roughly {BENCH['cco_cdo_kg']} kg per flight what continuous climb and
 descent procedures would recover, against the roughly 520 kg of total gap
 measured here. <b>This site measures the distance from a theoretical optimum,
-not avoidable waste.</b> The full comparison is in the methodology.
+not avoidable waste.</b> The full comparison is in the methodology; how this
+figure sits beside EUROCONTROL's own estimate of what is recoverable, and how
+much aviation weighs in the first place, is on the
+<a href="context.html">context page</a>.
 </p>
 
 <div class=stats>
@@ -1924,7 +1960,9 @@ a statement about where the deviation appears, not about what causes it. <b>{esc
 <section>
 <h2>What I make of this</h2>
 <p class=hint>The rest of this site is measurement. This section is opinion, and it
-is signed. Anyone named here has the right of reply, published in full.</p>
+is signed. Anyone named here has the right of reply, published in full. What the
+opinion rests on — how much aviation weighs, and what other people measure — is
+set out with its sources on the <a href="context.html">context page</a>.</p>
 
 <div class=note>
 <p>Nobody commissioned this. I run an ADS-B receiver, which is how I got
@@ -2203,6 +2241,15 @@ q.addEventListener('input',run);
     # probabile, non con la presentazione.
     pa_arr_own = f"{pa['arr_own']:.0f}%" if pa else "40 NM of it"
     QA = [
+        ("How much does aviation actually matter?",
+         """<b>About 2.5% of the world's CO₂ — and that figure is used to end the
+argument as often as to start it.</b> It is small beside electricity, industry or
+heating, and it has grown roughly eightfold as a share since 1940 while almost
+every other sector shrank in relative terms. Counting contrails and nitrogen
+oxides, which tonnes of CO₂ do not capture, aviation accounts for about 3.5% of
+human-caused radiative forcing. The two percentages are of different quantities
+and must not be added or swapped. The <a href="context.html">context page</a>
+sets out the series behind all of this, with the sources.""",),
         ("Are you saying airlines and airports are wasting fuel?",
          f"""<b>No, and the distinction is the whole point of this site.</b> We
 measure the distance between what a flight actually burnt and what the same
@@ -2212,7 +2259,9 @@ between aircraft, route structure, closed airspace and arrival queues put it out
 of reach of every real flight. Published estimates of what is genuinely
 <i>recoverable</i> are far smaller — EUROCONTROL puts about
 {BENCH['cco_cdo_kg']} kg of fuel per flight on continuous climb and descent
-procedures. Of the {vert_fleet:.1f} points of vertical gap we measure,
+procedures. Of the {vert_fleet:.1f} points of vertical gap the <i>median flight</i>
+carries — the headline {vert_w:.1f} is the fleet aggregate, which weighs long flights
+more heavily —
 <b>{vert_floor:.1f} remain even for a flight going direct through an empty night
 sky</b>. We read that as the baseline being unreachable rather than anybody's
 inefficiency — a reading, not a second measurement."""),
@@ -2232,8 +2281,10 @@ traffic, and nothing here distinguishes the two."""),
 {excess_t/co2_t*100:.0f}% — the gap as a share of what was <i>burnt</i>. The
 headline {(lat_w+vert_w):.1f}% is the gap as a share of what the <i>ideal
 flight</i> would have burnt, which is the smaller number, so the percentage is
-larger. It is also aggregated per flight rather than taken as a ratio of the two
-totals. Neither figure is wrong; they answer different questions, and this site
+larger. Both are ratios of sums, not averages of per-flight percentages; the
+remaining fraction of a point between them is the type calibration, which applies
+to the tonnages and cancels inside the percentages.
+Neither figure is wrong; they answer different questions, and this site
 uses the second because every comparison here — route against route, airport
 against airport — is made against the ideal, not against the actual."""),
         ("Can I trust the ranking order?",
@@ -2452,10 +2503,23 @@ replies are published on this site, in full and unconditionally.</p>
     OUT_FAQ.write_text(faq_doc)
     print(f"scritto {OUT_FAQ}  ({len(faq_doc)/1024:.0f} KB)")
 
+    import context_page
+    ctx_doc = context_page.build(
+        meta=meta, nav=NAV, style=STYLE_INDEX, term=term, release=RELEASE,
+        method_version=METHOD_VERSION, n_flights=len(df), days=len(days),
+        lat_w=lat_w, vert_w=vert_w)
+    OUT_CTX = OUT.parent / "context.html"
+    OUT_CTX.write_text(ctx_doc)
+    # Le cifre esterne viaggiano col sito: un lettore che vuole verificarle deve
+    # poter leggere fonte e data di verifica senza aprire il repository.
+    shutil.copyfile(context_page.EXTERNAL, OUT.parent / "context-sources.json")
+    print(f"scritto {OUT_CTX}  ({len(ctx_doc)/1024:.0f} KB)")
+
     meth = build_methodology(df, days, months, lat_w, vert_w, kea,
                              co2_t, excess_t, len(g_all), len(g), len(ga), gen,
                              sc_a, sc_b, sc_a_fuel_kt,
                              vert_floor, vert_fleet, vert_oper, n_floor,
+                             conv_fleet, conv_ap1,
                              finding_sections, n_biz_routes, non_airliner_pct)
     OUT_METH.write_text(add_toc(meth))
     print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")

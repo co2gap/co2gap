@@ -106,7 +106,8 @@ padding:1px 5px;border-radius:4px}
 </style></head><body>
 <div class=top><div class=wrap>
 <a class=brand href="index.html"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
-<nav><a href="index.html#findings">Findings</a><a href="data.html">Data</a>
+<nav><a href="index.html#findings">Findings</a><a href="context.html">Context</a>
+<a href="data.html">Data</a>
 <a href="methodology.html">Method</a><a href="faq.html">FAQ</a><a href="index.html#download">Download</a></nav>
 </div></div>
 <div class=wrap>
@@ -161,7 +162,8 @@ across operators that must divert and operators that need not.</p>
 island airports, more than thirty points away from the congested hubs.<br>Light
 traffic buys continuous descents and direct clearances. It is a measure of how
 much congestion costs, not a target a hub could adopt.</p>
-<h3 id=f4>4. Most of this gap cannot be compressed — the part usually left out.</h3><p>Of the 14.0 points of vertical gap, <b>5.5 remain for a
+<h3 id=f4>4. Most of this gap cannot be compressed — the part usually left out.</h3><p>Of the median flight's 14.0 points of vertical gap,
+<b>5.5 remain for a
 flight going direct through an empty night sky</b> — which we read as the baseline
 staying out of reach rather than inefficiency, though nothing here separates the
 two.<br>Only 8.5 points move with traffic,
@@ -170,7 +172,7 @@ aviation wastes X" and "between comparable flights there is a spread of this
 size" — and only the second is something these data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-20 05:28 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-20 13:36 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -217,7 +219,8 @@ done.</p>
 <p>A flight going direct, departing at night into an empty sky, on a long
 sector, is about as close to the ideal trajectory as an airliner actually gets.
 Across 3,120 such flights the vertical gap still stands at
-<b>5.5%</b>, against a fleet median of <b>14.0%</b>.</p>
+<b>5.5%</b>, against a median across all flights of
+<b>14.0%</b>.</p>
 <p><b>What is measured is that the gap does not disappear under near-ideal
 conditions.</b> The reading we place on it — that 5.5 points are a
 floor set by cost index, step climbs imposed by weight and discrete flight levels,
@@ -414,11 +417,19 @@ making up the incompressible floor.</li>
 <li><b>The split between lateral and vertical is a convention. The total does not
 depend on it; the split itself does.</b> We correct the route first and the profile second,
 charging the extra kilometres at the <i>optimal</i> profile. The opposite
-convention charges them at the flight's <i>actual</i> efficiency, which moves
-weight towards the lateral component: across the fleet the split goes from
-7.2 / 14.0 to 9.4 / 11.6 points. <b>The vertical component still dominates</b>,
-including for the airport named in the findings (7.9 / 33.0 becomes
-12.2 / 28.3 on raw medians). The total is identical under both by construction.
+convention charges them at the flight's <i>actual</i> CO<sub>2</sub> per kilometre,
+which moves weight towards the lateral component: for the <b>median flight</b> the
+split goes from 7.2 / 14.0 to
+9.4 / 11.6 points. <b>The vertical component still
+dominates</b>, including for the airport named in the findings
+(7.9 / 33.0 becomes 12.2 / 28.3,
+on raw medians rather than deviations from the norm). The total is identical under
+both by construction.<br>
+<b>Those four pairs describe the median flight, and are not the
+7.5 / 14.6 of the headline.</b> The headline is a ratio of sums over
+the whole period, where a long flight weighs more than a short one; the median
+flight is a different quantity and comes out lower. Both appear on this site, and
+every comparison in the rankings uses the aggregate.
 Anything resting on the <i>size</i> of the split should be read with this
 sensitivity in mind; the ordering does not change.</li>
 <li>The ideal trajectory's flight time uses the <b>harmonic mean of ground
@@ -539,7 +550,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-20 05:28 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-20 13:36 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>

@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Aviation's 2.5% — co2gap</title>
+<meta name=description content="How much of the world&#x27;s CO2 comes from flying, how that share has moved since 1940, and what changes once contrails and NOx are counted. The context around the co2gap figures, from published sources.">
+<link rel=canonical href="https://co2gap.org/context.html">
+<meta property=og:type content=website>
+<meta property=og:site_name content=co2gap>
+<meta property=og:url content="https://co2gap.org/context.html">
+<meta property=og:title content="Aviation&#x27;s 2.5% — co2gap">
+<meta property=og:description content="How much of the world&#x27;s CO2 comes from flying, how that share has moved since 1940, and what changes once contrails and NOx are counted. The context around the co2gap figures, from published sources.">
+<meta property=og:image content="https://co2gap.org/og.png">
+<meta property=og:image:width content=1200>
+<meta property=og:image:height content=630>
+<meta property=og:image:alt content="co2gap — 1,833,127 flights, 25.4 Mt CO2 emitted, 4.57 Mt gap from the theoretical optimum">
+<meta name=twitter:card content=summary_large_image>
+<meta name=twitter:title content="Aviation&#x27;s 2.5% — co2gap">
+<meta name=twitter:description content="How much of the world&#x27;s CO2 comes from flying, how that share has moved since 1940, and what changes once contrails and NOx are counted. The context around the co2gap figures, from published sources.">
+<meta name=twitter:image content="https://co2gap.org/og.png">
+<link rel=icon href=favicon.svg type="image/svg+xml">
+<link rel=icon href=favicon-32.png sizes=32x32>
+<link rel=apple-touch-icon href=apple-touch-icon.png>
+<style>
+@font-face{font-family:Inter;src:url(inter.woff2) format('woff2');
+font-weight:100 900;font-style:normal;font-display:swap}
+:root{color-scheme:light dark;
+--bg:#fbfcfd;--card:#ffffff;--fg:#111c25;--mut:#5b6b78;--line:#e4e9ee;
+--grid:#eceff3;--axis:#c8d1d9;--s1:#2a78d6;--s2:#eb6834;--up:#e34948;--dn:#2a78d6;
+--pos:#c2410c;--neg:#0f766e;--hi:#1b64c0;--warn:#b45309;--warnbg:#fdf6ec}
+@media(prefers-color-scheme:dark){:root{
+--bg:#0d1216;--card:#161d23;--fg:#e9eef2;--mut:#93a4b1;--line:#232d35;
+--grid:#1f2830;--axis:#3a4650;--s1:#3987e5;--s2:#d95926;--up:#e66767;--dn:#3987e5;
+--pos:#ff8a6b;--neg:#5fd0a8;--hi:#68b0ff;--warn:#f0b429;--warnbg:#1d1c14}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:0 22px}
+body.data .wrap,body.data .top .wrap{max-width:1080px}
+a{color:var(--hi)}
+.top{position:sticky;top:0;z-index:9;background:var(--bg);
+border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:26px;height:58px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:640;letter-spacing:-.01em;
+text-decoration:none;color:var(--fg);margin-right:auto;font-size:1.02rem}
+.brand svg{width:26px;height:26px;display:block}
+.top nav{display:flex;gap:20px}
+.top nav a{color:var(--mut);text-decoration:none;font-size:.92rem}
+.top nav a:hover{color:var(--fg)}
+.hero{padding:64px 0 8px}
+.eyebrow{color:var(--mut);font-size:.83rem;letter-spacing:.06em;text-transform:uppercase;
+margin:0 0 14px}
+h1{font-size:2.45rem;line-height:1.15;letter-spacing:-.025em;margin:0 0 18px;max-width:16em;
+text-wrap:balance}
+.lede{font-size:1.12rem;color:var(--mut);margin:0;max-width:34em}
+.figure{display:flex;align-items:baseline;gap:16px;margin:38px 0 6px}
+.figure .n{font-size:4.4rem;font-weight:660;letter-spacing:-.04em;line-height:1}
+.figure .u{font-size:1rem;color:var(--mut);max-width:15em;line-height:1.45}
+.shield{border-left:3px solid var(--warn);background:var(--warnbg);padding:12px 16px;
+border-radius:0 8px 8px 0;font-size:.94rem;margin:18px 0 0;max-width:38em}
+.shield b{color:var(--fg)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:40px 0 0}
+.stat{background:var(--card);padding:16px 18px}
+.stat .v{font-size:1.5rem;font-weight:640;letter-spacing:-.02em}
+.stat .l{color:var(--mut);font-size:.8rem;margin-top:3px;line-height:1.35}
+section{padding:52px 0;border-top:1px solid var(--line)}
+h2{font-size:1.55rem;letter-spacing:-.02em;margin:0 0 10px;line-height:1.25;
+text-wrap:balance}
+h3{font-size:1.02rem;margin:0 0 6px;letter-spacing:-.01em}
+p.hint,.sub{color:var(--mut);margin:0 0 26px;max-width:36em;font-size:.96rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:22px 24px;margin:20px 0}
+.card p{margin:0;font-size:.96rem} .card p+p{margin-top:10px}
+.caveat{color:var(--mut);font-size:.9rem}
+.cap{color:var(--mut);font-size:.86rem;margin:14px 0 0}
+.vizwrap{overflow-x:auto}
+.viz{width:100%;min-width:600px;height:auto;display:block;overflow:visible}
+.findings{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.findings .card{margin:0}
+.more{display:inline-block;margin-top:12px;font-size:.9rem;text-decoration:none}
+.more:hover{text-decoration:underline}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:18px 20px;text-decoration:none;color:var(--fg)}
+.dl a:hover{border-color:var(--axis)}
+.dl b{display:block;font-size:.98rem}
+.dl span{color:var(--mut);font-size:.88rem}
+.term{color:inherit;text-decoration:none;border-bottom:1px dotted var(--axis);cursor:help}
+.term:hover{color:var(--hi);border-bottom-color:var(--hi)}
+.howto{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:20px 24px 22px;margin:34px 0 0}
+.howto h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;
+color:var(--mut);font-weight:600;margin:0 0 12px}
+.howto dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;
+font-size:.94rem;align-items:baseline}
+.howto dt{font-weight:640;white-space:nowrap}
+.howto dd{margin:0;color:var(--mut)}
+.howto dd b{color:var(--fg);font-weight:560}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:500;font-size:.72rem;text-transform:uppercase;
+letter-spacing:.06em;background:var(--card)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.big{font-weight:650}
+td.pos{color:var(--pos)} td.neg{color:var(--neg)}
+td.r{font-weight:500;white-space:normal}
+.code{color:var(--mut);font-size:.76rem;margin-left:8px;font-family:ui-monospace,monospace}
+.flag{color:var(--warn);margin-left:6px;cursor:help}
+.note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--hi);
+border-radius:8px;padding:16px 20px;color:var(--mut);font-size:.92rem;margin:20px 0}
+.note.warn{border-left-color:var(--warn)}
+.note b{color:var(--fg)}
+.note p{margin:10px 0}
+.search{width:100%;padding:12px 14px;font-size:1rem;border:1px solid var(--line);
+border-radius:10px;background:var(--card);color:var(--fg);margin-bottom:8px;
+font-family:inherit}
+.count{color:var(--mut);font-size:.85rem;margin:0 0 18px}
+.gloss{display:grid;grid-template-columns:1fr;gap:0}
+.gloss div{padding:16px 0;border-bottom:1px solid var(--line)}
+.gloss div:last-child{border-bottom:none}
+.gloss dt{font-weight:640;margin-bottom:4px}
+.gloss dd{margin:0;color:var(--mut);font-size:.95rem}
+.gloss div:target dt{color:var(--hi)}
+.foot{color:var(--mut);font-size:.85rem;border-top:1px solid var(--line);
+padding:32px 0 60px;margin-top:0}
+@media(max-width:720px){
+ h1{font-size:1.9rem}.figure .n{font-size:3.2rem}
+ .stats,.findings,.dl{grid-template-columns:1fr}
+ .top nav{gap:15px}.top .wrap{gap:14px}.hero{padding-top:40px}
+}
+@media(max-width:560px){
+ .top nav a[href$="#download"]{display:none}
+ .figure{display:block}.figure .u{margin-top:8px;max-width:none}
+}
+
+/* Su carta questo sito ci finisce davvero: un analista lo salva in PDF e lo
+   allega a una nota interna. Senza queste regole si porta dietro la testata
+   fissa ripetuta, i fondi scuri e i link come testo cieco — un lettore che
+   stampa perde proprio i rimandi che rendono verificabile ciò che legge. */
+@media print{
+ :root{--bg:#fff;--card:#fff;--fg:#111;--mut:#444;--line:#bbb;--grid:#ddd;
+ --axis:#888;--hi:#111;--warnbg:#fff}
+ .top,.more,.dl,.search,.count,.toc{display:none}
+ body{font-size:10.5pt}
+ .wrap{max-width:none;padding:0}
+ section{padding:14pt 0;break-inside:avoid}
+ .card,.note,.shield,.howto{border:1px solid #bbb;break-inside:avoid}
+ .figure .n{font-size:32pt}
+ h1{font-size:20pt}h2{font-size:13pt}
+ h2,h3{break-after:avoid}
+ .viz{min-width:0}
+ table{font-size:9pt}
+ thead{display:table-header-group}
+ tr{break-inside:avoid}
+ /* l'indirizzo di un link non e' recuperabile da chi legge su carta */
+ a[href^="http"]::after{content:" (" attr(href) ")";font-size:8.5pt;color:#555;
+ word-break:break-all}
+ a[href^="#"]::after,a[href^="mailto"]::after{content:""}
+ .foot{border-top:1px solid #bbb}
+}
+
+</style>
+<style>
+body.context .wrap,body.context .top .wrap{max-width:1000px}
+body.context .col{max-width:66ch}
+:root{--c1:#2a78d6;--c2:#eb6834;--c3:#7a4fbf;--c4:#2e8b57}
+@media(prefers-color-scheme:dark){:root{--c1:#3987e5;--c2:#d95926;--c3:#9a79de;--c4:#2fa377}}
+.cfig{margin:30px 0;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.cfig figcaption{padding:16px 20px 0}
+.cfig .eyebrow{margin-bottom:6px}
+.cfig h3{margin:0;font-size:1.12rem;line-height:1.3;letter-spacing:-.01em}
+.cplot{position:relative;padding:14px 10px 4px;overflow-x:auto}
+.cplot svg{width:100%;height:auto;display:block;min-width:520px;overflow:visible}
+.cnote{border-top:1px solid var(--line);padding:16px 20px 18px;font-size:.94rem}
+.cnote p{margin:0 0 10px;max-width:74ch}
+.cnote .src{font-size:.82rem;color:var(--mut);margin:0;line-height:1.5}
+.clegend{display:flex;flex-wrap:wrap;gap:16px;list-style:none;margin:10px 0 0;padding:0 20px;
+font-size:.85rem;color:var(--mut)}
+.clegend li{display:flex;align-items:center;gap:7px}
+.sw{width:11px;height:11px;border-radius:2px;display:inline-block}
+.sw.c1{background:var(--c1)}.sw.c2{background:var(--c2)}
+.sw.c3{background:var(--c3)}.sw.c4{background:var(--c4)}
+.cgrid{stroke:var(--grid);stroke-width:1}
+.caxis{stroke:var(--axis);stroke-width:1}
+.ctick,.crowlab,.cval,.cendlab,.cendsub,.cpaneltitle,.cpanelsub,.cannot{
+font-variant-numeric:tabular-nums}
+.ctick{font-size:11.5px;fill:var(--mut)}
+.caxlab{font-size:10.5px;fill:var(--mut);letter-spacing:.08em;text-transform:uppercase}
+.crowlab{font-size:12.5px;fill:var(--fg)}
+.cval{font-size:12.5px;fill:var(--mut);font-weight:600}
+.cpaneltitle{font-size:14px;fill:var(--fg);font-weight:620}
+.cpanelsub{font-size:10.5px;fill:var(--mut)}
+.cendlab{font-size:12.5px;font-weight:620}
+.cendsub{font-size:11px;fill:var(--mut)}
+.cannot{font-size:11px;fill:var(--mut)}
+.cline{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.cline.c1{stroke:var(--c1)}.cline.c2{stroke:var(--c2)}
+.cline.c3{stroke:var(--c3)}.cline.c4{stroke:var(--c4)}
+.carea.c2{fill:var(--c2);fill-opacity:.14;stroke:none}
+.cdot.c1{fill:var(--c1)}.cdot.c2{fill:var(--c2)}
+.cdot.c3{fill:var(--c3)}.cdot.c4{fill:var(--c4)}
+.cendlab.c1{fill:var(--c1)}.cendlab.c2{fill:var(--c2)}
+.cendlab.c3{fill:var(--c3)}.cendlab.c4{fill:var(--c4)}
+.cbar{stroke:var(--card);stroke-width:2}
+.cbar.c2{fill:var(--c2)}.cbar.c3{fill:var(--c3)}.cbar.c4{fill:var(--c4)}
+.cbar:hover{opacity:.82}
+.cval.c2{fill:var(--c2)}.cval.c4{fill:var(--c4)}
+.cannotdot{fill:var(--mut)}
+.cannotline{stroke:var(--axis);stroke-width:1}
+.ccross{stroke:var(--mut);stroke-width:1;stroke-dasharray:3 3}
+.ctip{position:absolute;pointer-events:none;z-index:5;background:var(--card);
+border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.8rem;
+line-height:1.55;color:var(--fg);white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.18);
+transform:translate(-50%,-115%);font-variant-numeric:tabular-nums}
+.ctip .ty{color:var(--mut);display:block;margin-bottom:3px}
+.ctip .tr{display:flex;gap:14px;justify-content:space-between}
+.ctip .tn{color:var(--mut)}
+.ctbl{margin:0 0 14px}
+.ctbl summary{font-size:.82rem;color:var(--mut);cursor:pointer;list-style:none;
+display:flex;align-items:center;gap:7px}
+.ctbl summary::-webkit-details-marker{display:none}
+.ctbl summary::before{content:"+";color:var(--c2);font-weight:700}
+.ctbl[open] summary::before{content:"\2212"}
+.ctbl summary:hover{color:var(--fg)}
+.ctblwrap{max-height:300px;overflow:auto;margin-top:10px;border:1px solid var(--line);
+border-radius:8px}
+.ctblwrap table{border-collapse:collapse;width:100%;font-size:.82rem;
+font-variant-numeric:tabular-nums}
+.ctblwrap th{position:sticky;top:0;background:var(--card);text-align:left;font-weight:600;
+color:var(--mut);padding:7px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ctblwrap td{padding:5px 12px;border-bottom:1px solid var(--grid);color:var(--mut);
+white-space:nowrap}
+.ctblwrap td:first-child{color:var(--fg)}
+.ctiles{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:26px 0 34px}
+.ctile{background:var(--card);padding:16px 16px 18px}
+.ctile b{display:block;font-size:1.9rem;line-height:1;letter-spacing:-.02em;margin-bottom:8px;
+font-variant-numeric:tabular-nums}
+.ctile span{font-size:.86rem;color:var(--fg);line-height:1.4;display:block}
+.ctile em{font-size:.74rem;font-style:normal;color:var(--mut);display:block;margin-top:8px}
+.ctile.t1 b{color:var(--c2)}.ctile.t2 b{color:var(--c3)}
+.ctile.t3 b{color:var(--c1)}.ctile.t4 b{color:var(--c4)}
+.cpull{font-size:1.16rem;line-height:1.5;border-left:3px solid var(--c2);padding:2px 0 2px 18px;
+margin:26px 0}
+@media(max-width:760px){.ctiles{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:430px){.ctiles{grid-template-columns:1fr}}
+.csrc th,.csrc td{white-space:normal;vertical-align:top}
+.csrc td:first-child{width:34%;color:var(--fg)}
+.csrc td{color:var(--mut)}
+@media print{.cplot{overflow:visible}.ctbl{display:none}}
+</style></head><body class=context>
+<div class=top><div class=wrap>
+<a class=brand href="index.html"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
+<nav><a href="index.html#findings">Findings</a><a href="context.html">Context</a>
+<a href="data.html">Data</a>
+<a href="methodology.html">Method</a><a href="faq.html">FAQ</a><a href="index.html#download">Download</a></nav>
+</div></div>
+<div class=wrap>
+<div class=hero style="padding-bottom:0">
+<p class=eyebrow>Context</p>
+<h1>Aviation's 2.5%</h1>
+<p class=lede>Flying accounts for about 2.5% of the world's CO₂. It is a small figure, and it gets
+used for two opposite purposes: to close the argument and to open it. This page puts it back inside
+the series it comes from, and shows what changes when you change the denominator, the perimeter or
+the metric.</p>
+</div>
+
+<div class=ctiles>
+<div class="ctile t1"><b>2.47%</b><span>of world CO₂ was emitted by aviation in 2019</span>
+<em>Lee et al. · Our World in Data</em></div>
+<div class="ctile t2"><b>3.5%</b><span>of human-caused radiative
+forcing, once contrails are counted</span><em>Lee et al. 2021</em></div>
+<div class="ctile t3"><b>≈4%</b><span>of the warming observed so far is
+attributed to flying</span><em>Klöwer et al. 2021</em></div>
+<div class="ctile t4"><b>11.1 m</b><span>flights in Europe in 2025:
+as many as in 2019</span><em>EUROCONTROL</em></div></div>
+
+<section>
+<h2>A thin line on a total that will not stop rising</h2>
+<div class=col>
+<p>The four figures above describe the same activity and cannot be compared with one another: the
+first counts tonnes, the second watts per square metre, the third degrees, the fourth take-offs.
+Almost every discussion about aviation and the climate runs aground exactly there, in the move from
+one to the next. The simplest one comes first.</p>
+<p>In 2024 the world emitted about <b>43.2 billion tonnes</b> of CO₂ counting fossil
+fuels, cement and land use — four times the 1940 figure, and a record. Aviation, on the same scale,
+is the line that looks as if it were resting on the axis.</p>
+</div>
+<figure class=cfig id="fig-totale"><figcaption><p class=eyebrow>1940 – 2024 · billion tonnes</p><h3>Global CO₂ emissions, and the part that flies</h3></figcaption><div class=cplot><svg viewBox="0 0 880 380" role=img aria-label="Global CO₂ emissions, and the part that flies" data-cid="totale"><line class=cgrid x1="58" x2="740" y1="340.0" y2="340.0"/><text class=ctick x="48" y="344.0" text-anchor=end>0</text><line class=cgrid x1="58" x2="740" y1="270.2" y2="270.2"/><text class=ctick x="48" y="274.2" text-anchor=end>10</text><line class=cgrid x1="58" x2="740" y1="200.4" y2="200.4"/><text class=ctick x="48" y="204.4" text-anchor=end>20</text><line class=cgrid x1="58" x2="740" y1="130.7" y2="130.7"/><text class=ctick x="48" y="134.7" text-anchor=end>30</text><line class=cgrid x1="58" x2="740" y1="60.9" y2="60.9"/><text class=ctick x="48" y="64.9" text-anchor=end>40</text><text class=ctick x="58.0" y="362" text-anchor=middle>1940</text><text class=ctick x="220.4" y="362" text-anchor=middle>1960</text><text class=ctick x="382.8" y="362" text-anchor=middle>1980</text><text class=ctick x="545.1" y="362" text-anchor=middle>2000</text><text class=ctick x="707.5" y="362" text-anchor=middle>2020</text><line class=caxis x1="58" x2="740" y1="340.0" y2="340.0"/><text class=caxlab x="48" y="18" text-anchor=end>Gt CO₂</text><path class="cline c1" d="M58.0,265.8 L66.1,264.0 L74.2,264.0 L82.4,263.5 L90.5,263.3 L98.6,269.2 L106.7,267.2 L114.8,263.6 L123.0,262.0 L131.1,264.0 L139.2,252.2 L147.3,245.2 L155.4,244.3 L163.5,242.1 L171.7,238.1 L179.8,232.3 L187.9,228.4 L196.0,225.1 L204.1,224.0 L212.3,217.6 L220.4,221.4 L228.5,221.1 L236.6,222.2 L244.7,219.8 L252.9,218.0 L261.0,216.5 L269.1,215.9 L277.2,211.0 L285.3,205.8 L293.5,195.5 L301.6,189.4 L309.7,189.0 L317.8,181.9 L325.9,177.2 L334.0,177.3 L342.2,178.7 L350.3,173.1 L358.4,165.7 L366.5,161.4 L374.6,163.0 L382.8,162.7 L390.9,167.5 L399.0,170.7 L407.1,167.4 L415.2,159.4 L423.4,152.1 L431.5,148.9 L439.6,147.4 L447.7,144.1 L455.8,143.4 L464.0,140.7 L472.1,138.2 L480.2,141.2 L488.3,141.3 L496.4,133.2 L504.5,132.1 L512.7,125.3 L520.8,113.9 L528.9,123.1 L537.0,120.9 L545.1,119.1 L553.3,122.6 L561.4,114.2 L569.5,96.0 L577.6,95.4 L585.7,92.1 L593.9,84.4 L602.0,81.2 L610.1,74.8 L618.2,74.5 L626.3,62.0 L634.5,54.8 L642.6,49.5 L650.7,49.8 L658.8,47.8 L666.9,47.5 L675.0,55.5 L683.2,51.9 L691.3,49.6 L699.4,47.1 L707.5,63.2 L715.6,50.3 L723.8,44.7 L731.9,41.1 L740.0,38.7"/><circle class="cdot c1" cx="740.0" cy="38.7" r="4"/><text class="cendlab c1" x="751.0" y="42.7">Total CO₂</text><text class=cendsub x="751.0" y="58.7">43.2 Gt in 2024</text><path class="cline c2" d="M58.0,339.8 L66.1,339.7 L74.2,339.7 L82.4,339.7 L90.5,339.7 L98.6,339.7 L106.7,339.6 L114.8,339.6 L123.0,339.6 L131.1,339.5 L139.2,339.5 L147.3,339.4 L155.4,339.4 L163.5,339.3 L171.7,339.3 L179.8,339.2 L187.9,339.2 L196.0,339.1 L204.1,339.0 L212.3,339.0 L220.4,338.9 L228.5,338.8 L236.6,338.6 L244.7,338.6 L252.9,338.5 L261.0,338.4 L269.1,338.3 L277.2,338.0 L285.3,337.7 L293.5,337.5 L301.6,337.5 L309.7,337.5 L317.8,337.3 L325.9,337.2 L334.0,337.3 L342.2,337.4 L350.3,337.4 L358.4,337.2 L366.5,337.0 L374.6,337.0 L382.8,337.0 L390.9,337.1 L399.0,337.1 L407.1,337.0 L415.2,336.9 L423.4,336.7 L431.5,336.5 L439.6,336.4 L447.7,336.2 L455.8,336.1 L464.0,336.2 L472.1,336.2 L480.2,336.2 L488.3,336.2 L496.4,336.0 L504.5,335.9 L512.7,335.7 L520.8,335.6 L528.9,335.5 L537.0,335.4 L545.1,335.2 L553.3,335.3 L561.4,335.2 L569.5,335.2 L577.6,335.0 L585.7,334.7 L593.9,334.7 L602.0,334.5 L610.1,334.6 L618.2,334.9 L626.3,334.6 L634.5,334.5 L642.6,334.4 L650.7,334.2 L658.8,334.0 L666.9,333.8 L675.0,333.5 L683.2,333.1 L691.3,332.9 L699.4,332.8 L707.5,335.7 L715.6,334.9"/><circle class="cdot c2" cx="715.6" cy="334.9" r="4"/><text class="cendlab c2" x="726.6" y="320.9">Aviation</text><text class=cendsub x="726.6" y="336.9">0.73 Gt in 2021</text><rect class=chit x="58" y="26" width="682" height="314" fill="transparent"/><line class=ccross x1=0 x2=0 y1="26" y2="340" style="display:none"/></svg><div class=ctip hidden></div></div><div class=cnote><p>On the same scale aviation is a line almost resting on the axis: in 2019, its highest year, one part in 40 of the total. That is what makes the figure &laquo;2.5%&raquo; sound like the end of the argument. The total covers fossil fuels, cement and land use; the aviation series is reconstructed by multiplying that total by the published share, and agrees within rounding with the absolute series of Bergero et al. (1.03 Gt against 1.04 in 2019).</p><details class=ctbl><summary>Data behind this chart — 85 rows</summary><div class=ctblwrap><table><thead><tr><th>Year</th><th>Total CO₂</th><th>Aviation</th></tr></thead><tbody><tr><td>1940</td><td>10.6 Gt</td><td>0.03 Gt</td></tr><tr><td>1941</td><td>10.9 Gt</td><td>0.04 Gt</td></tr><tr><td>1942</td><td>10.9 Gt</td><td>0.04 Gt</td></tr><tr><td>1943</td><td>11.0 Gt</td><td>0.04 Gt</td></tr><tr><td>1944</td><td>11.0 Gt</td><td>0.05 Gt</td></tr><tr><td>1945</td><td>10.2 Gt</td><td>0.05 Gt</td></tr><tr><td>1946</td><td>10.4 Gt</td><td>0.05 Gt</td></tr><tr><td>1947</td><td>10.9 Gt</td><td>0.06 Gt</td></tr><tr><td>1948</td><td>11.2 Gt</td><td>0.06 Gt</td></tr><tr><td>1949</td><td>10.9 Gt</td><td>0.07 Gt</td></tr><tr><td>1950</td><td>12.6 Gt</td><td>0.07 Gt</td></tr><tr><td>1951</td><td>13.6 Gt</td><td>0.08 Gt</td></tr><tr><td>1952</td><td>13.7 Gt</td><td>0.09 Gt</td></tr><tr><td>1953</td><td>14.0 Gt</td><td>0.10 Gt</td></tr><tr><td>1954</td><td>14.6 Gt</td><td>0.10 Gt</td></tr><tr><td>1955</td><td>15.4 Gt</td><td>0.11 Gt</td></tr><tr><td>1956</td><td>16.0 Gt</td><td>0.12 Gt</td></tr><tr><td>1957</td><td>16.5 Gt</td><td>0.13 Gt</td></tr><tr><td>1958</td><td>16.6 Gt</td><td>0.14 Gt</td></tr><tr><td>1959</td><td>17.5 Gt</td><td>0.15 Gt</td></tr><tr><td>1960</td><td>17.0 Gt</td><td>0.16 Gt</td></tr><tr><td>1961</td><td>17.0 Gt</td><td>0.18 Gt</td></tr><tr><td>1962</td><td>16.9 Gt</td><td>0.19 Gt</td></tr><tr><td>1963</td><td>17.2 Gt</td><td>0.20 Gt</td></tr><tr><td>1964</td><td>17.5 Gt</td><td>0.21 Gt</td></tr><tr><td>1965</td><td>17.7 Gt</td><td>0.23 Gt</td></tr><tr><td>1966</td><td>17.8 Gt</td><td>0.25 Gt</td></tr><tr><td>1967</td><td>18.5 Gt</td><td>0.29 Gt</td></tr><tr><td>1968</td><td>19.2 Gt</td><td>0.33 Gt</td></tr><tr><td>1969</td><td>20.7 Gt</td><td>0.36 Gt</td></tr><tr><td>1970</td><td>21.6 Gt</td><td>0.35 Gt</td></tr><tr><td>1971</td><td>21.6 Gt</td><td>0.36 Gt</td></tr><tr><td>1972</td><td>22.7 Gt</td><td>0.38 Gt</td></tr><tr><td>1973</td><td>23.3 Gt</td><td>0.39 Gt</td></tr><tr><td>1974</td><td>23.3 Gt</td><td>0.38 Gt</td></tr><tr><td>1975</td><td>23.1 Gt</td><td>0.38 Gt</td></tr><tr><td>1976</td><td>23.9 Gt</td><td>0.38 Gt</td></tr><tr><td>1977</td><td>25.0 Gt</td><td>0.41 Gt</td></tr><tr><td>1978</td><td>25.6 Gt</td><td>0.42 Gt</td></tr><tr><td>1979</td><td>25.4 Gt</td><td>0.43 Gt</td></tr><tr><td>1980</td><td>25.4 Gt</td><td>0.43 Gt</td></tr><tr><td>1981</td><td>24.7 Gt</td><td>0.42 Gt</td></tr><tr><td>1982</td><td>24.3 Gt</td><td>0.42 Gt</td></tr><tr><td>1983</td><td>24.7 Gt</td><td>0.42 Gt</td></tr><tr><td>1984</td><td>25.9 Gt</td><td>0.45 Gt</td></tr><tr><td>1985</td><td>26.9 Gt</td><td>0.47 Gt</td></tr><tr><td>1986</td><td>27.4 Gt</td><td>0.50 Gt</td></tr><tr><td>1987</td><td>27.6 Gt</td><td>0.52 Gt</td></tr><tr><td>1988</td><td>28.1 Gt</td><td>0.54 Gt</td></tr><tr><td>1989</td><td>28.2 Gt</td><td>0.55 Gt</td></tr><tr><td>1990</td><td>28.6 Gt</td><td>0.55 Gt</td></tr><tr><td>1991</td><td>28.9 Gt</td><td>0.54 Gt</td></tr><tr><td>1992</td><td>28.5 Gt</td><td>0.54 Gt</td></tr><tr><td>1993</td><td>28.5 Gt</td><td>0.54 Gt</td></tr><tr><td>1994</td><td>29.6 Gt</td><td>0.58 Gt</td></tr><tr><td>1995</td><td>29.8 Gt</td><td>0.58 Gt</td></tr><tr><td>1996</td><td>30.8 Gt</td><td>0.61 Gt</td></tr><tr><td>1997</td><td>32.4 Gt</td><td>0.63 Gt</td></tr><tr><td>1998</td><td>31.1 Gt</td><td>0.64 Gt</td></tr><tr><td>1999</td><td>31.4 Gt</td><td>0.66 Gt</td></tr><tr><td>2000</td><td>31.7 Gt</td><td>0.69 Gt</td></tr><tr><td>2001</td><td>31.2 Gt</td><td>0.67 Gt</td></tr><tr><td>2002</td><td>32.4 Gt</td><td>0.69 Gt</td></tr><tr><td>2003</td><td>35.0 Gt</td><td>0.69 Gt</td></tr><tr><td>2004</td><td>35.1 Gt</td><td>0.72 Gt</td></tr><tr><td>2005</td><td>35.5 Gt</td><td>0.75 Gt</td></tr><tr><td>2006</td><td>36.6 Gt</td><td>0.75 Gt</td></tr><tr><td>2007</td><td>37.1 Gt</td><td>0.78 Gt</td></tr><tr><td>2008</td><td>38.0 Gt</td><td>0.78 Gt</td></tr><tr><td>2009</td><td>38.0 Gt</td><td>0.73 Gt</td></tr><tr><td>2010</td><td>39.8 Gt</td><td>0.78 Gt</td></tr><tr><td>2011</td><td>40.9 Gt</td><td>0.79 Gt</td></tr><tr><td>2012</td><td>41.6 Gt</td><td>0.81 Gt</td></tr><tr><td>2013</td><td>41.6 Gt</td><td>0.83 Gt</td></tr><tr><td>2014</td><td>41.9 Gt</td><td>0.85 Gt</td></tr><tr><td>2015</td><td>41.9 Gt</td><td>0.89 Gt</td></tr><tr><td>2016</td><td>40.8 Gt</td><td>0.93 Gt</td></tr><tr><td>2017</td><td>41.3 Gt</td><td>0.99 Gt</td></tr><tr><td>2018</td><td>41.6 Gt</td><td>1.02 Gt</td></tr><tr><td>2019</td><td>42.0 Gt</td><td>1.04 Gt</td></tr><tr><td>2020</td><td>39.7 Gt</td><td>0.61 Gt</td></tr><tr><td>2021</td><td>41.5 Gt</td><td>0.73 Gt</td></tr><tr><td>2022</td><td>42.3 Gt</td><td>—</td></tr><tr><td>2023</td><td>42.8 Gt</td><td>—</td></tr><tr><td>2024</td><td>43.2 Gt</td><td>—</td></tr></tbody></table></div></details><p class=src>Source: Global Carbon Budget v15 (2025), processed by Our World in Data, and Lee et al. 2021 and the Global Carbon Budget, via Our World in Data. Downloaded 2026-08-20.</p></div></figure>
+<div class=col>
+<p>So far, the reading that closes the argument. But the same line, divided by the total instead of
+set beside it, tells the other half: aviation's share went from <b>0.32% in 1940 to
+2.47% in 2019</b>, while almost every other sector lost relative weight over the same
+stretch.</p>
+</div>
+<figure class=cfig id="fig-quota"><figcaption><p class=eyebrow>1940 – 2021 · per cent of the total</p><h3>Aviation's share of world CO₂</h3></figcaption><div class=cplot><svg viewBox="0 0 880 380" role=img aria-label="Aviation's share of world CO₂" data-cid="quota"><line class=cgrid x1="58" x2="740" y1="340.0" y2="340.0"/><text class=ctick x="48" y="344.0" text-anchor=end>0%</text><line class=cgrid x1="58" x2="740" y1="235.3" y2="235.3"/><text class=ctick x="48" y="239.3" text-anchor=end>1%</text><line class=cgrid x1="58" x2="740" y1="130.7" y2="130.7"/><text class=ctick x="48" y="134.7" text-anchor=end>2%</text><line class=cgrid x1="58" x2="740" y1="26.0" y2="26.0"/><text class=ctick x="48" y="30.0" text-anchor=end>3%</text><text class=ctick x="58.0" y="362" text-anchor=middle>1940</text><text class=ctick x="226.4" y="362" text-anchor=middle>1960</text><text class=ctick x="394.8" y="362" text-anchor=middle>1980</text><text class=ctick x="563.2" y="362" text-anchor=middle>2000</text><text class=ctick x="731.6" y="362" text-anchor=middle>2020</text><line class=caxis x1="58" x2="740" y1="340.0" y2="340.0"/><path class="carea c2" d="M58.0,306.5 L66.4,305.5 L74.8,302.3 L83.3,299.2 L91.7,297.1 L100.1,288.7 L108.5,286.6 L116.9,285.6 L125.4,281.4 L133.8,275.1 L142.2,279.3 L150.6,277.2 L159.0,273.0 L167.5,268.8 L175.9,265.7 L184.3,264.6 L192.7,262.5 L201.1,258.4 L209.6,254.2 L218.0,252.1 L226.4,242.7 L234.8,231.1 L243.2,219.6 L251.7,215.4 L260.1,212.3 L268.5,203.9 L276.9,195.6 L285.3,174.6 L293.8,160.0 L302.2,156.8 L310.6,168.3 L319.0,166.3 L327.4,164.2 L335.9,163.1 L344.3,167.3 L352.7,168.3 L361.1,174.6 L369.5,169.4 L378.0,166.3 L386.4,163.1 L394.8,162.1 L403.2,163.1 L411.6,160.0 L420.0,161.0 L428.5,160.0 L436.9,155.8 L445.3,149.5 L453.7,144.3 L462.1,139.0 L470.6,134.9 L479.0,138.0 L487.4,143.2 L495.8,140.1 L504.2,141.1 L512.7,136.9 L521.1,135.9 L529.5,132.8 L537.9,136.9 L546.3,123.3 L554.8,119.2 L563.2,112.9 L571.6,115.0 L580.0,118.1 L588.4,133.8 L596.9,124.4 L605.3,118.1 L613.7,124.4 L622.1,119.2 L630.5,126.5 L639.0,138.0 L647.4,135.9 L655.8,136.9 L664.2,136.9 L672.6,130.7 L681.1,126.5 L689.5,118.1 L697.9,102.4 L706.3,89.8 L714.7,82.5 L723.2,81.5 L731.6,177.8 L740.0,154.7 L740.0,340.0 L58.0,340.0 Z"/><path class="cline c2" d="M58.0,306.5 L66.4,305.5 L74.8,302.3 L83.3,299.2 L91.7,297.1 L100.1,288.7 L108.5,286.6 L116.9,285.6 L125.4,281.4 L133.8,275.1 L142.2,279.3 L150.6,277.2 L159.0,273.0 L167.5,268.8 L175.9,265.7 L184.3,264.6 L192.7,262.5 L201.1,258.4 L209.6,254.2 L218.0,252.1 L226.4,242.7 L234.8,231.1 L243.2,219.6 L251.7,215.4 L260.1,212.3 L268.5,203.9 L276.9,195.6 L285.3,174.6 L293.8,160.0 L302.2,156.8 L310.6,168.3 L319.0,166.3 L327.4,164.2 L335.9,163.1 L344.3,167.3 L352.7,168.3 L361.1,174.6 L369.5,169.4 L378.0,166.3 L386.4,163.1 L394.8,162.1 L403.2,163.1 L411.6,160.0 L420.0,161.0 L428.5,160.0 L436.9,155.8 L445.3,149.5 L453.7,144.3 L462.1,139.0 L470.6,134.9 L479.0,138.0 L487.4,143.2 L495.8,140.1 L504.2,141.1 L512.7,136.9 L521.1,135.9 L529.5,132.8 L537.9,136.9 L546.3,123.3 L554.8,119.2 L563.2,112.9 L571.6,115.0 L580.0,118.1 L588.4,133.8 L596.9,124.4 L605.3,118.1 L613.7,124.4 L622.1,119.2 L630.5,126.5 L639.0,138.0 L647.4,135.9 L655.8,136.9 L664.2,136.9 L672.6,130.7 L681.1,126.5 L689.5,118.1 L697.9,102.4 L706.3,89.8 L714.7,82.5 L723.2,81.5 L731.6,177.8 L740.0,154.7"/><circle class="cdot c2" cx="740.0" cy="154.7" r="4"/><text class="cendlab c2" x="751.0" y="158.7">1.77%</text><text class=cendsub x="751.0" y="174.7">in 2021</text><circle class=cannotdot cx="723.2" cy="81.5" r="3.5"/><line class=cannotline x1="723.2" y1="81.5" x2="671.2" y2="43.5"/><text class=cannot x="665.2" y="47.5" text-anchor=end>2.47% in 2019</text><rect class=chit x="58" y="26" width="682" height="314" fill="transparent"/><line class=ccross x1=0 x2=0 y1="26" y2="340" style="display:none"/></svg><div class=ctip hidden></div></div><div class=cnote><p>The same line as before, divided by the total instead of set beside it: from 0.32% in 1940 to 2.47% in 2019, almost 8 times as much. The step in 1970 and the plateau that runs to 2013 are not aviation standing still — they are a denominator growing faster (Asian coal); the climb from 2013 and the collapse of 2020 are aviation. Watch the denominator: against fossil fuels alone, the same 2019 share reads 2.8%.</p><details class=ctbl><summary>Data behind this chart — 82 rows</summary><div class=ctblwrap><table><thead><tr><th>Year</th><th>Aviation share</th></tr></thead><tbody><tr><td>1940</td><td>0.32%</td></tr><tr><td>1941</td><td>0.33%</td></tr><tr><td>1942</td><td>0.36%</td></tr><tr><td>1943</td><td>0.39%</td></tr><tr><td>1944</td><td>0.41%</td></tr><tr><td>1945</td><td>0.49%</td></tr><tr><td>1946</td><td>0.51%</td></tr><tr><td>1947</td><td>0.52%</td></tr><tr><td>1948</td><td>0.56%</td></tr><tr><td>1949</td><td>0.62%</td></tr><tr><td>1950</td><td>0.58%</td></tr><tr><td>1951</td><td>0.60%</td></tr><tr><td>1952</td><td>0.64%</td></tr><tr><td>1953</td><td>0.68%</td></tr><tr><td>1954</td><td>0.71%</td></tr><tr><td>1955</td><td>0.72%</td></tr><tr><td>1956</td><td>0.74%</td></tr><tr><td>1957</td><td>0.78%</td></tr><tr><td>1958</td><td>0.82%</td></tr><tr><td>1959</td><td>0.84%</td></tr><tr><td>1960</td><td>0.93%</td></tr><tr><td>1961</td><td>1.04%</td></tr><tr><td>1962</td><td>1.15%</td></tr><tr><td>1963</td><td>1.19%</td></tr><tr><td>1964</td><td>1.22%</td></tr><tr><td>1965</td><td>1.30%</td></tr><tr><td>1966</td><td>1.38%</td></tr><tr><td>1967</td><td>1.58%</td></tr><tr><td>1968</td><td>1.72%</td></tr><tr><td>1969</td><td>1.75%</td></tr><tr><td>1970</td><td>1.64%</td></tr><tr><td>1971</td><td>1.66%</td></tr><tr><td>1972</td><td>1.68%</td></tr><tr><td>1973</td><td>1.69%</td></tr><tr><td>1974</td><td>1.65%</td></tr><tr><td>1975</td><td>1.64%</td></tr><tr><td>1976</td><td>1.58%</td></tr><tr><td>1977</td><td>1.63%</td></tr><tr><td>1978</td><td>1.66%</td></tr><tr><td>1979</td><td>1.69%</td></tr><tr><td>1980</td><td>1.70%</td></tr><tr><td>1981</td><td>1.69%</td></tr><tr><td>1982</td><td>1.72%</td></tr><tr><td>1983</td><td>1.71%</td></tr><tr><td>1984</td><td>1.72%</td></tr><tr><td>1985</td><td>1.76%</td></tr><tr><td>1986</td><td>1.82%</td></tr><tr><td>1987</td><td>1.87%</td></tr><tr><td>1988</td><td>1.92%</td></tr><tr><td>1989</td><td>1.96%</td></tr><tr><td>1990</td><td>1.93%</td></tr><tr><td>1991</td><td>1.88%</td></tr><tr><td>1992</td><td>1.91%</td></tr><tr><td>1993</td><td>1.90%</td></tr><tr><td>1994</td><td>1.94%</td></tr><tr><td>1995</td><td>1.95%</td></tr><tr><td>1996</td><td>1.98%</td></tr><tr><td>1997</td><td>1.94%</td></tr><tr><td>1998</td><td>2.07%</td></tr><tr><td>1999</td><td>2.11%</td></tr><tr><td>2000</td><td>2.17%</td></tr><tr><td>2001</td><td>2.15%</td></tr><tr><td>2002</td><td>2.12%</td></tr><tr><td>2003</td><td>1.97%</td></tr><tr><td>2004</td><td>2.06%</td></tr><tr><td>2005</td><td>2.12%</td></tr><tr><td>2006</td><td>2.06%</td></tr><tr><td>2007</td><td>2.11%</td></tr><tr><td>2008</td><td>2.04%</td></tr><tr><td>2009</td><td>1.93%</td></tr><tr><td>2010</td><td>1.95%</td></tr><tr><td>2011</td><td>1.94%</td></tr><tr><td>2012</td><td>1.94%</td></tr><tr><td>2013</td><td>2.00%</td></tr><tr><td>2014</td><td>2.04%</td></tr><tr><td>2015</td><td>2.12%</td></tr><tr><td>2016</td><td>2.27%</td></tr><tr><td>2017</td><td>2.39%</td></tr><tr><td>2018</td><td>2.46%</td></tr><tr><td>2019</td><td>2.47%</td></tr><tr><td>2020</td><td>1.55%</td></tr><tr><td>2021</td><td>1.77%</td></tr></tbody></table></div></details><p class=src>Source: Lee et al. 2021 and the Global Carbon Budget, via Our World in Data. The series ends in 2021.</p></div></figure>
+<div class=col>
+<p class=cpull>A small share does not mean a sector standing still. It means a small sector inside
+an enormous total — one that grows faster than the total does.</p>
+<p>The denominator is worth looking at closely, because it is the first source of confusion: here
+the total includes land use. Against fossil fuels alone, the same 2019 share becomes
+<b>2.8%</b>. And if you look at the perimeter of the numerator, the same question
+has at least three answers: commercial passenger flights alone, as counted by the OECD, come to
+<b>863 Mt</b> in 2019, while the Lee and Bergero series, which also covers freight,
+charter and general aviation, counts <b>1,037 Mt</b>. Neither is wrong: they count
+different things. Those same three answers turn up, with the same air of contradiction, in any
+public argument on the subject.</p>
+</div>
+</section>
+
+<section>
+<h2>The efficiency is real. Growth eats it</h2>
+<div class=col>
+<p>The obvious question, in front of the previous chart, is why the share rises precisely while
+aircraft get more efficient. The answer is a product of two factors moving in opposite directions,
+and one of them moves harder.</p>
+</div>
+<figure class=cfig id="fig-efficienza"><figcaption><p class=eyebrow>1990 = 100 · world aviation</p><h3>Demand, efficiency and emissions since 1990</h3></figcaption><div class=cplot><svg viewBox="0 0 880 380" role=img aria-label="Demand, efficiency and emissions since 1990" data-cid="efficienza"><line class=cgrid x1="58" x2="724" y1="340.0" y2="340.0"/><text class=ctick x="48" y="344.0" text-anchor=end>0</text><line class=cgrid x1="58" x2="724" y1="271.7" y2="271.7"/><text class=ctick x="48" y="275.7" text-anchor=end>100</text><line class=cgrid x1="58" x2="724" y1="203.5" y2="203.5"/><text class=ctick x="48" y="207.5" text-anchor=end>200</text><line class=cgrid x1="58" x2="724" y1="135.2" y2="135.2"/><text class=ctick x="48" y="139.2" text-anchor=end>300</text><line class=cgrid x1="58" x2="724" y1="67.0" y2="67.0"/><text class=ctick x="48" y="71.0" text-anchor=end>400</text><text class=ctick x="58.0" y="362" text-anchor=middle>1990</text><text class=ctick x="165.4" y="362" text-anchor=middle>1995</text><text class=ctick x="272.8" y="362" text-anchor=middle>2000</text><text class=ctick x="380.3" y="362" text-anchor=middle>2005</text><text class=ctick x="487.7" y="362" text-anchor=middle>2010</text><text class=ctick x="595.1" y="362" text-anchor=middle>2015</text><text class=ctick x="702.5" y="362" text-anchor=middle>2020</text><line class=caxis x1="58" x2="724" y1="340.0" y2="340.0"/><path class="cline c1" d="M58.0,271.7 L79.5,273.3 L101.0,270.6 L122.5,269.5 L143.9,263.7 L165.4,258.9 L186.9,252.0 L208.4,247.7 L229.9,244.5 L251.4,238.1 L272.8,231.2 L294.3,234.4 L315.8,233.3 L337.3,229.6 L358.8,215.2 L380.3,205.1 L401.7,196.6 L423.2,186.6 L444.7,184.4 L466.2,183.9 L487.7,168.9 L509.2,157.7 L530.6,147.9 L552.1,137.3 L573.6,125.2 L595.1,109.1 L616.6,92.1 L638.1,72.4 L659.5,56.8 L681.0,41.2 L702.5,236.1 L724.0,128.7"/><circle class="cdot c1" cx="724.0" cy="128.7" r="4"/><text class="cendlab c1" x="735.0" y="132.7">Passenger-km</text><text class=cendsub x="735.0" y="148.7">×4.4 since 1990</text><path class="cline c2" d="M58.0,271.7 L79.5,273.0 L101.0,273.0 L122.5,273.0 L143.9,269.2 L165.4,267.9 L186.9,264.2 L208.4,261.6 L229.9,260.4 L251.4,257.8 L272.8,255.3 L294.3,256.6 L315.8,255.3 L337.3,256.6 L358.8,251.5 L380.3,247.7 L401.7,246.5 L423.2,243.9 L444.7,245.2 L466.2,250.2 L487.7,245.2 L509.2,242.7 L530.6,241.4 L552.1,238.9 L573.6,235.1 L595.1,230.0 L616.6,225.0 L638.1,217.4 L659.5,212.3 L681.0,209.8 L702.5,262.9 L724.0,247.7"/><circle class="cdot c2" cx="724.0" cy="247.7" r="4"/><text class="cendlab c2" x="735.0" y="251.7">CO₂</text><text class=cendsub x="735.0" y="267.7">×1.9 since 1990</text><path class="cline c4" d="M58.0,271.7 L79.5,272.8 L101.0,275.7 L122.5,277.5 L143.9,280.7 L165.4,283.1 L186.9,284.8 L208.4,287.1 L229.9,287.3 L251.4,289.0 L272.8,290.7 L294.3,289.9 L315.8,290.5 L337.3,292.7 L358.8,295.3 L380.3,296.2 L401.7,298.4 L423.2,300.1 L444.7,300.7 L466.2,304.0 L487.7,304.9 L509.2,305.5 L530.6,306.0 L552.1,306.5 L573.6,307.5 L595.1,307.5 L616.6,308.1 L638.1,308.6 L659.5,309.1 L681.0,309.9 L702.5,300.6 L724.0,313.0"/><circle class="cdot c4" cx="724.0" cy="313.0" r="4"/><text class="cendlab c4" x="735.0" y="317.0">CO₂ per pass-km</text><text class=cendsub x="735.0" y="333.0">−56% since 1990</text><rect class=chit x="58" y="26" width="666" height="314" fill="transparent"/><line class=ccross x1=0 x2=0 y1="26" y2="340" style="display:none"/></svg><div class=ctip hidden></div></div><div class=cnote><p>The engine behind the previous chart. Carrying one passenger one kilometre costs less than half the CO₂ it cost in 1990 (357 grammes down to 157): the technology did what was asked of it. But the kilometres flown quadrupled, and the product of the two nearly doubles. It is the only reading that explains how a share can rise while every individual aircraft improves.</p><details class=ctbl><summary>Data behind this chart — 32 rows</summary><div class=ctblwrap><table><thead><tr><th>Year</th><th>Passenger-km</th><th>Aviation CO₂</th><th>CO₂ per passenger-km</th></tr></thead><tbody><tr><td>1990</td><td>100 (1990=100)</td><td>100 (1990=100)</td><td>100 (1990=100)</td></tr><tr><td>1991</td><td>98 (1990=100)</td><td>98 (1990=100)</td><td>98 (1990=100)</td></tr><tr><td>1992</td><td>102 (1990=100)</td><td>98 (1990=100)</td><td>94 (1990=100)</td></tr><tr><td>1993</td><td>103 (1990=100)</td><td>98 (1990=100)</td><td>92 (1990=100)</td></tr><tr><td>1994</td><td>112 (1990=100)</td><td>104 (1990=100)</td><td>87 (1990=100)</td></tr><tr><td>1995</td><td>119 (1990=100)</td><td>106 (1990=100)</td><td>83 (1990=100)</td></tr><tr><td>1996</td><td>129 (1990=100)</td><td>111 (1990=100)</td><td>81 (1990=100)</td></tr><tr><td>1997</td><td>135 (1990=100)</td><td>115 (1990=100)</td><td>77 (1990=100)</td></tr><tr><td>1998</td><td>140 (1990=100)</td><td>117 (1990=100)</td><td>77 (1990=100)</td></tr><tr><td>1999</td><td>149 (1990=100)</td><td>120 (1990=100)</td><td>75 (1990=100)</td></tr><tr><td>2000</td><td>159 (1990=100)</td><td>124 (1990=100)</td><td>72 (1990=100)</td></tr><tr><td>2001</td><td>155 (1990=100)</td><td>122 (1990=100)</td><td>73 (1990=100)</td></tr><tr><td>2002</td><td>156 (1990=100)</td><td>124 (1990=100)</td><td>72 (1990=100)</td></tr><tr><td>2003</td><td>162 (1990=100)</td><td>122 (1990=100)</td><td>69 (1990=100)</td></tr><tr><td>2004</td><td>183 (1990=100)</td><td>130 (1990=100)</td><td>65 (1990=100)</td></tr><tr><td>2005</td><td>198 (1990=100)</td><td>135 (1990=100)</td><td>64 (1990=100)</td></tr><tr><td>2006</td><td>210 (1990=100)</td><td>137 (1990=100)</td><td>61 (1990=100)</td></tr><tr><td>2007</td><td>225 (1990=100)</td><td>141 (1990=100)</td><td>58 (1990=100)</td></tr><tr><td>2008</td><td>228 (1990=100)</td><td>139 (1990=100)</td><td>58 (1990=100)</td></tr><tr><td>2009</td><td>229 (1990=100)</td><td>131 (1990=100)</td><td>53 (1990=100)</td></tr><tr><td>2010</td><td>251 (1990=100)</td><td>139 (1990=100)</td><td>51 (1990=100)</td></tr><tr><td>2011</td><td>267 (1990=100)</td><td>143 (1990=100)</td><td>51 (1990=100)</td></tr><tr><td>2012</td><td>281 (1990=100)</td><td>144 (1990=100)</td><td>50 (1990=100)</td></tr><tr><td>2013</td><td>297 (1990=100)</td><td>148 (1990=100)</td><td>49 (1990=100)</td></tr><tr><td>2014</td><td>315 (1990=100)</td><td>154 (1990=100)</td><td>48 (1990=100)</td></tr><tr><td>2015</td><td>338 (1990=100)</td><td>161 (1990=100)</td><td>48 (1990=100)</td></tr><tr><td>2016</td><td>363 (1990=100)</td><td>169 (1990=100)</td><td>47 (1990=100)</td></tr><tr><td>2017</td><td>392 (1990=100)</td><td>180 (1990=100)</td><td>46 (1990=100)</td></tr><tr><td>2018</td><td>415 (1990=100)</td><td>187 (1990=100)</td><td>45 (1990=100)</td></tr><tr><td>2019</td><td>438 (1990=100)</td><td>191 (1990=100)</td><td>44 (1990=100)</td></tr><tr><td>2020</td><td>152 (1990=100)</td><td>113 (1990=100)</td><td>58 (1990=100)</td></tr><tr><td>2021</td><td>310 (1990=100)</td><td>135 (1990=100)</td><td>40 (1990=100)</td></tr></tbody></table></div></details><p class=src>Source: Bergero et al. 2023 (Nature Sustainability), via Our World in Data. 2020-21 is the pandemic, not a trend.</p></div></figure>
+<div class=col>
+<p>Between 1990 and 2019 the CO₂ per passenger-kilometre fell from 357 to
+157 grammes: −56%, a real technical achievement, delivered by
+engines, aerodynamics and above all fuller aircraft. Over the same period passenger-kilometres went
+from 1,964 to 8,597 billion: ×4.4. The product, which is
+the emissions, nearly doubles: ×1.9.</p>
+<p>This is why the two usual camps can both cite true figures and reach opposite conclusions.
+&laquo;Every flight pollutes half as much as thirty years ago&raquo; and &laquo;flying pollutes
+twice as much as thirty years ago&raquo; are both correct statements about two different
+quantities. The second is the one the atmosphere sees.</p>
+</div>
+</section>
+
+<section>
+<h2>Warming is not measured in tonnes</h2>
+<div class=col>
+<p>Here the accounting changes in kind, and this is where aviation parts company with other
+sectors. An aircraft does not emit carbon dioxide alone: it emits nitrogen oxides at altitude,
+water vapour, and particles around which, in cold saturated air, trails form that can turn into
+cirrus and last for hours. The standard way of adding up effects that different is effective
+radiative forcing, in milliwatts per square metre.</p>
+</div>
+<figure class=cfig id="fig-erf"><figcaption><p class=eyebrow>2018 · effective radiative forcing, mW/m²</p><h3>What aviation's warming is made of</h3></figcaption><ul class=clegend><li><span class="sw c2"></span>CO₂</li><li><span class="sw c3"></span>Non-CO₂ effects</li></ul><div class=cplot><svg viewBox="0 0 880 204" role=img aria-label="What aviation's warming is made of"><text class=crowlab x="234" y="37.1" text-anchor=end>Contrail cirrus</text><rect class="cbar c3" x="248" y="14" width="496.2" height="34" rx=3 data-tip="Contrail cirrus · 57.4 mW/m²"/><text class=cval x="754.2" y="37.1">57.4</text><text class=crowlab x="234" y="83.1" text-anchor=end>CO₂</text><rect class="cbar c2" x="248" y="60" width="296.5" height="34" rx=3 data-tip="CO₂ · 34.3 mW/m²"/><text class=cval x="554.5" y="83.1">34.3</text><text class=crowlab x="234" y="129.1" text-anchor=end>NOˣ (net)</text><rect class="cbar c3" x="248" y="106" width="151.3" height="34" rx=3 data-tip="NOˣ (net) · 17.5 mW/m²"/><text class=cval x="409.3" y="129.1">17.5</text><text class=crowlab x="234" y="175.1" text-anchor=end>Water vapour</text><rect class="cbar c3" x="248" y="152" width="17.3" height="34" rx=3 data-tip="Water vapour · 2.0 mW/m²"/><text class=cval x="275.3" y="175.1">2.0</text></svg><div class=ctip hidden></div></div><div class=cnote><p>Tonnes of CO₂ are one thing; the warming that follows is another. In the 2018 balance CO₂ accounts for 34.3 of the 101 mW/m² net: about a third. The rest comes from effects that last hours or decades rather than centuries — contrail cirrus above all, at 57% of the net. The four items above sum to more than the net figure because aerosols (sulphates) carry the opposite sign and are not shown. They are also the most uncertain part of the whole balance: the published interval for the total runs from 55 to 145 mW/m² (5-95%).</p><details class=ctbl><summary>Data behind this chart — 4 rows</summary><div class=ctblwrap><table><thead><tr><th>Item</th><th>mW/m²</th></tr></thead><tbody><tr><td>Contrail cirrus</td><td>57.4</td></tr><tr><td>CO₂</td><td>34.3</td></tr><tr><td>NOˣ (net)</td><td>17.5</td></tr><tr><td>Water vapour</td><td>2.0</td></tr></tbody></table></div></details><p class=src>Source: Lee et al. 2021, Atmospheric Environment 244:117834.</p></div></figure>
+<div class=col>
+<p>In the 2018 balance CO₂ is worth 34% of the total: <b>34.3 of the
+101 mW/m²</b> net. Contrail cirrus alone is worth more than half. Aviation's total is about
+<b>3.5% of anthropogenic forcing</b> — against the
+2.5% of the tonnes alone — and Klöwer and colleagues, applying the same accounting to
+temperature, attribute to flying about <b>4% of the observed
+human-caused warming</b>, on the order of 0.04 °C. Aviation's cumulative emissions
+since 1940 are 33 Gt, roughly 2% of
+the world's cumulative total.</p>
+<p>Two warnings, which matter more than the figures. First: <b>2.5% and
+3.5% neither add up nor replace one another</b> — they are
+percentages of two different quantities, and swapping them produces numbers that sound stronger and
+mean nothing. Second: the non-CO₂ effects carry far wider uncertainty than CO₂ — the published
+interval for the total runs from 55 to 145 mW/m², at 5-95% — and they do not persist in the
+same way. A tonne of CO₂ acts for centuries; a contrail is gone by morning. Comparing them requires
+choosing a time horizon, and the choice changes the answer: that is why the European rules on
+monitoring non-CO₂ effects prescribe publishing several horizons — 20, 50 and 100 years — rather
+than a single number. At 20 years contrails dominate the comparison; at 100 CO₂ takes it back.
+Neither horizon is &laquo;the right one&raquo;: it is a choice, and it has to be stated.</p>
+</div>
+</section>
+
+<section>
+<h2>The same flights as 2019, more emissions</h2>
+<div class=col>
+<p>The <a class=term href="methodology.html#g-ecac" title="The European Civil Aviation Conference: 44 member states, from Iceland and Norway to Turkey, Armenia and Azerbaijan — a wider Europe than the European Union. It is the area this site covers, and the same one EUROCONTROL uses for its own published figures.">ECAC area</a> — 44 states, the Europe of air traffic control rather than the Europe of the Union —
+is the perimeter where the question can be asked flight by flight instead of through aggregate
+estimates. In 2025 it passed its 2019 levels for the first time.</p>
+</div>
+<figure class=cfig id="fig-europa"><figcaption><p class=eyebrow>ECAC / EUROCONTROL area</p><h3>Europe since 2019: the flights come back, the emissions do not</h3></figcaption><div class=cplot><svg viewBox="0 0 880 300" role=img aria-label="Europe since 2019: the flights come back, the emissions do not"><text class=cpaneltitle x="46.0" y=20>IFR flights per year</text><text class=cpanelsub x="46.0" y=38>millions · ECAC area (2025: NM area, not identical)</text><line class=cgrid x1="46.0" x2="414.0" y1="258.0" y2="258.0"/><text class=ctick x="38.0" y="262.0" text-anchor=end>0</text><line class=cgrid x1="46.0" x2="414.0" y1="189.3" y2="189.3"/><text class=ctick x="38.0" y="193.3" text-anchor=end>4</text><line class=cgrid x1="46.0" x2="414.0" y1="120.7" y2="120.7"/><text class=ctick x="38.0" y="124.7" text-anchor=end>8</text><line class=cgrid x1="46.0" x2="414.0" y1="52.0" y2="52.0"/><text class=ctick x="38.0" y="56.0" text-anchor=end>12</text><rect class="cbar c4" x="56.0" y="67.6" width="32.6" height="190.4" rx=3 data-tip="2019 · 11.1 million flights"/><text class=ctick x="72.3" y="278" text-anchor=middle>2019</text><text class="cval c4" x="72.3" y="59.6" text-anchor=middle>11.1</text><rect class="cbar c4" x="108.6" y="172.2" width="32.6" height="85.8" rx=3 data-tip="2020 · 5.0 million flights"/><text class=ctick x="124.9" y="278" text-anchor=middle>2020</text><text class="cval c4" x="124.9" y="164.2" text-anchor=middle>5.0</text><rect class="cbar c4" x="161.1" y="151.6" width="32.6" height="106.4" rx=3 data-tip="2021 · 6.2 million flights"/><text class=ctick x="177.4" y="278" text-anchor=middle>2021</text><text class="cval c4" x="177.4" y="143.6" text-anchor=middle>6.2</text><rect class="cbar c4" x="213.7" y="99.4" width="32.6" height="158.6" rx=3 data-tip="2022 · 9.2 million flights"/><text class=ctick x="230.0" y="278" text-anchor=middle>2022</text><text class="cval c4" x="230.0" y="91.4" text-anchor=middle>9.2</text><rect class="cbar c4" x="266.3" y="84.6" width="32.6" height="173.4" rx=3 data-tip="2023 · 10.1 million flights"/><text class=ctick x="282.6" y="278" text-anchor=middle>2023</text><text class="cval c4" x="282.6" y="76.6" text-anchor=middle>10.1</text><rect class="cbar c4" x="318.8" y="75.5" width="32.6" height="182.5" rx=3 data-tip="2024 · 10.6 million flights"/><text class=ctick x="335.1" y="278" text-anchor=middle>2024</text><text class="cval c4" x="335.1" y="67.5" text-anchor=middle>10.6</text><rect class="cbar c4" x="371.4" y="67.1" width="32.6" height="190.9" rx=3 data-tip="2025 · 11.1 million flights"/><text class=ctick x="387.7" y="278" text-anchor=middle>2025</text><text class="cval c4" x="387.7" y="59.1" text-anchor=middle>11.1</text><line class=caxis x1="46.0" x2="414.0" y1="258" y2="258"/><text class=cpaneltitle x="486.0" y=20>Gate-to-gate CO₂ of those flights</text><text class=cpanelsub x="486.0" y=38>million tonnes · EUROCONTROL area</text><line class=cgrid x1="486.0" x2="854.0" y1="258.0" y2="258.0"/><text class=ctick x="478.0" y="262.0" text-anchor=end>0</text><line class=cgrid x1="486.0" x2="854.0" y1="189.3" y2="189.3"/><text class=ctick x="478.0" y="193.3" text-anchor=end>80</text><line class=cgrid x1="486.0" x2="854.0" y1="120.7" y2="120.7"/><text class=ctick x="478.0" y="124.7" text-anchor=end>160</text><line class=cgrid x1="486.0" x2="854.0" y1="52.0" y2="52.0"/><text class=ctick x="478.0" y="56.0" text-anchor=end>240</text><rect class="cbar c2" x="503.5" y="115.5" width="57.0" height="142.5" rx=3 data-tip="2022 · 166 Mt CO₂"/><text class=ctick x="532.0" y="278" text-anchor=middle>2022</text><text class="cval c2" x="532.0" y="107.5" text-anchor=middle>166</text><rect class="cbar c2" x="595.5" y="94.9" width="57.0" height="163.1" rx=3 data-tip="2023 · 190 Mt CO₂"/><text class=ctick x="624.0" y="278" text-anchor=middle>2023</text><text class="cval c2" x="624.0" y="86.9" text-anchor=middle>190</text><rect class="cbar c2" x="687.5" y="80.3" width="57.0" height="177.7" rx=3 data-tip="2024 · 207 Mt CO₂"/><text class=ctick x="716.0" y="278" text-anchor=middle>2024</text><text class="cval c2" x="716.0" y="72.3" text-anchor=middle>207</text><rect class="cbar c2" x="779.5" y="72.6" width="57.0" height="185.4" rx=3 data-tip="2025 · 216 Mt CO₂"/><text class=ctick x="808.0" y="278" text-anchor=middle>2025</text><text class="cval c2" x="808.0" y="64.6" text-anchor=middle>216</text><line class=caxis x1="486.0" x2="854.0" y1="258" y2="258"/></svg><div class=ctip hidden></div></div><div class=cnote><p>In 2025 European skies saw the same number of flights as in 2019. The emissions did not follow: EUROCONTROL's gate-to-gate series grows by 30% between 2022 and 2025 while flights grow by 20%. Dividing one panel by the other would give a wrong CO₂ per flight: the perimeters do not match — the CO₂ is what is emitted <b>inside</b> the EUROCONTROL area, including by flights merely crossing it — and the emissions series starts in 2022. Two measures side by side, not an index.</p><details class=ctbl><summary>Data behind this chart — 7 rows</summary><div class=ctblwrap><table><thead><tr><th>IFR flights per year</th><th>million flights</th></tr></thead><tbody><tr><td>2019</td><td>11.1</td></tr><tr><td>2020</td><td>5.0</td></tr><tr><td>2021</td><td>6.2</td></tr><tr><td>2022</td><td>9.2</td></tr><tr><td>2023</td><td>10.1</td></tr><tr><td>2024</td><td>10.6</td></tr><tr><td>2025</td><td>11.1</td></tr></tbody></table></div></details><details class=ctbl><summary>Data behind this chart — 4 rows</summary><div class=ctblwrap><table><thead><tr><th>Gate-to-gate CO₂ of those flights</th><th>Mt CO₂</th></tr></thead><tbody><tr><td>2022</td><td>166</td></tr><tr><td>2023</td><td>190</td></tr><tr><td>2024</td><td>207</td></tr><tr><td>2025</td><td>216</td></tr></tbody></table></div></details><p class=src>Source: 2019/2022/2024 STATFOR via EUROCONTROL Standard Inputs; 2025 Data Snapshot #57 (Network Manager area); 2020/2021/2023 read off the 7-Year Forecast chart and rounded; gate-to-gate CO₂ from EUROCONTROL, Performance Review Report 2025 (March 2026), figure 3-4.</p></div></figure>
+<div class=col>
+<p>The return to pre-pandemic levels happened in the number of flights, not in the emissions.
+Comparing 2025 with 2019, EUROCONTROL measures the same traffic and more CO₂: sectors have grown
+longer, turboprops have been replaced by regional jets, long-haul has come back.</p>
+</div>
+<figure class=cfig id="fig-vs2019"><figcaption><p class=eyebrow>2025 against 2019 · per cent change</p><h3>The same sky, six years on</h3></figcaption><div class=cplot><svg viewBox="0 0 880 296" role=img aria-label="The same sky, six years on"><text class=crowlab x="234" y="37.1" text-anchor=end>Distance flown</text><rect class="cbar c4" x="248" y="14" width="464.5" height="34" rx=3 data-tip="Distance flown · 10.4 %"/><text class=cval x="722.5" y="37.1">10.4</text><text class=crowlab x="234" y="83.1" text-anchor=end>Passengers</text><rect class="cbar c4" x="248" y="60" width="384.1" height="34" rx=3 data-tip="Passengers · 8.6 %"/><text class=cval x="642.1" y="83.1">8.6</text><text class=crowlab x="234" y="129.1" text-anchor=end>Flight hours</text><rect class="cbar c4" x="248" y="106" width="370.7" height="34" rx=3 data-tip="Flight hours · 8.3 %"/><text class=cval x="628.7" y="129.1">8.3</text><text class=crowlab x="234" y="175.1" text-anchor=end>CO₂ (full trajectory)</text><rect class="cbar c4" x="248" y="152" width="187.6" height="34" rx=3 data-tip="CO₂ (full trajectory) · 4.2 %"/><text class=cval x="445.6" y="175.1">4.2</text><text class=crowlab x="234" y="221.1" text-anchor=end>Average take-off weight</text><rect class="cbar c4" x="248" y="198" width="151.9" height="34" rx=3 data-tip="Average take-off weight · 3.4 %"/><text class=cval x="409.9" y="221.1">3.4</text><text class=crowlab x="234" y="267.1" text-anchor=end>Number of flights</text><rect class="cbar c4" x="248" y="244" width="8.9" height="34" rx=3 data-tip="Number of flights · 0.2 %"/><text class=cval x="266.9" y="267.1">0.2</text></svg><div class=ctip hidden></div></div><div class=cnote><p>The last row is the one that makes all the others surprising: the flights are the same as in 2019 (+0.2%), but they fly 10.4% more kilometres, in aircraft 3.4% heavier, and emit 4.2% more CO₂. Traffic is no longer the variable that explains European emissions: sector length and aircraft type are. It is also why counting flights no longer says how things are going.</p><details class=ctbl><summary>Data behind this chart — 6 rows</summary><div class=ctblwrap><table><thead><tr><th>Item</th><th>%</th></tr></thead><tbody><tr><td>Distance flown</td><td>10.4</td></tr><tr><td>Passengers</td><td>8.6</td></tr><tr><td>Flight hours</td><td>8.3</td></tr><tr><td>CO₂ (full trajectory)</td><td>4.2</td></tr><tr><td>Average take-off weight</td><td>3.4</td></tr><tr><td>Number of flights</td><td>0.2</td></tr></tbody></table></div></details><p class=src>Source: EUROCONTROL, Performance Review Report 2025, figure 2-1. Slightly different geographical areas: ECAC for hours and distance, Network Manager area for flights.</p></div></figure>
+<div class=col>
+<p>In Europe the same activity weighs more — about <b>4.4% of total
+emissions</b> — and not because Europe flies worse: it is the rest of the European economy that has
+decarbonised while flying has not, so the same slice takes up more room in a smaller pie. The share
+is set to keep rising for the same reason: the sector has fewer levers than the others, and its
+main ones — sustainable fuels, fleet renewal — are slow. In EUROCONTROL's plan for 2050,
+operational measures — routes, profiles, traffic management — account for
+10% of the effort. Ten per cent of an enormous effort is still
+a great deal.</p>
+</div>
+</section>
+
+<section>
+<h2>Measuring the distance from an ideal flight</h2>
+<div class=col>
+<p>If the technological levers are slow and demand keeps growing, what is left to look at in the
+short run is how far each flight sits from a reference built on the same journey. On this, in
+Europe, there are two estimates: they use different references and measure different things, and
+the difference between them is not a hidden margin.</p>
+<p>The first is EUROCONTROL's. In the Performance Review Report 2025 the Performance Review
+Commission estimates the air-traffic-management &laquo;benefit pool&raquo; empirically at about
+<b>9%</b>, comparing each flight with the tenth percentile of comparable flights
+— that is, with what somebody else, on that same sector and in that same aircraft type, actually
+managed to do. It is a measure of plausibly recoverable margin, because its reference is a flight
+that existed.</p>
+<p>The second is this site's, and it means something else: it compares each flight with an
+<i>ideal flight</i> — same aircraft type, great-circle route, optimal altitude and speed profile,
+the same real wind — and finds, across 1,833,127 ECAC flights over 197 days,
+<b>22.1% more CO₂</b>, of which 7.5 points of route and 14.6 of profile.
+The two figures are not in contradiction: the first measures what could be recovered, the second
+how far a theoretical limit sits from every real flight, because a real flight has to respect
+separation, route structure, closed airspace and arrival queues, among many other operating
+conditions. That list explains why the limit is out of reach; it is not a breakdown of the
+22.1%, which the model does not attribute to any of those causes in particular.</p>
+<p>In one line: <b>the 9% measures what could realistically be recovered by
+comparing real flights with one another; the 22.1% measures the distance from a physical
+limit no flight can reach.</b> It follows that the difference between them is <i>not</i>
+13 points of inefficiency the institutions are ignoring: it is the part
+of the gap that exists because the sky is full of other aircraft. Subtracting one figure from the
+other produces no quantity that means anything.</p>
+<p class=cpull>The value of the gap is not saying how much is wasted. It is saying where it
+accumulates: in which phase of the flight, on which routes, with what regularity.</p>
+<p>&laquo;Where&raquo; should be taken literally. A high figure on the flights that touch an
+airport describes those flights — the shape of the airspace, the procedures, the queues waiting for
+them — and not the conduct of the airport, which decides almost none of those queues. The
+<a href="index.html#findings">findings</a> read that way throughout, and the
+<a href="methodology.html">method</a> says where it is soft.</p>
+</div>
+</section>
+
+<section>
+<h2>What this page does not say</h2>
+<div class=col>
+<ul>
+<li><b>It does not say flying is the main problem.</b> 2.5% is still 2.5%:
+electricity, industry and heating remain orders of magnitude larger.</li>
+<li><b>It does not say 3.5% replaces 2.5%.</b> They are
+percentages of different quantities, with different uncertainties, and each should be quoted with
+its metric attached.</li>
+<li><b>It does not estimate how much CO₂ could be avoided.</b> The gap this site measures is the
+distance from a <i>theoretical physical limit</i>, not an operational recovery margin. For that,
+the published reference is EUROCONTROL's 9%.</li>
+<li><b>It does not cover air freight separately</b>, nor compare flying with other modes for the
+same journey: both are legitimate questions that need different data from these.</li>
+<li><b>It is not a primary source.</b> Every figure here except this site's own comes from the
+publications listed below; where sources diverge, the divergence is flagged rather than averaged
+away. The full list, with the date each was verified, is published as
+<a href="context-sources.json">context-sources.json</a>.</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2>Sources</h2>
+<div class=col>
+<table class=csrc>
+<thead><tr><th>Source</th><th>What it provides · perimeter</th></tr></thead>
+<tbody>
+<tr><td>Global Carbon Budget v15 (2025), processed by Our World in Data</td><td>World CO₂ from fossil fuels, cement and land use, in tonnes.
+The GCB projection for 2025 (38.1 Gt of fossil alone) is not comparable line by line with this series, which is the revised November 2025 version: the chart stops at 2024.</td></tr>
+<tr><td>Lee et al. 2021, Atmospheric Environment 244:117834</td><td>Aviation effective radiative forcing in 2018, by component, mW/m²; the emissions series back to 1940. All aviation, not
+scheduled flights alone.</td></tr>
+<tr><td>Bergero et al. 2023 (Nature Sustainability), via Our World in Data</td><td>Passenger-km, carbon intensity and emissions
+1990-2021.</td></tr>
+<tr><td>Klöwer et al. 2021, Environmental Research Letters 16:104027</td><td>Share of observed
+warming attributed to aviation; cumulative emissions.</td></tr>
+<tr><td>OECD, Air transport CO2 emissions (experimental), via Our World in Data</td><td>CO₂ of commercial passenger flights only, in tonnes, assigned to the country of departure.
+A narrower perimeter than the Lee/Bergero series: no freight, charter or general aviation.</td></tr>
+<tr><td>EUROCONTROL, Performance Review Report 2025 (March 2026)</td><td>Flights, distances, hours,
+gate-to-gate CO₂ and emissions by flight phase in the EUROCONTROL area; the European
+4.4% share; the 9% ATM benefit pool.</td></tr>
+<tr><td>EUROCONTROL STATFOR — Standard Inputs, Data Snapshot #57, 7-Year Forecast</td><td>Annual
+IFR flight counts. The ECAC area (44 states) and the Network Manager area are not the same, and the
+publications alternate between them.</td></tr>
+<tr><td>co2gap</td><td>Gap from the theoretical optimum, 1,833,127 ECAC flights over 197
+days. Release 2026-09-01, methodology v1.0.</td></tr>
+</tbody></table>
+<p class=hint>Every figure on this page that is not this site's own was verified against its source
+on 2026-08-20, and is re-checked at each release. Unlike everything else here, these numbers
+cannot be recomputed from the published data: they come from other people's publications, and the
+machine cannot tell when they go out of date.</p>
+</div>
+</section>
+</div>
+<script>window.__CTXCHARTS__={"totale": {"series": [{"cls": "c1", "name": "Total CO\u2082", "years": [1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], "xs": [58.0, 66.1, 74.2, 82.4, 90.5, 98.6, 106.7, 114.8, 123.0, 131.1, 139.2, 147.3, 155.4, 163.5, 171.7, 179.8, 187.9, 196.0, 204.1, 212.3, 220.4, 228.5, 236.6, 244.7, 252.9, 261.0, 269.1, 277.2, 285.3, 293.5, 301.6, 309.7, 317.8, 325.9, 334.0, 342.2, 350.3, 358.4, 366.5, 374.6, 382.8, 390.9, 399.0, 407.1, 415.2, 423.4, 431.5, 439.6, 447.7, 455.8, 464.0, 472.1, 480.2, 488.3, 496.4, 504.5, 512.7, 520.8, 528.9, 537.0, 545.1, 553.3, 561.4, 569.5, 577.6, 585.7, 593.9, 602.0, 610.1, 618.2, 626.3, 634.5, 642.6, 650.7, 658.8, 666.9, 675.0, 683.2, 691.3, 699.4, 707.5, 715.6, 723.8, 731.9, 740.0], "ys": [265.8, 264.0, 264.0, 263.5, 263.3, 269.2, 267.2, 263.6, 262.0, 264.0, 252.2, 245.2, 244.3, 242.1, 238.1, 232.3, 228.4, 225.1, 224.0, 217.6, 221.4, 221.1, 222.2, 219.8, 218.0, 216.5, 215.9, 211.0, 205.8, 195.5, 189.4, 189.0, 181.9, 177.2, 177.3, 178.7, 173.1, 165.7, 161.4, 163.0, 162.7, 167.5, 170.7, 167.4, 159.4, 152.1, 148.9, 147.4, 144.1, 143.4, 140.7, 138.2, 141.2, 141.3, 133.2, 132.1, 125.3, 113.9, 123.1, 120.9, 119.1, 122.6, 114.2, 96.0, 95.4, 92.1, 84.4, 81.2, 74.8, 74.5, 62.0, 54.8, 49.5, 49.8, 47.8, 47.5, 55.5, 51.9, 49.6, 47.1, 63.2, 50.3, 44.7, 41.1, 38.7], "vals": ["10.6 Gt", "10.9 Gt", "10.9 Gt", "11.0 Gt", "11.0 Gt", "10.2 Gt", "10.4 Gt", "10.9 Gt", "11.2 Gt", "10.9 Gt", "12.6 Gt", "13.6 Gt", "13.7 Gt", "14.0 Gt", "14.6 Gt", "15.4 Gt", "16.0 Gt", "16.5 Gt", "16.6 Gt", "17.5 Gt", "17.0 Gt", "17.0 Gt", "16.9 Gt", "17.2 Gt", "17.5 Gt", "17.7 Gt", "17.8 Gt", "18.5 Gt", "19.2 Gt", "20.7 Gt", "21.6 Gt", "21.6 Gt", "22.7 Gt", "23.3 Gt", "23.3 Gt", "23.1 Gt", "23.9 Gt", "25.0 Gt", "25.6 Gt", "25.4 Gt", "25.4 Gt", "24.7 Gt", "24.3 Gt", "24.7 Gt", "25.9 Gt", "26.9 Gt", "27.4 Gt", "27.6 Gt", "28.1 Gt", "28.2 Gt", "28.6 Gt", "28.9 Gt", "28.5 Gt", "28.5 Gt", "29.6 Gt", "29.8 Gt", "30.8 Gt", "32.4 Gt", "31.1 Gt", "31.4 Gt", "31.7 Gt", "31.2 Gt", "32.4 Gt", "35.0 Gt", "35.1 Gt", "35.5 Gt", "36.6 Gt", "37.1 Gt", "38.0 Gt", "38.0 Gt", "39.8 Gt", "40.9 Gt", "41.6 Gt", "41.6 Gt", "41.9 Gt", "41.9 Gt", "40.8 Gt", "41.3 Gt", "41.6 Gt", "42.0 Gt", "39.7 Gt", "41.5 Gt", "42.3 Gt", "42.8 Gt", "43.2 Gt"]}, {"cls": "c2", "name": "Aviation", "years": [1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021], "xs": [58.0, 66.1, 74.2, 82.4, 90.5, 98.6, 106.7, 114.8, 123.0, 131.1, 139.2, 147.3, 155.4, 163.5, 171.7, 179.8, 187.9, 196.0, 204.1, 212.3, 220.4, 228.5, 236.6, 244.7, 252.9, 261.0, 269.1, 277.2, 285.3, 293.5, 301.6, 309.7, 317.8, 325.9, 334.0, 342.2, 350.3, 358.4, 366.5, 374.6, 382.8, 390.9, 399.0, 407.1, 415.2, 423.4, 431.5, 439.6, 447.7, 455.8, 464.0, 472.1, 480.2, 488.3, 496.4, 504.5, 512.7, 520.8, 528.9, 537.0, 545.1, 553.3, 561.4, 569.5, 577.6, 585.7, 593.9, 602.0, 610.1, 618.2, 626.3, 634.5, 642.6, 650.7, 658.8, 666.9, 675.0, 683.2, 691.3, 699.4, 707.5, 715.6], "ys": [339.8, 339.7, 339.7, 339.7, 339.7, 339.7, 339.6, 339.6, 339.6, 339.5, 339.5, 339.4, 339.4, 339.3, 339.3, 339.2, 339.2, 339.1, 339.0, 339.0, 338.9, 338.8, 338.6, 338.6, 338.5, 338.4, 338.3, 338.0, 337.7, 337.5, 337.5, 337.5, 337.3, 337.2, 337.3, 337.4, 337.4, 337.2, 337.0, 337.0, 337.0, 337.1, 337.1, 337.0, 336.9, 336.7, 336.5, 336.4, 336.2, 336.1, 336.2, 336.2, 336.2, 336.2, 336.0, 335.9, 335.7, 335.6, 335.5, 335.4, 335.2, 335.3, 335.2, 335.2, 335.0, 334.7, 334.7, 334.5, 334.6, 334.9, 334.6, 334.5, 334.4, 334.2, 334.0, 333.8, 333.5, 333.1, 332.9, 332.8, 335.7, 334.9], "vals": ["0.03 Gt", "0.04 Gt", "0.04 Gt", "0.04 Gt", "0.05 Gt", "0.05 Gt", "0.05 Gt", "0.06 Gt", "0.06 Gt", "0.07 Gt", "0.07 Gt", "0.08 Gt", "0.09 Gt", "0.10 Gt", "0.10 Gt", "0.11 Gt", "0.12 Gt", "0.13 Gt", "0.14 Gt", "0.15 Gt", "0.16 Gt", "0.18 Gt", "0.19 Gt", "0.20 Gt", "0.21 Gt", "0.23 Gt", "0.25 Gt", "0.29 Gt", "0.33 Gt", "0.36 Gt", "0.35 Gt", "0.36 Gt", "0.38 Gt", "0.39 Gt", "0.38 Gt", "0.38 Gt", "0.38 Gt", "0.41 Gt", "0.42 Gt", "0.43 Gt", "0.43 Gt", "0.42 Gt", "0.42 Gt", "0.42 Gt", "0.45 Gt", "0.47 Gt", "0.50 Gt", "0.52 Gt", "0.54 Gt", "0.55 Gt", "0.55 Gt", "0.54 Gt", "0.54 Gt", "0.54 Gt", "0.58 Gt", "0.58 Gt", "0.61 Gt", "0.63 Gt", "0.64 Gt", "0.66 Gt", "0.69 Gt", "0.67 Gt", "0.69 Gt", "0.69 Gt", "0.72 Gt", "0.75 Gt", "0.75 Gt", "0.78 Gt", "0.78 Gt", "0.73 Gt", "0.78 Gt", "0.79 Gt", "0.81 Gt", "0.83 Gt", "0.85 Gt", "0.89 Gt", "0.93 Gt", "0.99 Gt", "1.02 Gt", "1.04 Gt", "0.61 Gt", "0.73 Gt"]}], "top": 26}, "quota": {"series": [{"cls": "c2", "name": "Aviation share", "years": [1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021], "xs": [58.0, 66.4, 74.8, 83.3, 91.7, 100.1, 108.5, 116.9, 125.4, 133.8, 142.2, 150.6, 159.0, 167.5, 175.9, 184.3, 192.7, 201.1, 209.6, 218.0, 226.4, 234.8, 243.2, 251.7, 260.1, 268.5, 276.9, 285.3, 293.8, 302.2, 310.6, 319.0, 327.4, 335.9, 344.3, 352.7, 361.1, 369.5, 378.0, 386.4, 394.8, 403.2, 411.6, 420.0, 428.5, 436.9, 445.3, 453.7, 462.1, 470.6, 479.0, 487.4, 495.8, 504.2, 512.7, 521.1, 529.5, 537.9, 546.3, 554.8, 563.2, 571.6, 580.0, 588.4, 596.9, 605.3, 613.7, 622.1, 630.5, 639.0, 647.4, 655.8, 664.2, 672.6, 681.1, 689.5, 697.9, 706.3, 714.7, 723.2, 731.6, 740.0], "ys": [306.5, 305.5, 302.3, 299.2, 297.1, 288.7, 286.6, 285.6, 281.4, 275.1, 279.3, 277.2, 273.0, 268.8, 265.7, 264.6, 262.5, 258.4, 254.2, 252.1, 242.7, 231.1, 219.6, 215.4, 212.3, 203.9, 195.6, 174.6, 160.0, 156.8, 168.3, 166.3, 164.2, 163.1, 167.3, 168.3, 174.6, 169.4, 166.3, 163.1, 162.1, 163.1, 160.0, 161.0, 160.0, 155.8, 149.5, 144.3, 139.0, 134.9, 138.0, 143.2, 140.1, 141.1, 136.9, 135.9, 132.8, 136.9, 123.3, 119.2, 112.9, 115.0, 118.1, 133.8, 124.4, 118.1, 124.4, 119.2, 126.5, 138.0, 135.9, 136.9, 136.9, 130.7, 126.5, 118.1, 102.4, 89.8, 82.5, 81.5, 177.8, 154.7], "vals": ["0.32%", "0.33%", "0.36%", "0.39%", "0.41%", "0.49%", "0.51%", "0.52%", "0.56%", "0.62%", "0.58%", "0.60%", "0.64%", "0.68%", "0.71%", "0.72%", "0.74%", "0.78%", "0.82%", "0.84%", "0.93%", "1.04%", "1.15%", "1.19%", "1.22%", "1.30%", "1.38%", "1.58%", "1.72%", "1.75%", "1.64%", "1.66%", "1.68%", "1.69%", "1.65%", "1.64%", "1.58%", "1.63%", "1.66%", "1.69%", "1.70%", "1.69%", "1.72%", "1.71%", "1.72%", "1.76%", "1.82%", "1.87%", "1.92%", "1.96%", "1.93%", "1.88%", "1.91%", "1.90%", "1.94%", "1.95%", "1.98%", "1.94%", "2.07%", "2.11%", "2.17%", "2.15%", "2.12%", "1.97%", "2.06%", "2.12%", "2.06%", "2.11%", "2.04%", "1.93%", "1.95%", "1.94%", "1.94%", "2.00%", "2.04%", "2.12%", "2.27%", "2.39%", "2.46%", "2.47%", "1.55%", "1.77%"]}], "top": 26}, "efficienza": {"series": [{"cls": "c1", "name": "Passenger-km", "years": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021], "xs": [58.0, 79.5, 101.0, 122.5, 143.9, 165.4, 186.9, 208.4, 229.9, 251.4, 272.8, 294.3, 315.8, 337.3, 358.8, 380.3, 401.7, 423.2, 444.7, 466.2, 487.7, 509.2, 530.6, 552.1, 573.6, 595.1, 616.6, 638.1, 659.5, 681.0, 702.5, 724.0], "ys": [271.7, 273.3, 270.6, 269.5, 263.7, 258.9, 252.0, 247.7, 244.5, 238.1, 231.2, 234.4, 233.3, 229.6, 215.2, 205.1, 196.6, 186.6, 184.4, 183.9, 168.9, 157.7, 147.9, 137.3, 125.2, 109.1, 92.1, 72.4, 56.8, 41.2, 236.1, 128.7], "vals": ["100 (1990=100)", "98 (1990=100)", "102 (1990=100)", "103 (1990=100)", "112 (1990=100)", "119 (1990=100)", "129 (1990=100)", "135 (1990=100)", "140 (1990=100)", "149 (1990=100)", "159 (1990=100)", "155 (1990=100)", "156 (1990=100)", "162 (1990=100)", "183 (1990=100)", "198 (1990=100)", "210 (1990=100)", "225 (1990=100)", "228 (1990=100)", "229 (1990=100)", "251 (1990=100)", "267 (1990=100)", "281 (1990=100)", "297 (1990=100)", "315 (1990=100)", "338 (1990=100)", "363 (1990=100)", "392 (1990=100)", "415 (1990=100)", "438 (1990=100)", "152 (1990=100)", "310 (1990=100)"]}, {"cls": "c2", "name": "Aviation CO\u2082", "years": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021], "xs": [58.0, 79.5, 101.0, 122.5, 143.9, 165.4, 186.9, 208.4, 229.9, 251.4, 272.8, 294.3, 315.8, 337.3, 358.8, 380.3, 401.7, 423.2, 444.7, 466.2, 487.7, 509.2, 530.6, 552.1, 573.6, 595.1, 616.6, 638.1, 659.5, 681.0, 702.5, 724.0], "ys": [271.7, 273.0, 273.0, 273.0, 269.2, 267.9, 264.2, 261.6, 260.4, 257.8, 255.3, 256.6, 255.3, 256.6, 251.5, 247.7, 246.5, 243.9, 245.2, 250.2, 245.2, 242.7, 241.4, 238.9, 235.1, 230.0, 225.0, 217.4, 212.3, 209.8, 262.9, 247.7], "vals": ["100 (1990=100)", "98 (1990=100)", "98 (1990=100)", "98 (1990=100)", "104 (1990=100)", "106 (1990=100)", "111 (1990=100)", "115 (1990=100)", "117 (1990=100)", "120 (1990=100)", "124 (1990=100)", "122 (1990=100)", "124 (1990=100)", "122 (1990=100)", "130 (1990=100)", "135 (1990=100)", "137 (1990=100)", "141 (1990=100)", "139 (1990=100)", "131 (1990=100)", "139 (1990=100)", "143 (1990=100)", "144 (1990=100)", "148 (1990=100)", "154 (1990=100)", "161 (1990=100)", "169 (1990=100)", "180 (1990=100)", "187 (1990=100)", "191 (1990=100)", "113 (1990=100)", "135 (1990=100)"]}, {"cls": "c4", "name": "CO\u2082 per passenger-km", "years": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021], "xs": [58.0, 79.5, 101.0, 122.5, 143.9, 165.4, 186.9, 208.4, 229.9, 251.4, 272.8, 294.3, 315.8, 337.3, 358.8, 380.3, 401.7, 423.2, 444.7, 466.2, 487.7, 509.2, 530.6, 552.1, 573.6, 595.1, 616.6, 638.1, 659.5, 681.0, 702.5, 724.0], "ys": [271.7, 272.8, 275.7, 277.5, 280.7, 283.1, 284.8, 287.1, 287.3, 289.0, 290.7, 289.9, 290.5, 292.7, 295.3, 296.2, 298.4, 300.1, 300.7, 304.0, 304.9, 305.5, 306.0, 306.5, 307.5, 307.5, 308.1, 308.6, 309.1, 309.9, 300.6, 313.0], "vals": ["100 (1990=100)", "98 (1990=100)", "94 (1990=100)", "92 (1990=100)", "87 (1990=100)", "83 (1990=100)", "81 (1990=100)", "77 (1990=100)", "77 (1990=100)", "75 (1990=100)", "72 (1990=100)", "73 (1990=100)", "72 (1990=100)", "69 (1990=100)", "65 (1990=100)", "64 (1990=100)", "61 (1990=100)", "58 (1990=100)", "58 (1990=100)", "53 (1990=100)", "51 (1990=100)", "51 (1990=100)", "50 (1990=100)", "49 (1990=100)", "48 (1990=100)", "48 (1990=100)", "47 (1990=100)", "46 (1990=100)", "45 (1990=100)", "44 (1990=100)", "58 (1990=100)", "40 (1990=100)"]}], "top": 26}};</script>
+<script>
+(function(){
+var CH=window.__CTXCHARTS__||{},NS="http://www.w3.org/2000/svg";
+function place(tip,svg,x,y){var r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal,
+k=r.width/vb.width,host=tip.parentElement.getBoundingClientRect();
+tip.style.left=(r.left-host.left+x*k)+"px";tip.style.top=(r.top-host.top+y*k)+"px";}
+document.querySelectorAll("svg[data-cid]").forEach(function(svg){
+var cfg=CH[svg.dataset.cid];if(!cfg)return;
+var tip=svg.parentElement.querySelector(".ctip"),cross=svg.querySelector(".ccross"),
+dots=cfg.series.map(function(s){var c=document.createElementNS(NS,"circle");
+c.setAttribute("r",4.5);c.setAttribute("class","cdot "+s.cls);
+c.setAttribute("stroke","var(--card)");c.setAttribute("stroke-width","2");
+c.style.display="none";svg.appendChild(c);return c;});
+var zone=svg.querySelector(".chit");
+zone.addEventListener("pointermove",function(ev){
+var p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;
+p=p.matrixTransform(svg.getScreenCTM().inverse());
+var ref=cfg.series[0],i=0,best=Infinity;
+ref.xs.forEach(function(x,k){var d=Math.abs(x-p.x);if(d<best){best=d;i=k;}});
+var year=ref.years[i],rows="";
+cross.setAttribute("x1",ref.xs[i]);cross.setAttribute("x2",ref.xs[i]);cross.style.display="";
+cfg.series.forEach(function(s,si){var j=s.years.indexOf(year);
+if(j<0){dots[si].style.display="none";return;}
+dots[si].setAttribute("cx",s.xs[j]);dots[si].setAttribute("cy",s.ys[j]);dots[si].style.display="";
+rows+='<span class=tr><span class=tn>'+s.name+'</span><b>'+s.vals[j]+'</b></span>';});
+tip.innerHTML='<span class=ty>'+year+'</span>'+rows;tip.hidden=false;
+place(tip,svg,ref.xs[i],cfg.top+6);});
+zone.addEventListener("pointerleave",function(){tip.hidden=true;cross.style.display="none";
+dots.forEach(function(d){d.style.display="none";});});});
+document.querySelectorAll(".cplot").forEach(function(plot){
+var tip=plot.querySelector(".ctip");
+plot.querySelectorAll("[data-tip]").forEach(function(el){
+el.addEventListener("pointerenter",function(){tip.innerHTML=el.dataset.tip;tip.hidden=false;
+var b=el.getBBox();place(tip,el.ownerSVGElement,b.x+b.width/2,b.y);});
+el.addEventListener("pointerleave",function(){tip.hidden=true;});});});
+})();
+</script>
+</body></html>
