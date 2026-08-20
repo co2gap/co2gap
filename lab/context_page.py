@@ -303,8 +303,8 @@ el.addEventListener("pointerleave",function(){tip.hidden=true;});});});
 """
 
 
-def build(*, meta, nav, style, term, release, method_version, n_flights, days,
-          lat_w, vert_w):
+def build(*, meta, nav, footnav, style, term, release, method_version, n_flights,
+          days, lat_w, vert_w):
     """La pagina completa. Le cifre di co2gap arrivano da fuori, mai digitate qui."""
     ext = json.loads(EXTERNAL.read_text(encoding="utf-8"))
     S, FIG = ext["series"], ext["figures"]
@@ -696,6 +696,12 @@ machine cannot tell when they go out of date.</p>
 </div>
 </section>
 </div>
+<p class=foot><span class=wrap style="display:block">
+{footnav}<br>
+<b>Release {release}</b> · methodology v{method_version} · the external figures on
+this page were verified on {ext['verified']} and are re-checked at each release.<br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>
+</span></p>
 <script>window.__CTXCHARTS__={json.dumps(CHARTS)};</script>
 <script>{JS}</script>
 </body></html>"""

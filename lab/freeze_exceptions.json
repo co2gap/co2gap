@@ -70,5 +70,13 @@
  {
   "match": "the full comparison is in the methodology",
   "reason": "20/08: la frase non e' stata tolta, e' stata ALLUNGATA. Il riquadro sotto il titolo e' il punto in cui nasce l'equivoco fra scarto teorico e spreco recuperabile, quindi da li' parte il primo dei tre rimandi alla nuova pagina di contesto (gli altri due sono nella FAQ e nella sezione firmata). Nessun numero cambiato."
+ },
+ {
+  "match": "corrections are published on this site, and a reply you send will be published",
+  "reason": "20/08: la promessa del diritto di replica ora ha un indirizzo. Diceva «published on this site» senza indicare dove: se un ente rispondesse dopo il lancio non esisteva la pagina in cui pubblicarlo. Ora rimanda a replies.html, che dichiara la policy e registra che finora non e' arrivato nulla. Nessun numero, promessa invariata nella sostanza e resa operativa."
+ },
+ {
+  "match": "each release is archived with a doi so that a figure can be cited",
+  "reason": "20/08: la frase era al PRESENTE e non era vera — nessun DOI esisteva, ne' un blocco di citazione. Ora dice che le release sono archiviate su Zenodo e che l'identificativo sta nella nuova pagina releases.html, dove compare appena esiste (costante ZENODO_DOI, oggi None: la pagina scrive «archived at publication» invece di inventare un DOI). Sotto la frase c'e' ora il blocco «How to cite» con citazione e BibTeX."
  }
 ]

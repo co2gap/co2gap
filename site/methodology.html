@@ -17,6 +17,7 @@
 <meta name=twitter:title content="Methodology — co2gap">
 <meta name=twitter:description content="How co2gap computes emissions and the gap against an ideal flight: trajectory processing, OpenAP fuel model, wind-corrected baseline, lateral/vertical decomposition, and the limits of what the figures mean.">
 <meta name=twitter:image content="https://co2gap.org/og.png">
+<link rel=alternate type="application/atom+xml" title="co2gap releases" href="https://co2gap.org/feed.xml">
 <link rel=icon href=favicon.svg type="image/svg+xml">
 <link rel=icon href=favicon-32.png sizes=32x32>
 <link rel=apple-touch-icon href=apple-touch-icon.png>
@@ -172,7 +173,7 @@ aviation wastes X" and "between comparable flights there is a spread of this
 size" — and only the second is something these data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-20 13:36 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-20 20:27 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -476,9 +477,10 @@ receiver and I care about this. <b>The code was developed with AI tooling</b>
 on this page precisely so they can be checked rather than taken on trust.</p>
 <p><b>Right of reply.</b> If a figure looks wrong to you, or if you represent
 an airport, an airline or an air navigation service provider named here, write
-to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections are
-published on this site, and a reply you send will be published alongside the
-figure it concerns. It is why this work is public rather than private.</p>
+to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections and
+replies are published in full on the <a href="replies.html">replies page</a>,
+alongside the figure each one concerns. It is why this work is public rather than
+private.</p>
 </div>
 
 <h2 id=independence>11. Independence</h2>
@@ -530,9 +532,32 @@ upstream licence's requirement, not an additional condition imposed here.</li>
 Apache-2.0. The project name and domain are not covered by either.</li>
 </ul>
 <p>Wind data: ERA5, Copernicus Climate Change Service. Fuel references: ICAO CEC
-Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release
-is archived with a DOI so that a figure can be cited against the version that
-produced it.</p>
+Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release is
+archived on Zenodo so that a figure can be cited against the version that produced
+it; the identifier for a given release, and what changed in it, are on the
+<a href="releases.html">release history</a> page.</p>
+<div class=note>
+<p><b>How to cite.</b> What is citable here is the <i>tool</i>, not a study: the
+figures are outputs of running it, and anyone can re-run it.</p>
+<p style="font-family:ui-monospace,monospace;font-size:.86rem;line-height:1.6">
+co2gap (2026). <i>co2gap — an open pipeline for measuring CO<sub>2</sub> and
+flight inefficiency from ADS-B trajectories.</i> Release 2026-09-01,
+methodology v1.0, covering 2026-01-01 to 2026-07-20.
+https://co2gap.org</p>
+<p class=hint>The Zenodo archive is created when the release is published, and the identifier appears here as soon as it exists. Until then, cite the release name and the URL: they identify the version just as precisely.</p>
+<details><summary>BibTeX</summary>
+<pre style="overflow-x:auto;font-size:.82rem">@software{co2gap_2026,
+  author       = {co2gap},
+  title        = {co2gap: an open pipeline for measuring CO2 and flight
+                  inefficiency from ADS-B trajectories},
+  version      = {2026-09-01},
+  url          = {https://co2gap.org},
+  year         = {2026}
+}</pre></details>
+<p class=hint>The machine-readable form is
+<a href="https://github.com/co2gap/co2gap/blob/master/CITATION.cff">CITATION.cff</a>
+in the repository.</p>
+</div>
 
 <h2 id=glossary>13. Glossary</h2>
 <p>Every term used on this site, in one sentence each. No prior knowledge of aviation
@@ -541,6 +566,7 @@ an email.</p>
 <dl class=gloss><div id=g-ecac><dt>ECAC area</dt><dd>The European Civil Aviation Conference: 44 member states, from Iceland and Norway to Turkey, Armenia and Azerbaijan — a wider Europe than the European Union. It is the area this site covers, and the same one EUROCONTROL uses for its own published figures.</dd></div><div id=g-point><dt>Point</dt><dd>One percentage point of the ideal flight's CO&#8322;. An airport at +10 points emits about 10% more than comparable flights. Points are always relative: they never say how much fuel was burnt, only how far from the reference it is.</dd></div><div id=g-norm><dt>The norm (Δ norm)</dt><dd>The median of flights of the same length and the same aircraft type. The raw gap grows as flights get shorter, so ranking it would sort by shortness; every ranking here measures the distance from the norm instead.</dd></div><div id=g-lateral><dt>Lateral and vertical</dt><dd>The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.</dd></div><div id=g-movements><dt>Movements</dt><dd>Take-offs and landings counted together. A flight counts once at the airport it leaves and once at the airport it reaches.</dd></div><div id=g-adsb><dt>ADS-B</dt><dd>The position, altitude and speed each aircraft broadcasts about twice a second. Anyone with a receiver can pick it up; every trajectory here comes from those messages, collected by volunteers and published by adsb.lol.</dd></div><div id=g-gc><dt>Great circle</dt><dd>The shortest path between two points on the globe. It is the direct route each flight is compared against — a geometric reference, not a route anyone is allowed to fly.</dd></div><div id=g-enroute><dt>En route</dt><dd>The part of a flight beyond 40 NM from either airport, outside the terminal areas where departures and arrivals are sequenced. EUROCONTROL's efficiency indicator covers only this portion, so our comparison with it does too.</dd></div><div id=g-nm><dt>NM (nautical mile)</dt><dd>1,852 metres, the standard distance unit in aviation. 40 NM is about 74 km.</dd></div><div id=g-kea><dt>KEA</dt><dd>EUROCONTROL's indicator of horizontal en-route flight inefficiency: how much further flights actually fly than the direct route, over the en-route portion only. It is built from radar data, as a rolling 12-month average discarding the ten best and ten worst days of each area; ours is not. Same construction, not the same number.</dd></div><div id=g-cco><dt>Continuous climb and descent (CCO/CDO)</dt><dd>Climbing or descending without level-off segments. Level segments burn extra fuel, and removing them is one of the few savings the industry quantifies publicly: EUROCONTROL puts the network-wide potential at about 4 kg of fuel per departure and 35 kg per arrival.</dd></div><div id=g-mt><dt>Mt and kt</dt><dd>Million tonnes and thousand tonnes. Burning one kg of jet fuel releases about 3.16 kg of CO&#8322;.</dd></div><div id=g-era5><dt>ERA5</dt><dd>The weather reanalysis published by the European Centre for Medium-Range Weather Forecasts: the wind that was actually blowing, hour by hour. Without it the same route measures differently in the two directions.</dd></div><div id=g-openap><dt>OpenAP</dt><dd>An open aircraft performance model from TU Delft. It turns a trajectory and an aircraft type into fuel burnt; it is what makes this computable without any airline data.</dd></div><div id=g-odbl><dt>ODbL</dt><dd>The Open Database Licence covering the source trajectories. Reuse is free, with attribution, but a database derived from it must carry the same licence — which is why the figures on this site do.</dd></div></dl>
 
 <p class=foot>
+<a href="index.html">Findings</a> · <a href="context.html">Context</a> · <a href="data.html">Data</a> · <a href="methodology.html">Method</a> · <a href="faq.html">FAQ</a> · <a href="releases.html">Releases</a> · <a href="replies.html">Replies</a> · <a href="feed.xml">Updates feed</a><br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
 data published here is distributed under the same terms, as the licence requires.
@@ -548,9 +574,9 @@ Wind: ERA5, Copernicus Climate Change Service.
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
-next update 31 January 2027, covering the whole of 2026.<br>
+next update 31 January 2027, covering the whole of 2026 — <a href="releases.html">what changes</a>.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-20 13:36 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-20 20:27 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>

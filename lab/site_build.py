@@ -139,6 +139,35 @@ def coverage_note(days) -> str:
 # page without new data must not look like a new release.
 RELEASE = "2026-09-01"
 METHOD_VERSION = "1.0"
+# Il DOI del concetto Zenodo, che risolve sempre all'ultima versione. Resta None
+# finche' il primo archivio non esiste: la pagina si adatta e NON promette un
+# identificativo che non c'e'. La metodologia dice che ogni release e' archiviata
+# con un DOI, ed e' l'unica frase del sito che dipende da qualcosa fuori da qui.
+ZENODO_DOI = None
+# Cosa e' cambiato fra una versione e l'altra. Esiste perche' la release del
+# 31/01/2027 muove DUE cose insieme — la finestra passa da 197 giorni a 12 mesi,
+# e se si corregge optimal_cruise_alt_ft anche la baseline — e senza un posto in
+# cui sia scritto, il lettore leggera' quel movimento come "l'Europa ha volato
+# peggio". Il posto va costruito prima che serva, non dopo.
+RELEASES = [
+    dict(date=RELEASE, version=METHOD_VERSION, doi=ZENODO_DOI, published=True,
+         what="First release. The gap against an ideal flight, computed for every "
+              "flight in the ECAC area over the covered period, split into a lateral "
+              "and a vertical component, with the phase attribution of the vertical "
+              "part and a context page for the external figures."),
+]
+PLANNED = dict(
+    date="2027-01-31", window="the whole of 2026, twelve months",
+    what=("<b>Two things move at once, and neither is Europe flying worse.</b> "
+          "The window changes from the {days} days of this release to twelve "
+          "months, so every headline figure shifts for reasons of perimeter. And "
+          "the cruise baseline is under revision: measured on its own, the cruise "
+          "segment currently comes out <i>negative</i>, meaning real aircraft burn "
+          "less than what this model calls optimal — a baseline that is too "
+          "generous. Correcting it makes the ideal flight cheaper and therefore "
+          "the gap <i>larger</i>. Both changes push the headline in the same "
+          "direction, and a reader who is not told will read the sum as a "
+          "deterioration."))
 # Releases are twice a year, at the end of January and the end of July, and
 # each one carries 12 MONTHS — not the calendar half it follows. January carries
 # the calendar year just ended (so it doubles as "the 2026 figures", which is
@@ -360,6 +389,8 @@ def meta(title, desc, page=""):
 <meta name=twitter:title content="{esc(title)}">
 <meta name=twitter:description content="{esc(desc)}">
 <meta name=twitter:image content="{SITE_URL}/og.png">
+<link rel=alternate type="application/atom+xml" title="co2gap releases" \
+href="{SITE_URL}/feed.xml">
 <link rel=icon href=favicon.svg type="image/svg+xml">
 <link rel=icon href=favicon-32.png sizes=32x32>
 <link rel=apple-touch-icon href=apple-touch-icon.png>"""
@@ -624,6 +655,55 @@ LOGO = ('<svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true">'
         ' stroke-linecap="round"/>'
         '<circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/>'
         '<circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>')
+
+def citation(days) -> str:
+    """Come si cita questo sito, con l'onesta' sul DOI che ancora non esiste.
+
+    Il citabile e' il SOFTWARE, non uno studio: e' la posizione dichiarata in
+    CITATION.cff e sulla pagina del metodo, e la citazione qui la ripete invece
+    di contraddirla.
+    """
+    doi_line = (f'<br>DOI: <a href="https://doi.org/{ZENODO_DOI}">{ZENODO_DOI}</a>'
+                if ZENODO_DOI else "")
+    doi_note = ("" if ZENODO_DOI else
+                "<p class=hint>The Zenodo archive is created when the release is "
+                "published, and the identifier appears here as soon as it exists. "
+                "Until then, cite the release name and the URL: they identify the "
+                "version just as precisely.</p>")
+    bib_doi = f"\n  doi          = {{{ZENODO_DOI}}}," if ZENODO_DOI else ""
+    return f"""<div class=note>
+<p><b>How to cite.</b> What is citable here is the <i>tool</i>, not a study: the
+figures are outputs of running it, and anyone can re-run it.</p>
+<p style="font-family:ui-monospace,monospace;font-size:.86rem;line-height:1.6">
+co2gap ({RELEASE[:4]}). <i>co2gap — an open pipeline for measuring CO<sub>2</sub> and
+flight inefficiency from ADS-B trajectories.</i> Release {RELEASE},
+methodology v{METHOD_VERSION}, covering {esc(days[0])} to {esc(days[-1])}.
+{SITE_URL}{doi_line}</p>
+{doi_note}
+<details><summary>BibTeX</summary>
+<pre style="overflow-x:auto;font-size:.82rem">@software{{co2gap_{RELEASE[:4]},
+  author       = {{co2gap}},
+  title        = {{co2gap: an open pipeline for measuring CO2 and flight
+                  inefficiency from ADS-B trajectories}},
+  version      = {{{RELEASE}}},
+  url          = {{{SITE_URL}}},{bib_doi}
+  year         = {{{RELEASE[:4]}}}
+}}</pre></details>
+<p class=hint>The machine-readable form is
+<a href="https://github.com/co2gap/co2gap/blob/master/CITATION.cff">CITATION.cff</a>
+in the repository.</p>
+</div>"""
+
+
+# Il menu in alto e' il percorso di lettura e si ferma a sei voci. Releases e
+# Replies sono pagine di consultazione: si cercano dopo una domanda precisa, e nel
+# testo sono linkate proprio nel punto in cui quella domanda nasce. Ma un lettore
+# che quel punto non lo attraversa non deve poter concludere che non esistono, e
+# per questo il piede le elenca tutte, identico su ogni pagina.
+FOOTNAV = ('<a href="index.html">Findings</a> · <a href="context.html">Context</a> · '
+           '<a href="data.html">Data</a> · <a href="methodology.html">Method</a> · '
+           '<a href="faq.html">FAQ</a> · <a href="releases.html">Releases</a> · '
+           '<a href="replies.html">Replies</a> · <a href="feed.xml">Updates feed</a>')
 
 NAV = f"""<div class=top><div class=wrap>
 <a class=brand href="index.html">{LOGO}co2gap</a>
@@ -1315,9 +1395,10 @@ receiver and I care about this. <b>The code was developed with AI tooling</b>
 on this page precisely so they can be checked rather than taken on trust.</p>
 <p><b>Right of reply.</b> If a figure looks wrong to you, or if you represent
 an airport, an airline or an air navigation service provider named here, write
-to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections are
-published on this site, and a reply you send will be published alongside the
-figure it concerns. It is why this work is public rather than private.</p>
+to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. Corrections and
+replies are published in full on the <a href="replies.html">replies page</a>,
+alongside the figure each one concerns. It is why this work is public rather than
+private.</p>
 </div>
 
 <h2 id=independence>11. Independence</h2>
@@ -1369,9 +1450,11 @@ upstream licence's requirement, not an additional condition imposed here.</li>
 Apache-2.0. The project name and domain are not covered by either.</li>
 </ul>
 <p>Wind data: ERA5, Copernicus Climate Change Service. Fuel references: ICAO CEC
-Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release
-is archived with a DOI so that a figure can be cited against the version that
-produced it.</p>
+Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release is
+archived on Zenodo so that a figure can be cited against the version that produced
+it; the identifier for a given release, and what changed in it, are on the
+<a href="releases.html">release history</a> page.</p>
+{citation(days)}
 
 <h2 id=glossary>13. Glossary</h2>
 <p>Every term used on this site, in one sentence each. No prior knowledge of aviation
@@ -1380,6 +1463,7 @@ an email.</p>
 <dl class=gloss>{glossary_rows}</dl>
 
 <p class=foot>
+{FOOTNAV}<br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
 data published here is distributed under the same terms, as the licence requires.
@@ -1387,7 +1471,7 @@ Wind: ERA5, Copernicus Climate Change Service.
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.<br>
 <b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · updated twice a year over a 12-month window ·
-next update {NEXT_RELEASE}, covering {NEXT_WINDOW}.<br>
+next update {NEXT_RELEASE}, covering {NEXT_WINDOW} — <a href="releases.html">what changes</a>.<br>
 {len(df):,} flights · {len(days)} days · {n_routes_all:,} publishable routes ·
 {n_routes_rank:,} ranked · {n_airports:,} airports · generated {esc(gen)}.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
@@ -1960,7 +2044,8 @@ a statement about where the deviation appears, not about what causes it. <b>{esc
 <section>
 <h2>What I make of this</h2>
 <p class=hint>The rest of this site is measurement. This section is opinion, and it
-is signed. Anyone named here has the right of reply, published in full. What the
+is signed. Anyone named here has the right of reply,
+<a href="replies.html">published in full</a>. What the
 opinion rests on — how much aviation weighs, and what other people measure — is
 set out with its sources on the <a href="context.html">context page</a>.</p>
 
@@ -2026,6 +2111,8 @@ band, searchable by name or ICAO code</span></a>
 validations, stated limitations, independence</span></a>
 <a href="https://github.com/co2gap/co2gap"><b>Source code →</b><span>The whole
 pipeline, from raw ADS-B to this page</span></a>
+<a href="releases.html"><b>Cite a version →</b><span>Which release produced a figure,
+what changed since the last one, and how to cite it</span></a>
 <a href="mailto:hello@co2gap.org"><b>Ask for your own figures →</b><span>Airports,
 ANSPs and airlines: the detail behind these numbers for your own traffic</span></a>
 <a href="faq.html#weak"><b>Where this method is weak →</b><span>Three known soft
@@ -2087,6 +2174,7 @@ keep that separate from what appears on this page are written down under
 </div>
 </section>
 <p class=foot>
+{FOOTNAV}<br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
 data published here is distributed under the same terms.
@@ -2201,6 +2289,7 @@ ends. <a href="index.html#airports">The fuller note is on the home page</a>.
 </div>
 
 <p class=foot><span class=wrap style="display:block">
+{FOOTNAV}<br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
 data published here is distributed under the same terms.
@@ -2374,6 +2463,7 @@ published."""),
     qa_html = "\n".join(
         f"<section><h2>{q}</h2><p>{a}</p></section>" for q, a in QA)
     FOOT_FAQ = f"""<p class=foot><span class=wrap style="display:block">
+{FOOTNAV}<br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
 data published here is distributed under the same terms.
@@ -2503,9 +2593,17 @@ replies are published on this site, in full and unconditionally.</p>
     OUT_FAQ.write_text(faq_doc)
     print(f"scritto {OUT_FAQ}  ({len(faq_doc)/1024:.0f} KB)")
 
+    rel_doc = build_releases(days, len(df))
+    (OUT.parent / "releases.html").write_text(rel_doc)
+    rep_doc = build_replies()
+    (OUT.parent / "replies.html").write_text(rep_doc)
+    service_files(OUT.parent, gen[:10], days)
+    print(f"scritto {OUT.parent/'releases.html'} · {OUT.parent/'replies.html'} · "
+          f"sitemap.xml · robots.txt · feed.xml")
+
     import context_page
     ctx_doc = context_page.build(
-        meta=meta, nav=NAV, style=STYLE_INDEX, term=term, release=RELEASE,
+        meta=meta, nav=NAV, footnav=FOOTNAV, style=STYLE_INDEX, term=term, release=RELEASE,
         method_version=METHOD_VERSION, n_flights=len(df), days=len(days),
         lat_w=lat_w, vert_w=vert_w)
     OUT_CTX = OUT.parent / "context.html"
@@ -2529,6 +2627,182 @@ replies are published on this site, in full and unconditionally.</p>
           f"· lat {lat_w:.2f}% · vert {vert_w:.2f}% · KEA +{kea:.2f}%")
     print(f"  rotte con corridoio chiuso segnalate: {n_closed}")
 
+
+
+# ===========================================================================
+#  Pagine di servizio: la storia delle versioni e il contraddittorio
+# ===========================================================================
+def simple_page(title, desc, page, body):
+    """Guscio delle pagine minori: stessa testata, stesso stile, stesso piede."""
+    return f"""<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>{esc(title)} — co2gap</title>
+{meta(f"{title} — co2gap", desc, page)}
+<style>{STYLE_INDEX}</style></head><body>
+{NAV}
+<div class=wrap>
+{body}
+</div>
+<p class=foot><span class=wrap style="display:block">
+{FOOTNAV}<br>
+<b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} ·
+<a href="releases.html">release history</a> ·
+<a href="feed.xml">updates feed</a><br>
+Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>
+</span></p>
+</body></html>"""
+
+
+def build_releases(days, n_flights) -> str:
+    rows = []
+    for r in RELEASES:
+        doi = (f'<a href="https://doi.org/{r["doi"]}">{r["doi"]}</a>' if r["doi"]
+               else '<span class=mut>archived at publication</span>')
+        rows.append(f"""<tr><td class=r style="white-space:nowrap"><b>{r['date']}</b></td>
+<td class=r style="min-width:15em">{esc(days[0])} → {esc(days[-1])}, {len(days)} days<br>
+<span class=mut>{n_flights:,} flights · methodology v{r['version']}</span></td>
+<td class=r>{r['what']}</td><td class=r>{doi}</td></tr>""")
+    body = f"""<div class=hero style="padding-bottom:0">
+<p class=eyebrow>Release history</p>
+<h1>Which version produced a figure</h1>
+<p class=lede>Figures on this site move between releases, and not always because
+European flying changed. This page says what changed and why, so that a difference
+can be read for what it is.</p>
+</div>
+
+<section>
+<h2>Published</h2>
+<div class=scroll><table>
+<thead><tr><th>release</th><th>covers</th><th>what changed</th><th>archive</th></tr></thead>
+<tbody>{''.join(rows)}</tbody></table></div>
+</section>
+
+<section>
+<h2>Planned — {PLANNED['date']}</h2>
+<div class="note warn">
+<p><b>Covering {PLANNED['window']}.</b></p>
+<p>{PLANNED['what'].format(days=len(days))}</p>
+<p>It is written here before the fact rather than explained after it, because a
+change announced in advance can be checked and one explained afterwards can only
+be believed.</p>
+</div>
+<p class=hint>Releases are twice a year, at the end of January and the end of July,
+and each one carries twelve months rather than the calendar half it follows: a
+rolling window contains every season, and this site's own figures are seasonal.
+The cost, stated plainly: two consecutive releases share six months of data, so
+movements between them are damped.</p>
+</section>
+
+<section>
+<h2>Citing a version</h2>
+{citation(days)}
+</section>"""
+    return simple_page(
+        "Release history",
+        "Which version of co2gap produced a figure, what changed between releases, "
+        "and how to cite a specific one.",
+        "releases.html", body)
+
+
+def build_replies() -> str:
+    """La pagina del diritto di replica.
+
+    Vuota e' informativa: dice che la porta e' aperta e che nessuno l'ha ancora
+    usata. Senza questa pagina la promessa fatta due volte altrove sul sito —
+    «right of reply, published in full» — non ha un indirizzo, e una promessa
+    senza indirizzo non e' una promessa.
+    """
+    body = f"""<div class=hero style="padding-bottom:0">
+<p class=eyebrow>Right of reply</p>
+<h1>Replies and corrections</h1>
+<p class=lede>Anyone named on this site — an airport, an airline, an air navigation
+service provider, anyone at all — can reply, and the reply is published here in
+full and unedited. Corrections to the figures are published here too, whoever
+finds them.</p>
+</div>
+
+<section>
+<h2>Published so far</h2>
+<div class=note>
+<p><b>No reply and no correction so far.</b> This section lists them as they
+arrive, oldest first, with the date and the figure each one concerns.</p>
+<p class=hint>The invitation is the same for everyone named on this site, and it
+does not expire.</p>
+</div>
+</section>
+
+<section>
+<h2>How this works</h2>
+<ul>
+<li><b>A reply is published in full.</b> Not summarised, not excerpted, not
+answered inline before you have read it. If it is long, it gets its own page.</li>
+<li><b>A correction changes the figure, not the wording around it.</b> If a number
+here is wrong, it is recomputed and the change is recorded on the
+<a href="releases.html">release history</a>. What was previously published stays
+readable: a figure that quietly changes is worse than one that was wrong.</li>
+<li><b>Disagreement about method is not a correction</b>, and is published as a
+reply rather than folded into the method. Where a criticism has changed the
+method, the <a href="methodology.html#weak">stated limitations</a> say so.</li>
+<li><b>No approval is asked before publishing a figure</b>, and none is given
+after. The right of reply is not a right of veto — it is the reason this work is
+public rather than private.</li>
+</ul>
+<p>Write to <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>. If you
+represent an organisation named here, say so and the reply is published under that
+name; if you would rather not be named, say that too and the substance is published
+without the attribution.</p>
+</section>"""
+    return simple_page(
+        "Replies and corrections",
+        "The right of reply on co2gap: how replies and corrections are published, "
+        "and what has been received so far.",
+        "replies.html", body)
+
+
+def service_files(out_dir: Path, gen_iso: str, days) -> None:
+    """sitemap.xml, robots.txt e il feed Atom.
+
+    Il feed ha una voce per release, non per modifica: chi lo segue vuole sapere
+    quando escono cifre nuove, non quando si corregge una virgola. Trenta righe e
+    nessun servizio esterno, che e' il minimo onesto per due uscite l'anno.
+    """
+    pages = ["index.html", "context.html", "data.html", "methodology.html",
+             "faq.html", "releases.html", "replies.html"]
+    urls = "".join(
+        f"<url><loc>{SITE_URL}/{p}</loc><lastmod>{gen_iso[:10]}</lastmod></url>\n"
+        for p in pages)
+    (out_dir / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}</urlset>\n", encoding="utf-8")
+    (out_dir / "robots.txt").write_text(
+        f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml\n", encoding="utf-8")
+
+    entries = ""
+    for r in sorted(RELEASES, key=lambda x: x["date"], reverse=True):
+        doi = f" DOI: {r['doi']}." if r["doi"] else ""
+        entries += f"""<entry>
+<title>Release {r['date']}</title>
+<link href="{SITE_URL}/releases.html"/>
+<id>tag:co2gap.org,{r['date']}:release</id>
+<updated>{r['date']}T00:00:00Z</updated>
+<summary>{esc(r['what'])} Covers {esc(days[0])} to {esc(days[-1])}, methodology
+v{r['version']}.{doi}</summary>
+</entry>
+"""
+    (out_dir / "feed.xml").write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<feed xmlns="http://www.w3.org/2005/Atom">\n'
+        "<title>co2gap — releases</title>\n"
+        f'<link href="{SITE_URL}/"/>\n'
+        f'<link rel="self" href="{SITE_URL}/feed.xml"/>\n'
+        f"<id>{SITE_URL}/</id>\n"
+        f"<updated>{RELEASES[0]['date']}T00:00:00Z</updated>\n"
+        "<author><name>co2gap</name></author>\n"
+        "<subtitle>Two releases a year: what changed, and which version produced a "
+        "figure.</subtitle>\n"
+        f"{entries}</feed>\n", encoding="utf-8")
 
 if __name__ == "__main__":
     main()

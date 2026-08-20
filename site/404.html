@@ -23,6 +23,7 @@ svg{width:56px;height:56px;margin-bottom:20px}
 h1{font-size:1.15rem;font-weight:650;letter-spacing:-.015em;margin:0 0 10px}
 p{margin:0;color:var(--mut)}
 a{color:var(--hi)}
+.nav{margin-top:18px;font-size:.9rem;line-height:2}
 </style></head><body><div class=w>
 
 <svg viewBox="-2.5 0.25 69 69" xmlns="http://www.w3.org/2000/svg" aria-hidden=true>
@@ -40,7 +41,14 @@ a{color:var(--hi)}
 </svg>
 
 <h1>Not found</h1>
-<p>There is no page at this address.<br>
-<a href="/">co2gap.org</a></p>
+<p>There is no page at this address.</p>
+
+<!-- Elenco scritto a mano, come tutto questo file: la 404 resta autonoma e
+     leggera apposta, non passa da site_build.py e non condivide il foglio di
+     stile. Il prezzo e' che una pagina rinominata va cambiata anche qui. -->
+<p class=nav><a href="/">Findings</a> · <a href="/context.html">Context</a> ·
+<a href="/data.html">Data</a> · <a href="/methodology.html">Method</a> ·
+<a href="/faq.html">FAQ</a> · <a href="/releases.html">Releases</a> ·
+<a href="/replies.html">Replies</a></p>
 
 </div></body></html>
