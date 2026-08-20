@@ -2122,10 +2122,17 @@ or avoided airspace ({n_closed} routes flagged).</p>
 
 <section id=airports style="border-top:none">
 <h3>Airports furthest from the norm</h3>
-<p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT:,} flights. Each row
-describes the flights that touch this airport, measured over the whole flight — see the
-<a href="index.html#airports">note on the home page</a> for what that does and does not
-say.</p>
+<p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT:,} flights.</p>
+<div class=note>
+<b>What this table does not say.</b> Each row measures the modelled deviation of the
+flights that touch an airport. It is <b>not</b> a measure of that airport's
+performance, of its responsibility, or of emissions it could avoid, and it does not
+establish that the airport caused anything.<br><br>
+A high value may reflect operator choices, air traffic control constraints,
+congestion, the structure of the surrounding airspace, aircraft type, weather, or
+other factors this analysis does not separate. The flight is counted at both of its
+ends. <a href="index.html#airports">The fuller note is on the home page</a>.
+</div>
 <div class=scroll><table><thead>{AH}</thead><tbody class=f>
 {ap_worst}
 </tbody></table></div>
