@@ -17,6 +17,12 @@
 // previewing an unreleased build — you would look at the live site believing it
 // was the preview. Hence an exact-match list and not a `.endsWith('.pages.dev')`
 // test: `co2gap.pages.dev` is production, `<hash>.co2gap.pages.dev` is not.
+//
+// `www.co2gap.pages.dev` is deliberately NOT in the list, and adding it back by
+// reasoning would be wrong: measured on 2026-08-21, Cloudflare Access runs in
+// FRONT of Pages Functions, and its preview application covers every subdomain
+// of `co2gap.pages.dev` — `www.` included. That hostname is answered with a 302
+// to the Access login before this code is reached, so the rule could never fire.
 
 const CANONICAL_ORIGIN = "https://co2gap.org";
 
@@ -29,7 +35,6 @@ const CANONICAL_ORIGIN = "https://co2gap.org";
 // never reach this code.
 const REDIRECT_FROM = new Set([
   "co2gap.pages.dev",
-  "www.co2gap.pages.dev",
   "www.co2gap.org",
 ]);
 
