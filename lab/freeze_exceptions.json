@@ -82,5 +82,9 @@
   {
     "match": "against the roughly 520 kg of total gap",
     "reason": "25/08: l'etichetta era SBAGLIATA e la cifra scritta a mano. I ~520 kg sono (real - hybrid)/3.16/n, cioe' il solo gap VERTICALE: il totale e' 788 kg/volo. Un lettore che fa 4,57 Mt / 1,83 M voli / 3,16 trova 788 e il sito diceva 520 'total' -- stessa classe della divisione 4,57/25,4 che il progetto ha gia' deciso di anticipare. Il NUMERO non si muove (520,8): cambia l'etichetta in 'vertical gap', il valore passa a derivato da vertical_kg_per_flight() e stampa 521, che e' quanto la tabella della metodologia diceva gia' -- le due pagine divergevano di 1 kg proprio perche' una era digitata. Aggiunta anche la frase che dice perche' i due numeri non sono stime rivali della stessa grandezza: EUROCONTROL misura contro la pratica corrente ed e' recuperabile, noi contro un ottimo teorico non volabile. Verticale contro verticale e' il confronto giusto, perche' CCO/CDO e' salita e discesa."
+  },
+  {
+    "match": "the code was developed with AI tooling",
+    "reason": "25/08: la disclosure diceva MENO del vero. Il sito scriveva «il codice», mentre cio' che e' stato sviluppato con l'AI e' metodo, modellazione e codice; e nessuno dei tre testi diceva quale sia la parte dell'autore. Ora: «the method, the modelling and the code were developed with AI tooling (Claude); the constraints are mine -- what the figures cover, when they change, and what this project declines to claim». Le tre glosse sono verificabili: perimetro ECAC e 197 giorni congelati; due uscite l'anno, ferme al 31/01/2027; nessun punteggio sintetico (INDEPENDENCE regola 5), nessun dato per volo, nessuna tesi d'autore. Motivo: «tutto fatto dall'AI» e' inesatto e a sfavore dell'autore, e fra le due incoerenze possibili quella che lascia il SITO indietro sulla disclosure e' la peggiore. Allineati nello stesso momento README e commento HN. Nessuna cifra si muove."
   }
 ]

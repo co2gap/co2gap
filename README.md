@@ -30,8 +30,13 @@ recoverable fuel.** The ideal great-circle flight at a perfect profile is a limi
 no real flight can reach: separation, route structure, constrained airspace and
 arrival queues put it out of reach. Published estimates of what is actually
 recoverable are far smaller — EUROCONTROL puts roughly 39 kg per flight on
-continuous climb and descent procedures, against roughly 520 kg of total gap
-measured here.
+continuous climb and descent procedures, recoverable from current practice,
+against roughly 521 kg of vertical gap measured here. Those two figures are not
+rival estimates of one quantity: theirs is measured against what aircraft do
+today and is recoverable by a known procedure, ours against a theoretical
+optimum that no flight can fly. The total gap is roughly 788 kg per flight;
+the 521 kg is its vertical component, which is the part continuous climb and
+descent procedures address.
 
 The distinction matters enough that the site states it above the fold, and this
 repository would be misused if that framing were dropped.
@@ -47,7 +52,7 @@ ECAC area, 2026-01-01 → 2026-07-20, **197 days, 1,833,127 flights**:
 
 | | |
 |---|---|
-| CO₂ emitted | **25.44 Mt** |
+| CO₂ emitted | **25.4 Mt** |
 | Gap against the theoretical optimum | **4.57 Mt** (22.1%) |
 | — lateral (routing) | 7.5% |
 | — vertical (profile) | 14.6% |
@@ -230,9 +235,11 @@ I am not an aviation professional, an air traffic controller or a climate
 scientist. I keep an ADS-B receiver at home, and this started as a personal
 project because the subject matters to me.
 
-**The pipeline was built with AI assistance (Claude).** The method and the code
-are open precisely so that people who do know the field can check them — and if
-you find an error, that is the point of publishing it this way. Corrections and
+**The method, the modelling and the code were built with AI assistance (Claude);
+the constraints are mine** — what the figures cover, when they change, and what
+this project declines to claim. The method and the code are open precisely so
+that people who do know the field can check them — and if you find an error,
+that is the point of publishing it this way. Corrections and
 right-of-reply responses are published next to the figure they concern.
 
 Contact: **hello@co2gap.org**
