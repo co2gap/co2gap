@@ -1,82 +1,86 @@
 [
- {
-  "match": "co2 and flight inefficiency observatory for europe",
-  "reason": "titolo cambiato di proposito il 18/08: l'h1 dice ora cosa il sito misura (How far European flights sit from a theoretical optimum) invece di cosa il sito e'. Deciso esplicitamente con l'utente come unica eccezione al congelamento."
- },
- {
-  "match": "at least 2000 flights",
-  "reason": "solo formattazione: 2000 -> 2,000, era l'unico numero del sito senza separatore delle migliaia. Nessun cambio di valore."
- },
- {
-  "match": "rankings use only routes with at least 100 flights",
-  "reason": "18/08: aggiunta la clausola sull'esclusione delle rotte a maggioranza aviazione d'affari (37 rotte soppresse per privacy). ⚠️ NOTA: nello stesso cambio il conteggio delle rotte pubblicabili passa da 5.520 a 5.483, ma il cancello NON lo vede perche' le stat card sono coppie etichetta+numero sotto i 40 caratteri e non entrano nella fotografia. Limite noto dello strumento."
- },
- {
-  "match": "the deviation travels with the airport",
-  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. segnalata da 4 modelli su 4: fa il passo dal DOVE al CHI che la frase successiva nega. Il dato regge 'non spiegabile con l'altro capo', non 'propria dell'aeroporto'."
- },
- {
-  "match": "attribution derived from the data",
-  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. 3 modelli su 4: il confronto coi voli quasi ideali mostra che il gap RESTA, non che il residuo sia margine operativo. Riscritta come interpretazione dichiarata."
- },
- {
-  "match": "points are operational margin",
-  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. stessa correzione della precedente: la scomposizione causale non e' misurata."
- },
- {
-  "match": "that level is reachable by definition",
-  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. osservato non e' replicabile: i voli sopra la mediana possono differire per massa, tipo, aeroporto, ora, vincoli."
- },
- {
-  "match": "the split between lateral and vertical is a convention, but the result",
-  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. clausola d'apertura troppo generale: il TOTALE non dipende dalla convenzione, la scomposizione si' — e le righe successive gia' lo quantificavano."
- },
- {
-  "match": "that is where the fuel goes",
-  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. riscritta: fisicamente falsa, negli ultimi 40 NM i motori sono quasi al minimo. Li' si concentra lo SCARTO, non il consumo."
- },
- {
-  "match": "i did not expect a receiver on",
-  "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. la provenienza: i dati vengono dalla rete di adsb.lol, da ERA5 e da OpenAP, non dal ricevitore dell'autore."
- },
- {
-  "match": "so a share of what appears under one airport was produced at the other",
-  "reason": "18/08, SECONDO giro di revisione incrociata: CONTRADDIZIONE INTERNA trovata da 4 modelli su 4, dentro lo stesso riquadro. Questa frase, scritta prima che esistesse lo split per fase, diceva che una parte del gap nasce all'altro capo e in crociera; tre paragrafi sotto la fase 3 misura che l'altro capo e la crociera contano pochissimo (79-84% entro 40 NM). Riscritta come DOMANDA, cosi' il paragrafo successivo la risponde invece di smentirla."
- },
- {
-  "match": "that is the baseline being unreachable, not anybody's inefficiency",
-  "reason": "18/08, SECONDO giro di revisione incrociata: coerenza: la metodologia era gia' stata corretta a 'interpretazione, non seconda misura', ma FAQ e risultato 4 lo affermavano ancora come fatto derivato. Incoerenza che avevo creato io correggendo una delle tre occorrenze."
- },
- {
-  "match": "that is the baseline staying out of reach, not inefficiency",
-  "reason": "18/08, SECONDO giro di revisione incrociata: stessa correzione della precedente, terza occorrenza."
- },
- {
-  "match": "against a fleet median of 14.0",
-  "reason": "20/08: sola disambiguazione, valore identico (14,0). «fleet median» diceva mediana, ma «fleet» e' la parola che altrove indica l'aggregato pesato: ora «median across all flights». Nessun numero cambiato."
- },
- {
-  "match": "across the fleet the split goes from",
-  "reason": "20/08: le quattro cifre della convenzione alternativa erano DIGITATE a mano; ora sono derivate da convention_medians() e riproducono esattamente 7.2/14.0 e 9.4/11.6 sul dataset pubblicato. Aggiunta la frase che distingue queste mediane per volo dal 7.5/14.6 aggregato del titolo, e precisato che la convenzione alternativa addebita i km in piu' alla CO2 per chilometro reale."
- },
- {
-  "match": "12.2 / 28.3 on raw medians",
-  "reason": "20/08: stessa modifica della riga precedente, per la coppia dell'aeroporto. Valori identici (7.9/33.0 -> 12.2/28.3), ora derivati; precisato che sono mediane grezze e non scarti dalla norma."
- },
- {
-  "match": "the baseline remaining out of reach because of cost index",
-  "reason": "Terzo frammento della stessa frase riscritta in 8e0fb13 (19/08, rilievo 3 della revisione incrociata): il divisore taglia sui trattini lunghi, la frase originale produceva TRE frammenti e solo due furono registrati allora — «attribution derived from the data» e «points are operational margin». Questo e' il terzo, rimasto orfano per sviste di contabilita', non per perdita di contenuto: le tre cause (cost index, step climbs imposed by weight, discrete flight levels) sono ancora in pagina alla lettera, dentro «that N points are a floor set by cost index, step climbs imposed by weight and discrete flight levels». Cio' che e' stato tolto di proposito e' solo la pretesa che fosse «an attribution derived from the data» invece di una lettura. Registrato il 20/08 dopo verifica in git."
- },
- {
-  "match": "the full comparison is in the methodology",
-  "reason": "20/08: la frase non e' stata tolta, e' stata ALLUNGATA. Il riquadro sotto il titolo e' il punto in cui nasce l'equivoco fra scarto teorico e spreco recuperabile, quindi da li' parte il primo dei tre rimandi alla nuova pagina di contesto (gli altri due sono nella FAQ e nella sezione firmata). Nessun numero cambiato."
- },
- {
-  "match": "corrections are published on this site, and a reply you send will be published",
-  "reason": "20/08: la promessa del diritto di replica ora ha un indirizzo. Diceva «published on this site» senza indicare dove: se un ente rispondesse dopo il lancio non esisteva la pagina in cui pubblicarlo. Ora rimanda a replies.html, che dichiara la policy e registra che finora non e' arrivato nulla. Nessun numero, promessa invariata nella sostanza e resa operativa."
- },
- {
-  "match": "each release is archived with a doi so that a figure can be cited",
-  "reason": "20/08: la frase era al PRESENTE e non era vera — nessun DOI esisteva, ne' un blocco di citazione. Ora dice che le release sono archiviate su Zenodo e che l'identificativo sta nella nuova pagina releases.html, dove compare appena esiste (costante ZENODO_DOI, oggi None: la pagina scrive «archived at publication» invece di inventare un DOI). Sotto la frase c'e' ora il blocco «How to cite» con citazione e BibTeX."
- }
+  {
+    "match": "co2 and flight inefficiency observatory for europe",
+    "reason": "titolo cambiato di proposito il 18/08: l'h1 dice ora cosa il sito misura (How far European flights sit from a theoretical optimum) invece di cosa il sito e'. Deciso esplicitamente con l'utente come unica eccezione al congelamento."
+  },
+  {
+    "match": "at least 2000 flights",
+    "reason": "solo formattazione: 2000 -> 2,000, era l'unico numero del sito senza separatore delle migliaia. Nessun cambio di valore."
+  },
+  {
+    "match": "rankings use only routes with at least 100 flights",
+    "reason": "18/08: aggiunta la clausola sull'esclusione delle rotte a maggioranza aviazione d'affari (37 rotte soppresse per privacy). ⚠️ NOTA: nello stesso cambio il conteggio delle rotte pubblicabili passa da 5.520 a 5.483, ma il cancello NON lo vede perche' le stat card sono coppie etichetta+numero sotto i 40 caratteri e non entrano nella fotografia. Limite noto dello strumento."
+  },
+  {
+    "match": "the deviation travels with the airport",
+    "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. segnalata da 4 modelli su 4: fa il passo dal DOVE al CHI che la frase successiva nega. Il dato regge 'non spiegabile con l'altro capo', non 'propria dell'aeroporto'."
+  },
+  {
+    "match": "attribution derived from the data",
+    "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. 3 modelli su 4: il confronto coi voli quasi ideali mostra che il gap RESTA, non che il residuo sia margine operativo. Riscritta come interpretazione dichiarata."
+  },
+  {
+    "match": "points are operational margin",
+    "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. stessa correzione della precedente: la scomposizione causale non e' misurata."
+  },
+  {
+    "match": "that level is reachable by definition",
+    "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. osservato non e' replicabile: i voli sopra la mediana possono differire per massa, tipo, aeroporto, ora, vincoli."
+  },
+  {
+    "match": "the split between lateral and vertical is a convention, but the result",
+    "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. clausola d'apertura troppo generale: il TOTALE non dipende dalla convenzione, la scomposizione si' — e le righe successive gia' lo quantificavano."
+  },
+  {
+    "match": "that is where the fuel goes",
+    "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. riscritta: fisicamente falsa, negli ultimi 40 NM i motori sono quasi al minimo. Li' si concentra lo SCARTO, non il consumo."
+  },
+  {
+    "match": "i did not expect a receiver on",
+    "reason": "18/08, revisione incrociata di quattro modelli esterni: correzioni di frasi che affermavano piu' di quanto il metodo sostenga. Nessun numero e nessun risultato cambia — cambia cio' che il testo pretende di aver dimostrato. la provenienza: i dati vengono dalla rete di adsb.lol, da ERA5 e da OpenAP, non dal ricevitore dell'autore."
+  },
+  {
+    "match": "so a share of what appears under one airport was produced at the other",
+    "reason": "18/08, SECONDO giro di revisione incrociata: CONTRADDIZIONE INTERNA trovata da 4 modelli su 4, dentro lo stesso riquadro. Questa frase, scritta prima che esistesse lo split per fase, diceva che una parte del gap nasce all'altro capo e in crociera; tre paragrafi sotto la fase 3 misura che l'altro capo e la crociera contano pochissimo (79-84% entro 40 NM). Riscritta come DOMANDA, cosi' il paragrafo successivo la risponde invece di smentirla."
+  },
+  {
+    "match": "that is the baseline being unreachable, not anybody's inefficiency",
+    "reason": "18/08, SECONDO giro di revisione incrociata: coerenza: la metodologia era gia' stata corretta a 'interpretazione, non seconda misura', ma FAQ e risultato 4 lo affermavano ancora come fatto derivato. Incoerenza che avevo creato io correggendo una delle tre occorrenze."
+  },
+  {
+    "match": "that is the baseline staying out of reach, not inefficiency",
+    "reason": "18/08, SECONDO giro di revisione incrociata: stessa correzione della precedente, terza occorrenza."
+  },
+  {
+    "match": "against a fleet median of 14.0",
+    "reason": "20/08: sola disambiguazione, valore identico (14,0). «fleet median» diceva mediana, ma «fleet» e' la parola che altrove indica l'aggregato pesato: ora «median across all flights». Nessun numero cambiato."
+  },
+  {
+    "match": "across the fleet the split goes from",
+    "reason": "20/08: le quattro cifre della convenzione alternativa erano DIGITATE a mano; ora sono derivate da convention_medians() e riproducono esattamente 7.2/14.0 e 9.4/11.6 sul dataset pubblicato. Aggiunta la frase che distingue queste mediane per volo dal 7.5/14.6 aggregato del titolo, e precisato che la convenzione alternativa addebita i km in piu' alla CO2 per chilometro reale."
+  },
+  {
+    "match": "12.2 / 28.3 on raw medians",
+    "reason": "20/08: stessa modifica della riga precedente, per la coppia dell'aeroporto. Valori identici (7.9/33.0 -> 12.2/28.3), ora derivati; precisato che sono mediane grezze e non scarti dalla norma."
+  },
+  {
+    "match": "the baseline remaining out of reach because of cost index",
+    "reason": "Terzo frammento della stessa frase riscritta in 8e0fb13 (19/08, rilievo 3 della revisione incrociata): il divisore taglia sui trattini lunghi, la frase originale produceva TRE frammenti e solo due furono registrati allora — «attribution derived from the data» e «points are operational margin». Questo e' il terzo, rimasto orfano per sviste di contabilita', non per perdita di contenuto: le tre cause (cost index, step climbs imposed by weight, discrete flight levels) sono ancora in pagina alla lettera, dentro «that N points are a floor set by cost index, step climbs imposed by weight and discrete flight levels». Cio' che e' stato tolto di proposito e' solo la pretesa che fosse «an attribution derived from the data» invece di una lettura. Registrato il 20/08 dopo verifica in git."
+  },
+  {
+    "match": "the full comparison is in the methodology",
+    "reason": "20/08: la frase non e' stata tolta, e' stata ALLUNGATA. Il riquadro sotto il titolo e' il punto in cui nasce l'equivoco fra scarto teorico e spreco recuperabile, quindi da li' parte il primo dei tre rimandi alla nuova pagina di contesto (gli altri due sono nella FAQ e nella sezione firmata). Nessun numero cambiato."
+  },
+  {
+    "match": "corrections are published on this site, and a reply you send will be published",
+    "reason": "20/08: la promessa del diritto di replica ora ha un indirizzo. Diceva «published on this site» senza indicare dove: se un ente rispondesse dopo il lancio non esisteva la pagina in cui pubblicarlo. Ora rimanda a replies.html, che dichiara la policy e registra che finora non e' arrivato nulla. Nessun numero, promessa invariata nella sostanza e resa operativa."
+  },
+  {
+    "match": "each release is archived with a doi so that a figure can be cited",
+    "reason": "20/08: la frase era al PRESENTE e non era vera — nessun DOI esisteva, ne' un blocco di citazione. Ora dice che le release sono archiviate su Zenodo e che l'identificativo sta nella nuova pagina releases.html, dove compare appena esiste (costante ZENODO_DOI, oggi None: la pagina scrive «archived at publication» invece di inventare un DOI). Sotto la frase c'e' ora il blocco «How to cite» con citazione e BibTeX."
+  },
+  {
+    "match": "against the roughly 520 kg of total gap",
+    "reason": "25/08: l'etichetta era SBAGLIATA e la cifra scritta a mano. I ~520 kg sono (real - hybrid)/3.16/n, cioe' il solo gap VERTICALE: il totale e' 788 kg/volo. Un lettore che fa 4,57 Mt / 1,83 M voli / 3,16 trova 788 e il sito diceva 520 'total' -- stessa classe della divisione 4,57/25,4 che il progetto ha gia' deciso di anticipare. Il NUMERO non si muove (520,8): cambia l'etichetta in 'vertical gap', il valore passa a derivato da vertical_kg_per_flight() e stampa 521, che e' quanto la tabella della metodologia diceva gia' -- le due pagine divergevano di 1 kg proprio perche' una era digitata. Aggiunta anche la frase che dice perche' i due numeri non sono stime rivali della stessa grandezza: EUROCONTROL misura contro la pratica corrente ed e' recuperabile, noi contro un ottimo teorico non volabile. Verticale contro verticale e' il confronto giusto, perche' CCO/CDO e' salita e discesa."
+  }
 ]

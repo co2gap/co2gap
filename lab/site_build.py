@@ -292,6 +292,28 @@ def esc(s):
     return html.escape(str(s))
 
 
+def vertical_kg_per_flight(df) -> float:
+    """Carburante per volo del solo gap VERTICALE, in kg.
+
+    real - hybrid: l'ibrido e' la traccia reale col profilo ottimo, quindi la
+    differenza esclude il laterale per costruzione. E' la grandezza da mettere
+    accanto ai ~39 kg di CCO/CDO, che sono anch'essi salita e discesa: il totale
+    (~788 kg) includerebbe la lunghezza della rotta e il confronto sarebbe fra
+    cose diverse.
+
+    Calibrata, come ogni massa assoluta di questo sito e del rapporto 2b: le
+    percentuali sono invarianti alla calibrazione, i chilogrammi no, e i due
+    artefatti non devono citare cifre diverse per la stessa quantita'.
+
+    Sta in una funzione perche' la usano DUE pagine -- la tabella dei benchmark
+    in metodologia e la frase-scudo in home. Nella home era scritta a mano come
+    "520 kg di gap totale": sbagliata di etichetta (e' il verticale) e non
+    derivata, cioe' l'unica cifra del sito fuori dalla regola del file. Le due
+    cose sono legate: una cifra digitata non ha un nome che la corregge.
+    """
+    return (df.co2_real_kg.sum() - df.co2_hybrid_kg.sum()) / 3.16 / len(df)
+
+
 def load() -> pd.DataFrame:
     files = sorted(glob.glob(str(DEC_DIR / "*.parquet")))
     if not files:
@@ -1085,10 +1107,7 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
         f"<tr><td>{m}</td><td class=num>{r:,}</td><td class=num>{wf:.1f}</td>"
         f"<td class=num><b>{wa:.1f}</b></td></tr>"
         for m, (wf, wa, r) in GATE.items())
-    # Calibrated, like every absolute mass on this site and in the phase-2b
-    # report: percentages are calibration-invariant, kilograms are not, and the
-    # two artefacts must not quote different figures for the same quantity.
-    per_flight_vert = (df.co2_real_kg.sum() - df.co2_hybrid_kg.sum()) / 3.16 / len(df)
+    per_flight_vert = vertical_kg_per_flight(df)
     return f"""<!doctype html>
 <html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
@@ -1863,8 +1882,11 @@ perfect profile is a theoretical limit no real flight can reach: separation
 between aircraft, route structure, constrained airspace and arrival queues put
 it out of reach. Published estimates of <i>recoverable</i> inefficiency are much
 smaller — EUROCONTROL puts at roughly {BENCH['cco_cdo_kg']} kg per flight what continuous climb and
-descent procedures would recover, against the roughly 520 kg of total gap
-measured here. <b>This site measures the distance from a theoretical optimum,
+descent procedures would recover, against the roughly {vertical_kg_per_flight(df):.0f} kg of
+vertical gap measured here. Those two figures are not rival estimates of one
+quantity: theirs is measured against current practice and is recoverable by a
+known procedure, ours against a theoretical optimum that no flight can fly.
+<b>This site measures the distance from a theoretical optimum,
 not avoidable waste.</b> The full comparison is in the methodology; how this
 figure sits beside EUROCONTROL's own estimate of what is recoverable, and how
 much aviation weighs in the first place, is on the
