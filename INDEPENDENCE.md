@@ -22,10 +22,12 @@ customer can commission a recalculation whose result is a different public
 number.
 
 **2. No advance access, embargo or preview for anyone, customers included.**
-Where organisations are notified before publication, *every* named organisation
-is notified, on the same terms and with the same lead time, and notification
-confers no ability to alter what is published. Advance notice is a matter of
-fairness, never a commercial courtesy.
+Where organisations are notified before publication, notice goes to those the
+findings single out, and every one of them is notified on the same terms and
+with the same lead time; notification confers no ability to alter what is
+published. Advance notice is a matter of fairness, never a commercial courtesy —
+and it is not what protects everyone else named here. That is rule 3, the right
+of reply, which is unconditional and carries no notice period.
 
 **3. Right of reply is free, unconditional and published in full.**
 Anyone named here may reply. The reply is published next to the figure it

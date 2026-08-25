@@ -86,5 +86,13 @@
   {
     "match": "the code was developed with AI tooling",
     "reason": "25/08: la disclosure diceva MENO del vero. Il sito scriveva «il codice», mentre cio' che e' stato sviluppato con l'AI e' metodo, modellazione e codice; e nessuno dei tre testi diceva quale sia la parte dell'autore. Ora: «the method, the modelling and the code were developed with AI tooling (Claude); the constraints are mine -- what the figures cover, when they change, and what this project declines to claim». Le tre glosse sono verificabili: perimetro ECAC e 197 giorni congelati; due uscite l'anno, ferme al 31/01/2027; nessun punteggio sintetico (INDEPENDENCE regola 5), nessun dato per volo, nessuna tesi d'autore. Motivo: «tutto fatto dall'AI» e' inesatto e a sfavore dell'autore, e fra le due incoerenze possibili quella che lascia il SITO indietro sulla disclosure e' la peggiore. Allineati nello stesso momento README e commento HN. Nessuna cifra si muove."
+  },
+  {
+    "match": "were written to before the first publication",
+    "reason": "25/08: la riga era FALSA, e stava nella sezione sull'integrita'. Diceva «Organisations named here were written to before the first publication: ALL OF THEM». Il sito nomina 152 aeroporti; le organizzazioni scritte il 29/07 sono quattro. In prosa i risultati nominano Schiphol, Madrid, Barcellona, Dublino e Stavanger: preavvisati Schiphol+LVNL e Aena+ENAIRE (che coprono anche Barcellona come gestore e ANSP), NON Dublino, nominato come «followed by Dublin at +8.0» per mostrare dove sta la rottura fra secondo e terzo. Chi gestisce Dublino leggeva una riga smentita dalla propria casella di posta. Ora dice esattamente il vero -- i due aeroporti che i risultati isolano piu' l'ANSP di ciascuno -- e sposta la garanzia universale dove e' sempre stata davvero: il diritto di replica, incondizionato e senza preavviso, che vale per tutti e 152. Dublino NON e' stato preavvisato ora: sei giorni contro i 24 giorni lavorativi degli altri renderebbero «stesse condizioni e stesso preavviso» visibilmente falso. Entra invece nel follow-up del giorno del lancio (DEPLOY §5), che e' notifica alla pubblicazione e non preavviso."
+  },
+  {
+    "match": "Notice is given because being named deserves warning",
+    "reason": "25/08, coda della riscrittura della regola 2: «being NAMED» -> «being SINGLED OUT». E' la stessa correzione, non una seconda: «nominato» reintrodurrebbe l'ambiguita' che la riscrittura toglie, perche' i nominati sul sito sono 152 e i preavvisati quattro. Chi viene isolato per nome in un risultato merita un avviso; chi compare in una riga di tabella e' coperto dal diritto di replica."
   }
 ]

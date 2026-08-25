@@ -1444,10 +1444,14 @@ apply from the first release, while the number of such arrangements is zero.</p>
 <li><b>The public figure is never a deliverable.</b> What could be provided to an
 organisation is analysis <i>of</i> a published figure — never a change <i>to</i>
 it, and never its removal or postponement.</li>
-<li><b>No advance access, embargo or preview for anyone.</b> Organisations named
-here were written to before the first publication: all of them, on the same
-terms, with no ability to alter what was published. Notice is given because
-being named deserves warning, never as a commercial courtesy.</li>
+<li><b>No advance access, embargo or preview for anyone.</b> The two airports
+whose figures the findings single out, and the air navigation service provider
+responsible for each, were written to before the first publication, on the same
+terms and with the same lead time, with no ability to alter what was published.
+Every other organisation named anywhere on this site — in a finding, a chart or
+a table — is covered by the right of reply below, which is unconditional and
+carries no notice period. Notice is given because being singled out deserves
+warning, never as a commercial courtesy.</li>
 <li><b>Right of reply is free and unconditional</b>, published in full and on
 identical terms whether or not there is any other relationship.</li>
 <li><b>Any commercial relationship with a named organisation is disclosed next
