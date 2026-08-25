@@ -144,6 +144,19 @@ METHOD_VERSION = "1.0"
 # identificativo che non c'e'. La metodologia dice che ogni release e' archiviata
 # con un DOI, ed e' l'unica frase del sito che dipende da qualcosa fuori da qui.
 ZENODO_DOI = None
+# Va scritto NUDO — "10.5281/zenodo.1234567" — perche' le tre interpolazioni piu'
+# sotto lo infilano dentro un href che porta gia' il prefisso. Zenodo pero' lo
+# mostra anche come URL intero, ed e' quella la forma che finisce negli appunti:
+# incollata qui produce href="https://doi.org/https://doi.org/10.5281/..." in
+# metodologia, releases e feed, cioe' tre link morti e nessun errore. Nemmeno
+# freeze_check se ne accorge — non guarda releases.html, e la frase che il DOI
+# fa sparire non e' nella fotografia. Misurato il 25/08 in una prova a secco:
+# senza questa riga l'unico errore realistico del giorno del lancio passa
+# inosservato dentro la finestra di un'ora.
+if ZENODO_DOI is not None and not re.fullmatch(r"10\.\d{4,9}/\S+", ZENODO_DOI):
+    raise SystemExit(
+        f"ZENODO_DOI={ZENODO_DOI!r} non e' un DOI: serve la forma nuda "
+        "10.xxxx/suffisso, senza 'https://doi.org/' e senza 'doi:'")
 # Cosa e' cambiato fra una versione e l'altra. Esiste perche' la release del
 # 31/01/2027 muove DUE cose insieme — la finestra passa da 197 giorni a 12 mesi,
 # e se si corregge optimal_cruise_alt_ft anche la baseline — e senza un posto in
