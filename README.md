@@ -203,12 +203,24 @@ scripts/run_phase2.sh
 Site generation:
 
 ```bash
+ADSB_ROOT=$PWD \
 ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
+ADSB_PHASE_DIR=$PWD/data/decomposition_ecac_phase \
 ADSB_CALIB=$PWD/data/calibration_ecac.json \
 ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
 ADSB_SITE_OUT=$PWD/site/index.html \
 python lab/site_build.py
 ```
+
+None of those variables are optional, and two of them fail *silently* rather
+than loudly: without `ADSB_DECOMP_DIR` the script reads whichever decomposition
+directory it finds by default, and without `ADSB_PHASE_DIR` it does not error at
+all — it falls back to older wording that says the gap cannot be located inside
+the flight, and drops the whole phase attribution. The run must print
+**1,833,127 flights · 197 days · 25.44 Mt · lat 7.51 · vert 14.55 · KEA +2.26 ·
+152 airports · 208 flagged routes**; anything else means a different dataset was
+read. `lab/freeze_check.py check` compares the rebuilt pages against a snapshot
+of what the site claims and is what caught that fallback in the first place.
 
 Per-flight intermediate data stays out of this repository by design.
 
