@@ -13,7 +13,13 @@ route on a less efficient altitude and speed profile).
 Everything is aggregated by route and airport. Nothing is published per flight,
 per aircraft or per operator.
 
-Site: **[co2gap.org](https://co2gap.org)** · Methodology: `site/methodology.html`
+Site: **[co2gap.org](https://co2gap.org)** — findings, [context](https://co2gap.org/context.html),
+[data](https://co2gap.org/data.html), [methodology](https://co2gap.org/methodology.html),
+[FAQ and where the method is weak](https://co2gap.org/faq.html),
+[release history](https://co2gap.org/releases.html) and
+[replies and corrections](https://co2gap.org/replies.html).
+Releases are twice a year, at the end of January and the end of July, each
+covering twelve months; the next is **31 January 2027**.
 
 ---
 
@@ -43,15 +49,16 @@ ECAC area, 2026-01-01 → 2026-07-20, **197 days, 1,833,127 flights**:
 |---|---|
 | CO₂ emitted | **25.44 Mt** |
 | Gap against the theoretical optimum | **4.57 Mt** (22.1%) |
-| — lateral (routing) | 7.51% |
-| — vertical (profile) | 14.55% |
-| Routes with n≥10 | 5,520 (2,788 ranked at n≥100) |
+| — lateral (routing) | 7.5% |
+| — vertical (profile) | 14.6% |
+| Routes with n≥10 | 5,483 (2,787 ranked at n≥100) |
 | Airports with n≥2,000 movements | 152 |
 
-Of the 14.0 points of vertical gap, **5.5 remain for a flight going direct
-through an empty night sky** — a floor that is not inefficiency but the baseline
-staying out of reach. Only the remaining 8.5 move with traffic, routing and
-profile.
+Of the median flight's 14.0 points of vertical gap, **5.5 remain for a flight
+going direct through an empty night sky**. We read that as the baseline staying
+out of reach rather than inefficiency — a reading, not a second measurement,
+since nothing here separates the two. The remaining 8.5 points move with
+traffic, routing and profile.
 
 ## External validation
 
@@ -60,6 +67,16 @@ en-route flight efficiency indicator (KEA). Computed on the same definition —
 excluding the terminal areas within 40 NM of each airport — this pipeline
 obtains **+2.26%** against the roughly 3% EUROCONTROL publishes. That agreement
 is the main external check on the method, and it was not tuned for.
+
+Splitting the same vertical gap by the part of the path it was burnt on gives a
+second, independent reading. Across the 118 airports whose departures deviate by
+at least two points, a median of **79%** of that deviation was produced within
+40 NM of the airport itself and 83% of it in the climb; for arrivals (123
+airports) it is **84%** within 40 NM and **90%** in the descent. A 2009 study of
+US traffic, found afterwards, put 80% in descent and arrival. **That is a
+location, not a cause**: it says where the fuel was burnt, not whether the
+profile was chosen by the operator or imposed by the traffic, and nothing here
+distinguishes the two.
 
 Two further checks: the wind correction holds identically across seasons
 (directional spread 5.1 / 5.2 / 4.6 in January, February and July), and the
@@ -81,7 +98,11 @@ lab/        calibrate.py     per-type correction factors
             anchor_refs.py   ICAO reference cruise fuel flows
             gate.py          wind-correction validation gate
             stability.py     month-over-month rank stability
+            run_phase_split.py  vertical excess by phase of flight and position
+            phase_attrib.py  per-airport attribution of that split
+            context_page.py  the only figures on the site not from the pipeline
             site_build.py    static site generation
+            freeze_check.py  guards what the site claims against a snapshot
 ```
 
 Emissions come from **[OpenAP](https://openap.dev)** (TU Delft). Aircraft mass is
@@ -108,10 +129,28 @@ around silently.
   Belarus, Ukraine. 208 ranked routes have a direct path through closed
   airspace; they are flagged individually, and the detour is not recoverable
   while those closures hold.
-- The vertical component does **not** separate cruise from climb and descent.
-- Four days are missing from the source (2026-05-05/06/07 and 2026-06-11).
+- The vertical component does not distinguish the *cause* of a profile. It is
+  split by **where along the path** the gap was burnt (see *External validation*
+  above), which is a location and not a cause.
+- **Eight days are missing**: four absent at the source (2026-05-05/06/07 and
+  2026-06-11), four because of weather data latency.
 - No oceanic coverage: the scope is deliberately ECAC, where ADS-B coverage is
   dense and an external benchmark (KEA) exists.
+- **The cruise baseline is too generous.** Measured over the cruise alone the
+  gap comes out slightly negative: real aircraft burn marginally less than the
+  profile we call optimal, because that baseline cruises about 1,000 ft below
+  what aircraft actually reach on the longest sectors. It is a defect in the
+  reference, not a result about aviation, and correcting it would make the
+  headline figure *larger*. It is stated before the next release rather than
+  explained after it.
+- **No uncertainty is quantified.** Aircraft mass is estimated rather than
+  known, and there is no ± on any figure here. The metric is a difference
+  between two model runs, so a systematic error cancels and a state-dependent
+  one does not — which is why only the tails of the rankings are presented as
+  meaning anything.
+- CO₂ only: **contrails and NOx are not measured**, and they are a large share
+  of aviation's warming effect. A profile that avoids contrail formation can
+  look worse by these figures and be better for the climate.
 
 ## Data sources and licensing
 
@@ -138,7 +177,12 @@ in `INDEPENDENCE.md`.
 ## Privacy
 
 No published row aggregates fewer than **10 flights**, and nothing is published
-per flight, per aircraft registration or per operator. This is a project rule
+per flight, per aircraft registration or per operator. **37 routes whose traffic
+is majority business aviation are excluded** from every table and chart: on such
+a route a row can describe one or two aircraft — one operator or one owner —
+even while clearing the floor of 10 flights, and since aircraft identity is
+deliberately not stored, that cannot be ruled out by counting. Those flights
+stay in the European totals, where they identify nobody. This is a project rule
 rather than a licence requirement: it is what keeps an aggregate observatory from
 becoming a tool for tracking individual movements.
 

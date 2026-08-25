@@ -28,6 +28,11 @@ Data and published outputs are governed separately — see DATA-LICENCE.md:
   * Airport reference data: OurAirports (CC0).
   * Aircraft performance model: OpenAP (TU Delft), LGPL-3.0 — used as an
     unmodified library dependency, not redistributed here.
+  * Typeface: Inter, Copyright 2020 The Inter Project Authors
+    (https://github.com/rsms/inter), SIL Open Font License 1.1. The web font is
+    redistributed here as site/inter.woff2, with the licence text alongside it
+    in site/inter-OFL.txt. The wordmark in site/logo-lockup.svg is Inter
+    converted to outlines, which the same licence permits.
 
 The name "co2gap", the domain co2gap.org and the project's presentation are not
 licensed under Apache-2.0. Section 6 of that licence grants no trademark rights.
