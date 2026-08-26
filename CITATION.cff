@@ -4,7 +4,11 @@ cff-version: 1.2.0
 # outputs of running it, and anyone can re-run it. See the methodology page for
 # why the project is positioned this way.
 type: software
-title: "co2gap — an open pipeline for measuring CO2 and flight inefficiency from ADS-B trajectories"
+# ⚠️ Questo titolo diventa il nome PERMANENTE dell'archivio Zenodo: Zenodo lo
+# legge da qui al momento del tag. Diceva "CO2 and flight inefficiency", ma il
+# sito non usa mai "inefficiency" in positivo -- le sue 18 occorrenze sono tutte
+# negazioni. Corretto il 26/08, prima del tag.
+title: "co2gap — an open pipeline for measuring the CO2 of European flights against a fuel-optimal ideal, from ADS-B trajectories"
 abstract: >-
   A pipeline that reconstructs flight trajectories from open ADS-B archives and
   computes, for each flight, the CO2 actually emitted against that of an ideal

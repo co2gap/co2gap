@@ -722,16 +722,16 @@ def citation(days) -> str:
 <p><b>How to cite.</b> What is citable here is the <i>tool</i>, not a study: the
 figures are outputs of running it, and anyone can re-run it.</p>
 <p style="font-family:ui-monospace,monospace;font-size:.86rem;line-height:1.6">
-co2gap ({RELEASE[:4]}). <i>co2gap — an open pipeline for measuring CO<sub>2</sub> and
-flight inefficiency from ADS-B trajectories.</i> Release {RELEASE},
+co2gap ({RELEASE[:4]}). <i>co2gap — an open pipeline for measuring the CO<sub>2</sub>
+of European flights against a fuel-optimal ideal, from ADS-B trajectories.</i> Release {RELEASE},
 methodology v{METHOD_VERSION}, covering {esc(days[0])} to {esc(days[-1])}.
 {SITE_URL}{doi_line}</p>
 {doi_note}
 <details><summary>BibTeX</summary>
 <pre style="overflow-x:auto;font-size:.82rem">@software{{co2gap_{RELEASE[:4]},
   author       = {{co2gap}},
-  title        = {{co2gap: an open pipeline for measuring CO2 and flight
-                  inefficiency from ADS-B trajectories}},
+  title        = {{co2gap: an open pipeline for measuring the CO2 of European
+                  flights against a fuel-optimal ideal, from ADS-B trajectories}},
   version      = {{{RELEASE}}},
   url          = {{{SITE_URL}}},{bib_doi}
   year         = {{{RELEASE[:4]}}}
