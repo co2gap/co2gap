@@ -118,5 +118,17 @@
   {
     "match": "No advance access, embargo or preview for anyone",
     "reason": "26/08: la regola era smentita dal sito stesso. replies.html dice che a uno dei quattro sono stati mandati metodologia e cifre il 16 agosto, prima della pubblicazione del 1 settembre: quello E' accesso anticipato. La regola non e' stata ammorbidita, e' stata resa vera -- e nella forma piu' forte: «no PRIVILEGED access», e cio' che e' stato dato a uno e' disponibile alle stesse condizioni a chiunque sia nominato. E' la versione che regge se qualcuno chiede perche' Aena ha avuto le cifre in anticipo. Corretta nello stesso momento la FAQ «Who pays for this?», che diceva «no organisation has had sight of the figures before publication»: falso dal 16 agosto."
+  },
+  {
+    "match": "would sort by shortness rather than by inefficiency",
+    "reason": "26/08, verifica Fable: per CONTRASTO la frase implicava che le classifiche corrette del sito ordinino per «inefficiency» -- parola che il sito usa solo in negazione. Troncata a «would sort by shortness»: la frase successiva dice gia' cosa usano le classifiche (la deviazione dalla mediana di voli di pari lunghezza e tipo), quindi non si perde nulla. Il glossario aveva gia' la forma pulita; il corpo del testo no."
+  },
+  {
+    "match": "are much smaller than ours, and rightly so",
+    "reason": "26/08, verifica Fable: «than OURS» rendeva la cifra del sito una *estimate of avoidable inefficiency* -- esattamente cio' che la frase precedente («not wasted, recoverable fuel») e l'intero sito negano. Ribaltava il senso NEL paragrafo che esiste per impedirlo. Ora «than the gap measured here»."
+  },
+  {
+    "match": "The total is identical under both by construction",
+    "reason": "26/08, verifica Fable: NESSUNA CIFRA ERA SBAGLIATA -- verificate contro i dati, 7,92/33,00 -> 12,23/28,27 si riproducono esatte. Ma le somme divergono davvero (40,92 contro 40,50) e la mediana del totale e' un terzo numero ancora (41,85), perche' le mediane delle parti non fanno la mediana del tutto: e' la trappola gia' documentata in questo progetto. La frase era vera PER OGNI VOLO e induceva un'inferenza falsa in chi somma. 🔑 Il rilievo vale perche' Fable e' la simulazione del lettore di Hacker News, e ci e' cascato pur avendo l'istruzione esplicita di verificare i conti: se ci casca lui, ci casca chiunque. Aggiunto il guardrail -- «identical for every individual flight», «medians do not add» -- senza toccare un solo valore."
   }
 ]

@@ -1161,7 +1161,7 @@ theoretical limit no real flight can reach: separation between aircraft, route
 structure, constrained airspace, arrival sequencing and weather put it out of
 reach for reasons that are not inefficiency.</p>
 <p>Estimates of <i>avoidable</i> inefficiency published by bodies in the field
-are much smaller than ours, and rightly so:</p>
+are much smaller than the gap measured here, and rightly so:</p>
 <table><thead><tr><th>measure</th><th class=num>per flight</th></tr></thead><tbody>
 <tr><td>EUROCONTROL — level-offs in climb and descent, recoverable through
 CCO/CDO procedures</td><td class=num>~{BENCH['cco_cdo_kg']} kg</td></tr>
@@ -1389,7 +1389,10 @@ split goes from {conv_fleet[0]:.1f} / {conv_fleet[1]:.1f} to
 dominates</b>, including for the airport named in the findings
 ({conv_ap1[0]:.1f} / {conv_ap1[1]:.1f} becomes {conv_ap1[2]:.1f} / {conv_ap1[3]:.1f},
 on raw medians rather than deviations from the norm). The total is identical under
-both by construction.<br>
+both conventions <i>for every individual flight</i>. The four figures above are
+medians, and medians do not add: summing each pair gives a different number again,
+and neither sum is the median total. That is a property of medians, not a
+discrepancy.<br>
 <b>Those four pairs describe the median flight, and are not the
 {lat_w:.1f} / {vert_w:.1f} of the headline.</b> The headline is a ratio of sums over
 the whole period, where a long flight weighs more than a short one; the median
@@ -1928,8 +1931,8 @@ much aviation weighs in the first place, is on the
 <dt>A {term('point', 'point')}</dt><dd>is one percentage point of the ideal flight's
 CO&#8322;. An airport at <b>+10</b> emits about <b>10% more</b> than comparable flights.</dd>
 <dt>Comparable</dt><dd>means <b>same length, same aircraft type</b>. That median is the
-<b>{term('norm', 'norm')}</b>, and every ranking here measures distance from it — never
-the raw gap.</dd>
+<b>{term('norm', 'norm')}</b>, and every <i>efficiency</i> ranking here measures
+distance from it — never the raw gap.</dd>
 <dt>{term('lateral', 'Lateral')}</dt><dd>is <b>extra kilometres flown</b>; <b>vertical</b>
 is a less efficient climb, cruise and descent along the same route. The two add up to
 the total.</dd>
@@ -2036,7 +2039,7 @@ baseline and criteria.
 <section>
 <h2>Why a raw ranking would be wrong</h2>
 <p class=hint>The raw gap grows as distance shrinks, so a raw ranking would sort
-by shortness rather than by inefficiency. Every ranking below uses the deviation
+by shortness. Every ranking below uses the deviation
 from the median of <b>flights of the same length and the same aircraft
 type</b>.</p>
 <div class=card><div class=vizwrap>{viz_bands(band)}</div></div>
