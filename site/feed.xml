@@ -12,7 +12,7 @@
 <link href="https://co2gap.org/releases.html"/>
 <id>tag:co2gap.org,2026-09-01:release</id>
 <updated>2026-09-01T00:00:00Z</updated>
-<summary>First release. The gap against an ideal flight, computed for every flight in the ECAC area over the covered period, split into a lateral and a vertical component, with the phase attribution of the vertical part and a context page for the external figures. Covers 2026-01-01 to 2026-07-20, methodology
+<summary>First release. The gap against an ideal flight, computed for every flight that passes the quality gates in the ECAC area over the covered period, split into a lateral and a vertical component, with the phase attribution of the vertical part and a context page for the external figures. Covers 2026-01-01 to 2026-07-20, methodology
 v1.0.</summary>
 </entry>
 </feed>

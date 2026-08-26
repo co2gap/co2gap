@@ -165,7 +165,8 @@ if ZENODO_DOI is not None and not re.fullmatch(r"10\.\d{4,9}/\S+", ZENODO_DOI):
 RELEASES = [
     dict(date=RELEASE, version=METHOD_VERSION, doi=ZENODO_DOI, published=True,
          what="First release. The gap against an ideal flight, computed for every "
-              "flight in the ECAC area over the covered period, split into a lateral "
+              "flight that passes the quality gates in the ECAC area over the covered "
+              "period, split into a lateral "
               "and a vertical component, with the phase attribution of the vertical "
               "part and a context page for the external figures."),
 ]
@@ -1360,8 +1361,9 @@ within a few points of the norm, inside the uncertainty of the method: between
 with at least {RANK_MIN_N} flights.</li>
 <li>The period is <b>2026 only, January to July</b>: no year-on-year comparison,
 and December is not covered.</li>
-<li><b>Eight days are missing</b>: four absent at the source, four because of
-weather data latency.</li>
+<li><b>Four days are missing</b> inside the period, all absent at the source.
+The window ends on 20 July because the four days that follow have flight data
+but not yet the wind data the comparison needs.</li>
 {coverage_note(days)}
 <li>Routes flagged ⚑ <b>cannot</b> fly the direct path because the airspace is
 closed. The ban applies to European carriers and not to third-country ones, so
@@ -1456,7 +1458,10 @@ apply from the first release, while the number of such arrangements is zero.</p>
 <li><b>The public figure is never a deliverable.</b> What could be provided to an
 organisation is analysis <i>of</i> a published figure — never a change <i>to</i>
 it, and never its removal or postponement.</li>
-<li><b>No advance access, embargo or preview for anyone.</b> The two airports
+<li><b>No privileged access, embargo or preview.</b> Where material is provided
+before publication — as it was, on request, to one of the organisations notified —
+the same is available on the same terms to anyone named here, and it confers no
+ability to alter what is published. The two airports
 whose figures the findings single out, and the air navigation service provider
 responsible for each, were written to before the first publication, on the same
 terms and with the same lead time, with no ability to alter what was published.
@@ -1500,7 +1505,7 @@ Apache-2.0. The project name and domain are not covered by either.</li>
 </ul>
 <p>Wind data: ERA5, Copernicus Climate Change Service. Fuel references: ICAO CEC
 Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release is
-archived on Zenodo so that a figure can be cited against the version that produced
+archived on Zenodo as they are published, so that a figure can be cited against the version that produced
 it; the identifier for a given release, and what changed in it, are on the
 <a href="releases.html">release history</a> page.</p>
 {citation(days)}
@@ -2191,8 +2196,9 @@ along the real track is sampled along the path and weighted by distance.<br><br>
 (1) We measure the gap from a <b>theoretical</b> optimum, not avoidable
 inefficiency.
 (2) The period is 2026 only, January to July: no year-on-year comparison.
-(3) Eight days are missing — four absent at the source, four because of weather
-data latency.
+(3) Four days are missing inside the period, absent at the source; the window
+ends on 20 July because the four days after it have flight data but no wind data
+yet.
 (4) <b>Only the tails of the rankings are reliable</b>: half the routes sit
 within a few points of the norm, inside the uncertainty of the method, and their
 ordering is not meaningful.
@@ -2442,19 +2448,19 @@ flights", never "third worst in Europe"."""),
          """<b>No.</b> It is an independent open-data project, not an institutional
 or academic publication. What it offers instead is verifiability: the source data
 is public, the method is documented in full, the code is open, and every figure
-can be recomputed from scratch. The organisations named on this site were given
-advance notice before publication, and any reply they send is published here in
-full and unconditionally."""),
+can be recomputed from scratch. The organisations the findings single out were
+given advance notice before publication, and any reply from anyone named here is
+published in full and unconditionally."""),
         ("Who pays for this?",
          """<b>Nobody.</b> There is no funder, client, sponsor or advertising, and
-no organisation has had sight of the figures before publication beyond the
-advance notice given to those named. The rules that keep it that way — including
+no organisation has had sight of the figures before publication beyond material
+provided on request, on terms open to anyone named here. The rules that keep it that way — including
 what happens if that ever changes — are written down under
 <a href="methodology.html#independence">independence</a>."""),
         ("What does it leave out?",
          """<b>CO&#8322; is not the whole climate effect of flying.</b> Contrails
 and nitrogen oxides contribute a large share of aviation's total warming effect —
-by published assessments, the majority of it — and this site measures none of
+by published assessments, the majority of it — and these figures contain none of
 them. It also excludes ground operations, and ADS-B coverage does not include
 oceanic sectors. Read the figures here as what they are: fuel burnt in the air
 over Europe, turned into CO&#8322;."""),
@@ -2750,8 +2756,9 @@ can be read for what it is.</p>
 change announced in advance can be checked and one explained afterwards can only
 be believed.</p>
 </div>
-<p class=hint>Releases are twice a year, at the end of January and the end of July,
-and each one carries twelve months rather than the calendar half it follows: a
+<p class=hint>From the January 2027 release onwards, releases are twice a year, at
+the end of January and the end of July, and each one carries twelve months rather
+than the calendar half it follows: a
 rolling window contains every season, and this site's own figures are seasonal.
 The cost, stated plainly: two consecutive releases share six months of data, so
 movements between them are damped.</p>
