@@ -153,7 +153,7 @@ around silently.
   between two model runs, so a systematic error cancels and a state-dependent
   one does not — which is why only the tails of the rankings are presented as
   meaning anything.
-- CO₂ only: **contrails and NOx are not measured**, and they are a large share
+- CO₂ only: **these figures contain no contrails or NOx**, and they are a large share
   of aviation's warming effect. A profile that avoids contrail formation can
   look worse by these figures and be better for the climate.
 
