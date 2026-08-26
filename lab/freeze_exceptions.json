@@ -102,5 +102,9 @@
   {
     "match": "The thing I am most aware of not measuring is contrails",
     "reason": "26/08, rilievo dell'utente: la frase e' al PRESENTE e parla di CIO' CHE L'AUTORE FA, non di cosa contengono le cifre. Sulle scie e sui NOx il lavoro e' in corso sul ramo scie-nox (non pubblicato, non finito, fuori dal percorso del lancio per decisione della roadmap): «non le misuro» e' quindi un'affermazione che puo' essere smentita a breve dal progetto stesso. 🔑 Il principio, che vale oltre le scie: **le affermazioni vanno agganciate all'artefatto, non all'autore.** «Queste cifre non contengono scie ne' NOx» resta vero per sempre -- anche il giorno in cui l'inventario sulle scie esce, dove anzi diventa la premessa di cio' che si aggiunge. Stessa correzione applicata nello stesso momento a README, commento HN (§4.2) e risposta 6.7. Le due voci della FAQ NON sono state toccate: parlavano gia' di «this site's figures», quindi erano gia' agganciate all'artefatto. ⚠️ Deciso di NON annunciare che il lavoro sulle scie e' in corso: creerebbe un'aspettativa con una data implicita sulla limitazione piu' scrutinata del progetto, sei giorni prima del lancio, e la formulazione corretta non ne ha bisogno."
+  },
+  {
+    "match": "is made against the ideal, not against the actual",
+    "reason": "26/08: aggiunte in coda le due cifre PER VOLO -- ~788 kg di gap totale, di cui ~521 kg verticali -- perche' erano finite nel README e nel commento Show HN e sul sito non c'erano. Non sono una misura nuova: sono la divisione di due cifre gia' pubblicate (4,57 Mt / 1.833.127 voli / 3,16), ed e' proprio la divisione che un lettore fa da solo dopo aver fatto la prima. Senza, chi la fa trova 788 dove la frase-scudo dice 521 e non sa perche'. Derivate da total_kg_per_flight() e vertical_kg_per_flight(), mai digitate: il ~520 scritto a mano nell'hero era etichettato \"total\" ed era il verticale."
   }
 ]

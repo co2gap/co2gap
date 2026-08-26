@@ -314,6 +314,18 @@ def vertical_kg_per_flight(df) -> float:
     return (df.co2_real_kg.sum() - df.co2_hybrid_kg.sum()) / 3.16 / len(df)
 
 
+def total_kg_per_flight(df) -> float:
+    """Carburante per volo del gap TOTALE, in kg: verticale + laterale.
+
+    Sta qui accanto al verticale perche' la coppia si legge insieme e perche' e'
+    la divisione che un lettore fa da solo: 4,57 Mt / 1.833.127 voli / 3,16 da'
+    questo numero, e chi la fa deve ritrovarlo scritto invece di scoprire uno
+    scarto contro i ~521 kg del verticale. Derivata, mai digitata: il ~520
+    scritto a mano nell'hero era etichettato "total" ed era il verticale.
+    """
+    return (df.co2_real_kg.sum() - df.co2_ideal_kg.sum()) / 3.16 / len(df)
+
+
 def load() -> pd.DataFrame:
     files = sorted(glob.glob(str(DEC_DIR / "*.parquet")))
     if not files:
@@ -2415,7 +2427,10 @@ remaining fraction of a point between them is the type calibration, which applie
 to the tonnages and cancels inside the percentages.
 Neither figure is wrong; they answer different questions, and this site
 uses the second because every comparison here — route against route, airport
-against airport — is made against the ideal, not against the actual."""),
+against airport — is made against the ideal, not against the actual.
+Per flight that gap is about {total_kg_per_flight(df):.0f} kg of fuel, of which
+{vertical_kg_per_flight(df):.0f} kg is the vertical component — the part
+continuous climb and descent procedures address."""),
         ("Can I trust the ranking order?",
          f"""<b>Only its tails.</b> About half the routes sit within a few points
 of the norm, inside the uncertainty of the method, and their ordering carries no
