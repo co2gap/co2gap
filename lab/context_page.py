@@ -698,6 +698,11 @@ machine cannot tell when they go out of date.</p>
 </div>
 <p class=foot><span class=wrap style="display:block">
 {footnav}<br>
+Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — these pages
+are a Produced Work: attribution, no share-alike.
+Wind: ERA5, Copernicus. Airports: OurAirports (CC0). Performance model: OpenAP,
+TU Delft.<br>
 <b>Release {release}</b> · methodology v{method_version} · the external figures on
 this page were verified on {ext['verified']} and are re-checked at each release.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>

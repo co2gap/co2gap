@@ -46,7 +46,15 @@ The site carries, and must keep carrying:
 > Wind: ERA5, Copernicus Climate Change Service (C3S).
 > Airports: OurAirports (CC0). Performance model: [OpenAP](https://openap.dev), TU Delft.
 
-Removing any of these breaks the licence, not merely good manners.
+⚠️ **Not all four are licence obligations, and the distinction is worth keeping
+straight.** Attribution to **adsb.lol** is required by the ODbL, and
+acknowledgement of **Copernicus/ERA5** by its own terms: removing either breaks a
+licence. **OurAirports is CC0** — a public-domain dedication that waives
+attribution — and **OpenAP** is credited as the tool that produced the figures,
+not because LGPL-3.0 compels a line on a web page. Those two are carried because
+crediting what you rely on is right, not because anyone could sue over it.
+Claiming otherwise would overstate the obligation, which is its own kind of
+error.
 
 ## Privacy floor, which is stricter than any licence
 

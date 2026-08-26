@@ -1509,8 +1509,9 @@ makes a Derivative Database. The
 <a href="https://github.com/co2gap/co2gap">pipeline source code</a> is
 Apache-2.0. The project name and domain are not covered by either.</li>
 </ul>
-<p>Wind data: ERA5, Copernicus Climate Change Service. Fuel references: ICAO CEC
-Methodology v13.1. Performance model: OpenAP, TU Delft (LGPL-3.0). Each release is
+<p>Wind data: ERA5, Copernicus Climate Change Service. Airport names and
+positions: OurAirports (CC0). Fuel references: ICAO CEC Methodology v13.1.
+Performance model: OpenAP, TU Delft (LGPL-3.0). Each release is
 archived on Zenodo as they are published, so that a figure can be cited against the version that produced
 it; the identifier for a given release, and what changed in it, are on the
 <a href="releases.html">release history</a> page.</p>
@@ -1530,6 +1531,7 @@ a Produced Work: reuse with attribution, no share-alike. A dataset extracted fro
 them is a Derivative Database and stays under ODbL —
 <a href="methodology.html#licence">what that means</a>.
 Wind: ERA5, Copernicus Climate Change Service.
+Airports: OurAirports (CC0).
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.<br>
 <b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} · updated twice a year over a 12-month window ·
@@ -2249,6 +2251,7 @@ a Produced Work: reuse with attribution, no share-alike. A dataset extracted fro
 them is a Derivative Database and stays under ODbL —
 <a href="methodology.html#licence">what that means</a>.
 Wind: ERA5, Copernicus Climate Change Service.
+Airports: OurAirports (CC0).
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.
 Text and charts <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.<br>
@@ -2363,6 +2366,8 @@ under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>. These pages
 a Produced Work: reuse with attribution, no share-alike. A dataset extracted from
 them is a Derivative Database and stays under ODbL —
 <a href="methodology.html#licence">what that means</a>.
+Wind: ERA5, Copernicus. Airports: OurAirports (CC0). Fuel references: ICAO CEC
+v13.1. Performance model: OpenAP, TU Delft.<br>
 {len(df):,} flights · {len(days)} days · generated {esc(gen)}.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 {SOCIAL}
@@ -2543,8 +2548,8 @@ under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>. These pages
 a Produced Work: reuse with attribution, no share-alike. A dataset extracted from
 them is a Derivative Database and stays under ODbL —
 <a href="methodology.html#licence">what that means</a>.
-Wind: ERA5, Copernicus. Fuel references: ICAO CEC v13.1. Performance model:
-OpenAP, TU Delft.<br>
+Wind: ERA5, Copernicus. Airports: OurAirports (CC0). Fuel references: ICAO CEC
+v13.1. Performance model: OpenAP, TU Delft.<br>
 {len(df):,} flights · {len(days)} days · release {RELEASE} · generated {esc(gen)}.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 {SOCIAL}
@@ -2730,6 +2735,11 @@ def simple_page(title, desc, page, body):
 </div>
 <p class=foot><span class=wrap style="display:block">
 {FOOTNAV}<br>
+Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — these pages
+are a Produced Work: attribution, no share-alike.
+Wind: ERA5, Copernicus. Airports: OurAirports (CC0). Performance model: OpenAP,
+TU Delft.<br>
 <b>Release {RELEASE}</b> · methodology v{METHOD_VERSION} ·
 <a href="releases.html">release history</a> ·
 <a href="feed.xml">updates feed</a><br>
