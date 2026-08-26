@@ -1501,8 +1501,11 @@ routes or airports with their figures, redistributed as data — is a
 <i>Derivative Database</i>. ODbL requires it to be published under
 <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> as well. This is the
 upstream licence's requirement, not an additional condition imposed here.</li>
-<li><b>The text of these pages</b> is
-<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; the
+<li><b>The text and the charts on these pages</b> are additionally offered under
+<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> — a grant
+over this project's own expression, not over the underlying data, whose terms are
+the ODbL ones above. The <b>tables</b> are not included: extracting them as data
+makes a Derivative Database. The
 <a href="https://github.com/co2gap/co2gap">pipeline source code</a> is
 Apache-2.0. The project name and domain are not covered by either.</li>
 </ul>
@@ -1522,8 +1525,10 @@ an email.</p>
 <p class=foot>
 {FOOTNAV}<br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
-under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
-data published here is distributed under the same terms, as the licence requires.
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>. These pages are
+a Produced Work: reuse with attribution, no share-alike. A dataset extracted from
+them is a Derivative Database and stays under ODbL —
+<a href="methodology.html#licence">what that means</a>.
 Wind: ERA5, Copernicus Climate Change Service.
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.<br>
@@ -2239,14 +2244,14 @@ keep that separate from what appears on this page are written down under
 <p class=foot>
 {FOOTNAV}<br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
-under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
-data published here is distributed under the same terms.
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>. These pages are
+a Produced Work: reuse with attribution, no share-alike. A dataset extracted from
+them is a Derivative Database and stays under ODbL —
+<a href="methodology.html#licence">what that means</a>.
 Wind: ERA5, Copernicus Climate Change Service.
 Fuel references: ICAO CEC Methodology v13.1.
 Performance model: OpenAP, TU Delft.
-Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; reusing
-these figures as a <i>dataset</i> triggers ODbL share-alike —
-<a href="methodology.html#licence">what that means</a>.<br>
+Text and charts <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.<br>
 {len(df):,} flights · {len(days)} days · {len(months)} months.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 {SOCIAL}
@@ -2354,8 +2359,10 @@ ends. <a href="index.html#airports">The fuller note is on the home page</a>.
 <p class=foot><span class=wrap style="display:block">
 {FOOTNAV}<br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
-under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
-data published here is distributed under the same terms.
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>. These pages are
+a Produced Work: reuse with attribution, no share-alike. A dataset extracted from
+them is a Derivative Database and stays under ODbL —
+<a href="methodology.html#licence">what that means</a>.
 {len(df):,} flights · {len(days)} days · generated {esc(gen)}.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 {SOCIAL}
@@ -2512,8 +2519,9 @@ Note also that an overflight ban binds European carriers and not third-country
 ones, so a figure for such a route averages operators that must divert with
 operators that need not."""),
         ("Can I reuse these figures?",
-         f"""Yes, and the terms differ by what you reuse. The <b>text</b> is
-CC BY 4.0. The <b>figures as data</b> derive from
+         f"""Yes, and the terms differ by what you reuse. The <b>text and the charts</b> are
+additionally offered under CC BY 4.0 — this project's own expression. The
+<b>figures as data</b> derive from
 <a href="https://adsb.lol">adsb.lol</a> trajectories under
 {term('odbl', 'ODbL')}, so a dataset built from them is a derivative database and carries
 the same share-alike obligation. In both cases attribution is required. The
@@ -2531,8 +2539,10 @@ published."""),
     FOOT_FAQ = f"""<p class=foot><span class=wrap style="display:block">
 {FOOTNAV}<br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
-under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — the derived
-data published here is distributed under the same terms.
+under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>. These pages are
+a Produced Work: reuse with attribution, no share-alike. A dataset extracted from
+them is a Derivative Database and stays under ODbL —
+<a href="methodology.html#licence">what that means</a>.
 Wind: ERA5, Copernicus. Fuel references: ICAO CEC v13.1. Performance model:
 OpenAP, TU Delft.<br>
 {len(df):,} flights · {len(days)} days · release {RELEASE} · generated {esc(gen)}.<br>

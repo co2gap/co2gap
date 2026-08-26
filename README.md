@@ -165,8 +165,11 @@ around silently.
 see `DATA-LICENCE.md`, which matters more than it sounds: the published site is
 a *Produced Work* under ODbL and needs only attribution, but redistributing an
 aggregated dataset would make it a Derivative Database and bind it to
-share-alike. Site text, tables and figures are additionally offered under
-**CC BY 4.0**.
+share-alike. Site **text and charts** are additionally offered under
+**CC BY 4.0** — that grant covers this project's own expression, not the
+underlying data. The tables are not included: they are figures derived from an
+ODbL database, and extracting them as a dataset makes a Derivative Database.
+Methodology §12 is the reference text.
 
 The name *co2gap* and the domain are not covered by the code licence: Apache-2.0
 §6 grants no trademark rights. Reuse the code freely; do not present a derived
