@@ -106,5 +106,9 @@
   {
     "match": "is made against the ideal, not against the actual",
     "reason": "26/08: aggiunte in coda le due cifre PER VOLO -- ~788 kg di gap totale, di cui ~521 kg verticali -- perche' erano finite nel README e nel commento Show HN e sul sito non c'erano. Non sono una misura nuova: sono la divisione di due cifre gia' pubblicate (4,57 Mt / 1.833.127 voli / 3,16), ed e' proprio la divisione che un lettore fa da solo dopo aver fatto la prima. Senza, chi la fa trova 788 dove la frase-scudo dice 521 e non sa perche'. Derivate da total_kg_per_flight() e vertical_kg_per_flight(), mai digitate: il ~520 scritto a mano nell'hero era etichettato \"total\" ed era il verticale."
+  },
+  {
+    "match": "nothing here measures them",
+    "reason": "26/08: ultimo residuo della stessa forma corretta poco prima altrove -- afferma al PRESENTE che su questo sito nulla misura scie e NOx, e diventa falsa il giorno in cui compaiono. Stesso principio: l'affermazione si aggancia all'artefatto («queste cifre non ne contengono») e non al sito ne' all'autore. Nella stessa scheda e' stato aggiunto un paragrafo che dice che scie e NOx SONO stati misurati (201 giorni del 2026) e che metodo, cifre e limiti escono con la release di gennaio 2027. NESSUNA cifra di risultato pubblicata: la ragione data per l'attesa e' la finestra incompleta (EF/volo di gennaio = 4,5x luglio, quindi sette mesi non sono un anno), che e' verificabile e non verra' smentita a gennaio, quando la finestra SARA' un anno. Deliberatamente NON usata come motivo l'instabilita' della classifica per aeroporto: il 23/08 e' emerso che era un artefatto della metrica in joule e che a rango entro cella la classifica e' stabile (Spearman 0,994), quindi «non si puo' classificare» rischierebbe di essere smentito dalla release stessa. Il testo dice la versione debole e vera: alcune cose che una classifica per aeroporto sembra mostrare seguono da scelte di modellazione."
   }
 ]

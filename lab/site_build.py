@@ -2573,9 +2573,17 @@ reference burns less.</p>
 <div class=card>
 <h3>2. CO&#8322; is not the whole climate effect</h3>
 <p>Contrails and nitrogen oxides account for a large share of aviation's warming
-effect — by published assessments the majority of it — and nothing here measures them.
-A route flown at a level that avoids contrail formation could be worse by this site's
-figures and better for the climate.</p>
+effect &mdash; by published assessments the majority of it &mdash; and these figures contain
+neither. A route flown at a level that avoids contrail formation could be worse by this
+site's figures and better for the climate.</p>
+<p>Both have now been measured, for European traffic across 201 days of 2026. The method,
+the figures and what they cannot support will be published with the January 2027 release,
+when the window covers a full calendar year: contrail forcing per flight differs by a
+factor of about four and a half between January and July, so seven months is not a year,
+and publishing a figure now would mean publishing one that then moves. The January release
+will also be explicit about which parts of it can be broken down and which cannot &mdash;
+some of what a per-airport contrail ranking appears to show follows from modelling
+choices rather than from the air above the airport.</p>
 <p class=caveat>Anyone who works on non-CO&#8322; effects and can say how badly that
 changes the reading of these rankings would be doing this project a service.</p>
 </div>
