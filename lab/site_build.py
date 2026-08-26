@@ -2602,7 +2602,7 @@ reference burns less.</p>
 effect &mdash; by published assessments the majority of it &mdash; and these figures contain
 neither. A route flown at a level that avoids contrail formation could be worse by this
 site's figures and better for the climate.</p>
-<p>Both have now been measured, for European traffic across 201 days of 2026. The method,
+<p>Both have now been measured, for European traffic across 201 days of data, to 24 July 2026 — a slightly wider window than the CO&#8322; figures above, whose 197 days end on 20 July because that is where the wind data ends. The method,
 the figures and what they cannot support will be published with the January 2027 release,
 when the window covers a full calendar year: contrail forcing per flight differs by a
 factor of about four and a half between January and July, so seven months is not a year,

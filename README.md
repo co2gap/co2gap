@@ -118,11 +118,21 @@ makes it cancel between the two.
 
 Per-type correction factors are anchored to the **ICAO Carbon Emissions
 Calculator methodology v13.1**, Appendix C. They are needed because OpenAP ships
-calibrated fuel models for 14 typecodes and falls back to a generic model for
-everything else; types with a calibrated model land within ~5% of the ICAO
-reference with no correction at all, across more than 270,000 flights. This is
-documented in an open question to the OpenAP maintainers rather than worked
-around silently.
+its own fuel models for 14 typecodes and falls back to a generic model for
+everything else — and it is the generic branch, not the engine, that produces
+the error worth correcting.
+
+The types OpenAP models natively need no correction here: A320, A321, B738 and
+A319, **the majority of flights in the published period**, land within ~5% of the
+ICAO reference on their own. That is the check that means anything, because on a
+corrected type the comparison is tautological.
+
+⚠️ The methodology page calls those four **uncalibrated**, which is the opposite
+word for the same thing: there it means *no correction applied by this project*,
+here it means *OpenAP has a model for them*. Same types, both statements true.
+
+This is documented in an open question to the OpenAP maintainers rather than
+worked around silently.
 
 ## Known limitations
 
