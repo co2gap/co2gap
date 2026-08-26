@@ -130,5 +130,9 @@
   {
     "match": "The total is identical under both by construction",
     "reason": "26/08, verifica Fable: NESSUNA CIFRA ERA SBAGLIATA -- verificate contro i dati, 7,92/33,00 -> 12,23/28,27 si riproducono esatte. Ma le somme divergono davvero (40,92 contro 40,50) e la mediana del totale e' un terzo numero ancora (41,85), perche' le mediane delle parti non fanno la mediana del tutto: e' la trappola gia' documentata in questo progetto. La frase era vera PER OGNI VOLO e induceva un'inferenza falsa in chi somma. 🔑 Il rilievo vale perche' Fable e' la simulazione del lettore di Hacker News, e ci e' cascato pur avendo l'istruzione esplicita di verificare i conti: se ci casca lui, ci casca chiunque. Aggiunto il guardrail -- «identical for every individual flight», «medians do not add» -- senza toccare un solo valore."
+  },
+  {
+    "match": "one of the two sides would sit near the norm",
+    "reason": "26/08, verifica Fable: INFERENZA NON VALIDA. «Se fosse ereditato dagli aeroporti all'altro capo, uno dei due lati starebbe vicino alla norma» non segue: un aeroporto collegato prevalentemente a hub congestionati eredita da ENTRAMBI i capi e ha entrambe le colonne alte. La simmetria non distingue produzione da eredita'. La prova valida e' lo split di FASE (79-90% entro 40 NM), che sta due paragrafi piu' sotto. ⚠️ Corretta anche una SECONDA occorrenza della stessa inferenza che la verifica non aveva segnalato: «so it is not an artefact of which airports it connects to» deduceva la non-eredita' dalla simmetria allo stesso modo. Ora il paragrafo dice cosa il taglio dep/arr mostra davvero -- dove una cifra e' concentrata -- e rimanda allo split di fase per la domanda sull'eredita'."
   }
 ]

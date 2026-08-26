@@ -2047,7 +2047,8 @@ type</b>.</p>
 picks the altitude that minimises its own fuel for that distance. Checked against
 what aircraft actually do, on the shortest sectors it asks for about
 <b>{BENCH['alt_short_below_ft']:,} ft less</b> climb than the median real flight
-reaches — whatever drives that {band.iloc[0].med:.0f}%, it is not a reference
+reaches — whatever drives the {band.iloc[0].med:.0f}% median gap on the shortest
+sectors, it is not a reference
 demanding the impossible.</p>
 <p class=cap>The same figures as a table, with the flight counts, are on the
 <a href="data.html#bands">data page</a>.</p>
@@ -2083,12 +2084,13 @@ is counted at both of its ends, and its gap is measured over the <b>whole flight
 in the cruise between them. <b>How much?</b> Until the gap could be split by phase,
 that question had no answer here; it does now, below.<br><br>
 That is why <b>on dep.</b> and <b>on arr.</b> are shown separately: the same figure,
-split by the role the airport played. If it were inherited from the airports at the
-far end, one of the two sides would sit near the norm. Both readings occur here.
+split by the role the airport played. What it shows is where a figure is
+concentrated; whether the gap was produced at this airport or inherited from the
+other end is answered further down, by the phase split. Both readings occur here.
 <b>{esc(aname(sym_ap))}</b> stands at {symr.dep:+.1f} on departure and
 {symr.arr:+.1f} on arrival: whatever produces that gap is not confined to one end
-of its flights, so it is not an artefact of which airports it connects to. That is
-a statement about where the deviation appears, not about what causes it. <b>{esc(aname(asym_ap))}</b> stands at {asymr.dep:+.1f} and
+of its flights. That is a statement about where the deviation appears, not about
+what causes it. <b>{esc(aname(asym_ap))}</b> stands at {asymr.dep:+.1f} and
 {asymr.arr:+.1f}: nearly all of it appears on one side, and its combined figure of
 {asymr.d:+.1f} alone would not have told you which. The median across all
 {len(ga)} airports is {ap_med:+.1f}.<br><br>
