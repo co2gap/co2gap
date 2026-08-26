@@ -134,5 +134,9 @@
   {
     "match": "one of the two sides would sit near the norm",
     "reason": "26/08, verifica Fable: INFERENZA NON VALIDA. «Se fosse ereditato dagli aeroporti all'altro capo, uno dei due lati starebbe vicino alla norma» non segue: un aeroporto collegato prevalentemente a hub congestionati eredita da ENTRAMBI i capi e ha entrambe le colonne alte. La simmetria non distingue produzione da eredita'. La prova valida e' lo split di FASE (79-90% entro 40 NM), che sta due paragrafi piu' sotto. ⚠️ Corretta anche una SECONDA occorrenza della stessa inferenza che la verifica non aveva segnalato: «so it is not an artefact of which airports it connects to» deduceva la non-eredita' dalla simmetria allo stesso modo. Ora il paragrafo dice cosa il taglio dep/arr mostra davvero -- dove una cifra e' concentrata -- e rimanda allo split di fase per la domanda sull'eredita'."
+  },
+  {
+    "match": "measured quantities with their uncertainty",
+    "reason": "26/08, verifica della superficie pubblica del repo: la regola 5 diceva che il progetto pubblica «quantita' misurate CON LA LORO INCERTEZZA», mentre il README e il punto debole 4 della FAQ dicono l'opposto -- «no uncertainty is quantified», «there is no ± on any figure here». Il sito si contraddiceva da solo, e le due affermazioni sono pubblicate insieme. Tolto «with their uncertainty»: la frase regge com'era, perche' prosegue gia' con «with an explicit statement of where the ordering stops being meaningful», che e' quello che il progetto fa davvero. Stessa correzione in INDEPENDENCE.md regola 5."
   }
 ]

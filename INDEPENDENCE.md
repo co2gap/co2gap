@@ -21,11 +21,14 @@ it, by hour, origin, aircraft type and month. Never a change *to* it. No
 customer can commission a recalculation whose result is a different public
 number.
 
-**2. No advance access, embargo or preview for anyone, customers included.**
+**2. No privileged access, embargo or preview, customers included.**
 Where organisations are notified before publication, notice goes to those the
 findings single out, and every one of them is notified on the same terms and
 with the same lead time; notification confers no ability to alter what is
-published. Advance notice is a matter of fairness, never a commercial courtesy —
+published. Where material is provided before publication — as it was, on
+request, to one of the organisations notified — the same is available on the same
+terms to anyone named here. Advance notice is a matter of fairness, never a
+commercial courtesy —
 and it is not what protects everyone else named here. That is rule 3, the right
 of reply, which is unconditional and carries no notice period.
 
@@ -45,7 +48,7 @@ it reading as a confession — which is exactly why it is written now.
 **5. What is published is measured quantities, never a grade or a score.**
 No letter grades, no tiers, no composite index, no league table. The site
 publishes physical quantities — kilograms of CO₂, percentage distance from a
-stated optimum — with their uncertainty and with an explicit statement of where
+stated optimum — with an explicit statement of where
 the ordering stops being meaningful. Anything that compresses an organisation
 into a single mark is outside what this method can support, and is not offered
 at any price.

@@ -18,13 +18,18 @@ abstract: >-
   distance flown) and a vertical component (altitude and speed profile).
   Emissions are computed with OpenAP, with per-type correction factors anchored
   to the ICAO Carbon Emissions Calculator methodology. Results are aggregated by
-  route and airport only, never per flight, aircraft or operator. Validated
-  against the EUROCONTROL horizontal en-route flight efficiency indicator (KEA).
+  route and airport only, never per flight, aircraft or operator. Checked for
+  consistency against the EUROCONTROL horizontal en-route flight efficiency
+  indicator (KEA): the methodology states this is a consistency check, not a
+  reproduction of their figure.
 authors:
   # Entita', non persona: il progetto e' firmato co2gap e il DOI Zenodo va
   # attribuito al progetto. La forma `name:` e' l'autore-entita' di CFF.
   - name: "co2gap"
-version: "1.0.0"
+# La stessa stringa che il sito usa nel blocco di citazione e nel BibTeX.
+# Zenodo timbra il DOI con questa: se qui dicesse 1.0.0 e il sito 2026-09-01,
+# le citazioni non si riconcilierebbero mai, e il DOI e' irreversibile.
+version: "2026-09-01"
 date-released: "2026-09-01"
 license: Apache-2.0
 repository-code: "https://github.com/co2gap/co2gap"

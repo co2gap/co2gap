@@ -1440,7 +1440,7 @@ the way can be inspected. What you find here is a <i>tool</i> with its
 limitations stated, not an authored study.</p>
 <p>I am not an aviation professional or a climate scientist; I run an ADS-B
 receiver and I care about this. <b>The method, the modelling and the code were
-developed with AI tooling</b> (Claude, by Anthropic); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical
+built with AI assistance</b> (Claude); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical
 decisions it implements are documented on this page precisely so they can be
 checked rather than taken on trust.</p>
 <p><b>Right of reply.</b> If a figure looks wrong to you, or if you represent
@@ -1477,7 +1477,7 @@ identical terms whether or not there is any other relationship.</li>
 <li><b>Any commercial relationship with a named organisation is disclosed next
 to that organisation's figure</b>, for as long as the figure is published.</li>
 <li><b>No grades, tiers or composite scores are sold or published.</b> What this
-project produces is measured quantities with their uncertainty; a score would
+project produces is measured quantities; a score would
 compress exactly the caveats that section 8 says must travel with the number.</li>
 </ol>
 <p>If you operate an airport, an ANSP or an airline and want the detail behind
@@ -2224,7 +2224,7 @@ an independent open-data project, not the output of an institution — which is
 why the limitations are stated as prominently as the results.<br><br>
 I am not an aviation professional or a climate scientist; I run an ADS-B
 receiver and I care about this. The method, the modelling and the code were
-developed with AI tooling (Claude); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical choices behind them
+built with AI assistance (Claude); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical choices behind them
 are written down so that people who know the field can check them.<br><br>
 <b>Found a mistake, or named here and want to reply?</b>
 <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> — corrections and replies
