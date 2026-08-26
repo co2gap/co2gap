@@ -2765,8 +2765,15 @@ finds them.</p>
 <section>
 <h2>Published so far</h2>
 <div class=note>
-<p><b>No reply and no correction so far.</b> This section lists them as they
-arrive, oldest first, with the date and the figure each one concerns.</p>
+<p><b>No reply to a published figure yet:</b> these figures become public with
+this release. The advance notice has already produced one exchange — the
+organisations notified on 29 July 2026 all received the same terms and the same
+lead time, and one of them asked for the methodology and the underlying figures
+before commenting. Those were sent on 16 August, on terms open to any
+organisation named here that asks for them. No comment on the figures themselves
+has been received.</p>
+<p>This section lists replies and corrections as they arrive, oldest first, with
+the date and the figure each one concerns.</p>
 <p class=hint>The invitation is the same for everyone named on this site, and it
 does not expire.</p>
 </div>

@@ -94,5 +94,9 @@
   {
     "match": "Notice is given because being named deserves warning",
     "reason": "25/08, coda della riscrittura della regola 2: «being NAMED» -> «being SINGLED OUT». E' la stessa correzione, non una seconda: «nominato» reintrodurrebbe l'ambiguita' che la riscrittura toglie, perche' i nominati sul sito sono 152 e i preavvisati quattro. Chi viene isolato per nome in un risultato merita un avviso; chi compare in una riga di tabella e' coperto dal diritto di replica."
+  },
+  {
+    "match": "No reply and no correction so far",
+    "reason": "25/08: la frase era difendibile ma induceva l'inferenza sbagliata. Sotto la definizione della pagina una «replica» e' una risposta a una CIFRA PUBBLICATA, e le cifre diventano pubbliche solo il 1/9 -- quindi «nessuna replica» era vero. Ma Aena HA risposto: lettera del 30/07 della sua divisione ambiente che chiedeva metodologia, dataset e calcoli prima di commentare; il materiale e' stato mandato il 16/08; da allora nessun commento nel merito, ne' da lei ne' dagli altri tre. «Nessuno si e' mosso» e' falso, ed era quasi la stessa frase gia' colta come falsa il 20/08 nella prima stesura di questa pagina. Ora si descrive il processo invece di rivendicare un vuoto: il vuoto come prova e' fragile in entrambe le direzioni, il processo toglie in anticipo sia il «non ci avevate dato modo di rispondere» sia il «lo scambio l'avete nascosto». ⚠️ Aena NON e' nominata: non per privacy (e' persona giuridica), ma perche' nominarla la metterebbe in una posizione che non ha chiesto -- «ha ricevuto i dati il 16/08 e da allora tace» suona come un conto alla rovescia. Se un giorno replica per la pubblicazione si nomina allora, con parole sue. ⚠️ La riga «on terms open to any organisation named here» e' obbligatoria, non ornamentale: senza, «a uno dei quattro abbiamo mandato metodologia e dati» si legge come accesso privilegiato, cioe' l'opposto della regola 2."
   }
 ]
