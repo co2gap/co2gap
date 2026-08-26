@@ -137,8 +137,10 @@ around silently.
 - The vertical component does not distinguish the *cause* of a profile. It is
   split by **where along the path** the gap was burnt (see *External validation*
   above), which is a location and not a cause.
-- **Eight days are missing**: four absent at the source (2026-05-05/06/07 and
-  2026-06-11), four because of weather data latency.
+- **Four days are missing** inside the period, all absent at the source
+  (2026-05-05, 05-06, 05-07 and 2026-06-11). The window ends on 20 July because
+  the four days that follow have flight data but not yet the wind data the
+  comparison needs.
 - No oceanic coverage: the scope is deliberately ECAC, where ADS-B coverage is
   dense and an external benchmark (KEA) exists.
 - **The cruise baseline is too generous.** Measured over the cruise alone the
