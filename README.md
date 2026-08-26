@@ -1,7 +1,7 @@
 # co2gap
 
-**An open pipeline that measures CO₂ and flight inefficiency in Europe from
-ADS-B trajectories.**
+**An open pipeline that measures the CO₂ of European flights against a
+fuel-optimal ideal, from ADS-B trajectories.**
 
 For every flight it computes the CO₂ actually emitted and compares it with an
 *ideal* flight: same aircraft type, direct great-circle route, the most
