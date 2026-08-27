@@ -173,7 +173,7 @@ aviation wastes X" and "between comparable flights there is a spread of this
 size" — and only the second is something these data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-26 20:23 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-27 16:50 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -309,6 +309,20 @@ itself a better cruise level and the lateral component would deflate.</li>
 the track is time-sampled, so it is dense where the aircraft is slow, and a
 time-weighted average would over-weight the terminal areas.</li>
 </ul>
+
+<h3>Prior work on the same data and model</h3>
+<p>Open ADS-B trajectories and an open performance model have been combined for
+European traffic before. In <i>PLOS ONE</i> in 2023,
+<a href="https://doi.org/10.1371/journal.pone.0287612">Olive, Sun, Basora and
+Spinielli</a> took two months of 2019 arrivals at five European airports and
+measured what holding patterns, point merge procedures and continuous descent
+operations cost in fuel; OpenAP, the performance model used here, is the work of
+one of them.</p>
+<p><b>The quantity is not the same as the one on this site.</b> They compare real
+flights with and without a given procedure at the same airport, so their
+reference is other traffic. Here the reference is a wind-corrected optimal
+profile that no flight flies. The two sets of figures do not sit next to each
+other.</p>
 
 <h2 id=calibration>5. Calibration</h2>
 <p>OpenAP fuel flows are compared per type against values derived from ICAO, and
@@ -595,7 +609,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026 — <a href="releases.html">what changes</a>.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-26 20:23 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-27 16:50 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>

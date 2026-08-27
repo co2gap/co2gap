@@ -1275,6 +1275,20 @@ the track is time-sampled, so it is dense where the aircraft is slow, and a
 time-weighted average would over-weight the terminal areas.</li>
 </ul>
 
+<h3>Prior work on the same data and model</h3>
+<p>Open ADS-B trajectories and an open performance model have been combined for
+European traffic before. In <i>PLOS ONE</i> in 2023,
+<a href="https://doi.org/10.1371/journal.pone.0287612">Olive, Sun, Basora and
+Spinielli</a> took two months of 2019 arrivals at five European airports and
+measured what holding patterns, point merge procedures and continuous descent
+operations cost in fuel; OpenAP, the performance model used here, is the work of
+one of them.</p>
+<p><b>The quantity is not the same as the one on this site.</b> They compare real
+flights with and without a given procedure at the same airport, so their
+reference is other traffic. Here the reference is a wind-corrected optimal
+profile that no flight flies. The two sets of figures do not sit next to each
+other.</p>
+
 <h2>5. Calibration</h2>
 <p>OpenAP fuel flows are compared per type against values derived from ICAO, and
 corrected with a factor for types deviating by more than 10% with at least 100
