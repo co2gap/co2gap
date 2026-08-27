@@ -826,7 +826,7 @@ GLOSSARY = [
      "airline data."),
     ("odbl", "ODbL",
      "The Open Database Licence covering the source trajectories. Reuse is free, with "
-     "attribution, but a database derived from it must carry the same licence — which "
+     "attribution, but a database derived from it must carry the same licence, which "
      "is why the figures on this site do."),
 ]
 GTERMS = {k: (t, d) for k, t, d in GLOSSARY}
@@ -1172,8 +1172,8 @@ actually flown</td><td class=num>{BENCH['pasutto_kg']}–{BENCH['pasutto_avg_kg'
 </tbody></table>
 <p>Over the same distance range Pasutto uses (200–1500 NM), their
 {BENCH['pasutto_pct']}% median for cruise alone compares with our 13.1% for the
-whole profile: a factor of <b>2.8</b>, explained by three stated differences —
-their reference is the <i>best observed profile</i>, ours a physical optimum;
+whole profile: a factor of <b>2.8</b>, explained by three stated differences.
+Their reference is the <i>best observed profile</i>, ours a physical optimum;
 they cover cruise only, we also cover climb, descent and speed; they assume
 nominal mass and no wind, we use estimated mass and real wind.</p>
 <p><b>Practical consequence:</b> multiplying our total by a carbon price and
@@ -1320,7 +1320,7 @@ and {len(months)} months, ECAC area.</p>
 <p>If it were not, the same route would come out different in the two
 directions. We therefore measure the spread between outbound and return on every
 route with at least 10 flights per direction. With wind modelled, the median of
-that spread collapses, and it stays <b>stable across seasons</b> — which is the
+that spread collapses, and it stays <b>stable across seasons</b>. That is the
 real test, because winter jet streams are far stronger.</p>
 <div class=scroll><table><thead><tr><th>month</th><th class=num>routes</th>
 <th class=num>without wind</th><th class=num>with wind</th></tr></thead><tbody>
@@ -1344,9 +1344,9 @@ indicator</b> — a ratio of sums, over the en-route portion beyond 40 NM from t
 airports — we obtain <b>+{kea:.2f}%</b> against the
 <b>~{BENCH['kea_published']:.0f}%</b> published. Same order of magnitude and
 same construction.</p>
-<p>KEA is not merely a published statistic: it is the <b>only environmental
+<p>KEA is not merely a published statistic: it is the only environmental
 indicator on which the Single European Sky performance scheme sets binding
-targets</b> for Member States. For the current reference period, RP4, the
+targets for Member States. For the current reference period, RP4, the
 Union-wide target falls from <b>{BENCH['kea_rp4_start']:.2f}% in 2025 to
 {BENCH['kea_rp4_end']:.2f}% in 2029</b>, and measured performance has been
 running above target.</p>
@@ -1442,7 +1442,7 @@ the class is removed instead. <b>{n_biz_routes} routes whose traffic is majority
 business aviation are excluded from every table and chart on this site.</b> Their
 flights remain in the European totals, where they are diluted across {len(df):,}
 flights and identify nobody; what is suppressed is the row that would have
-singled them out. No airport comes close to the same threshold — the most exposed
+singled them out. No airport comes close to the same threshold: the most exposed
 sits below 6%.</p>
 
 <h2>10. Who made this, and how to report an error</h2>
@@ -1870,7 +1870,7 @@ mechanism rather than as a placing.""",
 on sample size. Baltic connections
 towards Turkey route around Belarus and Ukraine for the same reason. In total
 {n_closed} ranked routes have a direct path through closed airspace. None of
-this is recoverable while those closures hold — and the overflight ban binds
+this is recoverable while those closures hold. And the overflight ban binds
 European carriers but not third-country ones, so each figure is an average
 across operators that must divert and operators that need not."""),
         ("f3",
@@ -2001,7 +2001,7 @@ empty sky, on a <b>long</b> sector where cruise dominates, is about as close to
 our ideal trajectory as an airliner gets in practice. Across {n_floor:,} such
 flights the vertical gap still stands at <b>{vert_floor:.1f}%</b>.</p>
 <p>That is the <b>floor</b>: not inefficiency, but the baseline remaining out of
-reach. It comes from choices and constraints no procedure removes — the cruise
+reach. It comes from choices and constraints no procedure removes: the cruise
 speed chosen to meet schedules rather than to minimise fuel, the need to climb
 in steps as the aircraft gets lighter, flight levels available only at discrete
 intervals.</p>
@@ -2014,8 +2014,7 @@ intervals.</p>
 </tbody></table>
 <p>The floor measured here is close to the value a EUROCONTROL study obtains for
 cruise by comparing each flight with the <i>best profile actually observed</i> —
-a reference that already embeds those constraints. Two independent routes to the
-same point.</p>
+a reference that already embeds those constraints.</p>
 </div>
 </section>
 
@@ -2068,9 +2067,8 @@ type</b>.</p>
 picks the altitude that minimises its own fuel for that distance. Checked against
 what aircraft actually do, on the shortest sectors it asks for about
 <b>{BENCH['alt_short_below_ft']:,} ft less</b> climb than the median real flight
-reaches — whatever drives the {band.iloc[0].med:.0f}% median gap on the shortest
-sectors, it is not a reference
-demanding the impossible.</p>
+reaches. Whatever drives the {band.iloc[0].med:.0f}% median gap there, it is not a
+reference demanding the impossible.</p>
 <p class=cap>The same figures as a table, with the flight counts, are on the
 <a href="data.html#bands">data page</a>.</p>
 </section>
@@ -2159,7 +2157,7 @@ airline decides on its own.</p>
 burns about {band.iloc[0].med:.0f}% more than its ideal; on the longest sectors it
 is {band.iloc[-1].med:.0f}%. Climbing to altitude costs the same whether you then
 fly for twenty minutes or for four hours, so on a short sector that fixed cost is
-most of the flight. This is geometry, not blame — but it is the clearest pattern in
+most of the flight. This is geometry, not blame. But it is the clearest pattern in
 the whole dataset.</p>
 
 <p><b>A single number per airport can be false.</b> {esc(aname(asym_ap))} is
@@ -2239,10 +2237,9 @@ comparisons →</a></b>
 </div>
 
 <div class=note>
-<b>About this project.</b> Every figure here can be recomputed from scratch: the
-data is public, the method is documented in full and the code is open. This is
-an independent open-data project, not the output of an institution — which is
-why the limitations are stated as prominently as the results.<br><br>
+<b>About this project.</b> This is an independent open-data project, not the
+output of an institution. That is why the limitations are stated as prominently
+as the results.<br><br>
 I am not an aviation professional or a climate scientist; I run an ADS-B
 receiver and I care about this. The method, the modelling and the code were
 built with AI assistance (Claude); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical choices behind them
@@ -2466,7 +2463,7 @@ Neither figure is wrong; they answer different questions, and this site
 uses the second because every comparison here — route against route, airport
 against airport — is made against the ideal, not against the actual.
 Per flight that gap is about {total_kg_per_flight(df):.0f} kg of fuel, of which
-{vertical_kg_per_flight(df):.0f} kg is the vertical component — the part
+{vertical_kg_per_flight(df):.0f} kg is the vertical component: the part
 continuous climb and descent procedures address."""),
         ("Can I trust the ranking order?",
          f"""<b>Only its tails.</b> About half the routes sit within a few points
@@ -2596,7 +2593,7 @@ conclusions.</p>
 <h3>1. The cruise baseline is not as optimal as it claims</h3>
 <p>Measured over the <b>cruise alone</b>, our gap comes out slightly <i>negative</i>:
 the real aircraft burns marginally less than the profile we call optimal. That is not
-a result about aviation, it is a defect in our reference — the optimal cruise altitude
+a result about aviation, it is a defect in our reference: the optimal cruise altitude
 we compute is not the fuel-optimal one. Published work on cruise efficiency finds a
 clear positive gap on the same perimeter, so the disagreement is ours to explain.</p>
 <p>We now know where it comes from. Compared with the altitude aircraft actually
@@ -2633,7 +2630,7 @@ changes the reading of these rankings would be doing this project a service.</p>
 <p>The performance model carries calibrated fuel curves for a limited set of aircraft
 types; the rest fall back on a generic model rescaled from a static take-off figure.
 Our per-type correction compensates that, and the check is that the types needing no
-correction land within about 5% of an independent reference — but a correction is
+correction land within about 5% of an independent reference. But a correction is
 still a correction.</p>
 <p class=caveat>The diagnosis, including which types are affected and why, is written
 up in the <a href="methodology.html">methodology</a> and has been put to the model's
@@ -2651,7 +2648,7 @@ ideal one. An error that is systematic cancels out in the subtraction; one that
 varies with altitude, weight or phase of flight does not, and lands squarely on
 the gap. Showing that the model reproduces published fuel burn to within a few
 per cent says nothing about either case. Until that sensitivity is measured, only
-the extremes of these rankings should be read as meaning anything — which is why
+the extremes of these rankings should be read as meaning anything, which is why
 that caution appears wherever a ranking does.</p>
 </div>
 
@@ -2660,8 +2657,8 @@ that caution appears wherever a ranking does.</p>
 <p>The quality gate is <b>geometric</b>: it checks that a flight covered the distance
 it should have, and never looks at the fuel. A handful of flights in the published
 period therefore carry burn figures that are physically impossible, the residue of
-degenerate trajectories. They are far too few to move any published statistic —
-correcting them shifts the headline by two ten-thousandths of a point — but they are
+degenerate trajectories. They are far too few to move any published statistic
+(correcting them shifts the headline by two ten-thousandths of a point), but they are
 there, and a gate on fuel plausibility is due in the next release.</p>
 </div>
 </section>
