@@ -1742,13 +1742,12 @@ apply from the first release, while the number of such arrangements is zero.</p>
 organisation is analysis <i>of</i> a published figure — never a change <i>to</i>
 it, and never its removal or postponement.</li>
 <li><b>No privileged access, embargo or preview.</b> Where material is provided
-before publication — as it was, on request, to one of the organisations notified —
+before publication — as it was, on request, to one organisation in July 2026 —
 the same is available on the same terms to anyone named here, and it confers no
-ability to alter what is published. The two airports
-whose figures the findings single out, and the air navigation service provider
-responsible for each, were written to before the first publication, on the same
-terms and with the same lead time, with no ability to alter what was published.
-Every other organisation named anywhere on this site — in a finding, a chart or
+ability to alter what is published. In July 2026, four organisations were written
+to about figures that a later correction changed substantially; those figures are
+not in this release, and no organisation is singled out here in the way they were.
+Every organisation named anywhere on this release — in a finding, a chart or
 a table — is covered by the right of reply below, which is unconditional and
 carries no notice period. Notice is given because being singled out deserves
 warning, never as a commercial courtesy.</li>
