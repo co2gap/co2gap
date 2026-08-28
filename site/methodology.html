@@ -12,7 +12,7 @@
 <meta property=og:image content="https://co2gap.org/og.png">
 <meta property=og:image:width content=1200>
 <meta property=og:image:height content=630>
-<meta property=og:image:alt content="co2gap — 1,833,127 flights, 25.4 Mt CO2 emitted, 4.57 Mt gap from the theoretical optimum">
+<meta property=og:image:alt content="co2gap — 1,833,127 flights, 23.4 Mt CO2 emitted in flight, 2.50 Mt gap from the theoretical optimum">
 <meta name=twitter:card content=summary_large_image>
 <meta name=twitter:title content="Methodology — co2gap">
 <meta name=twitter:description content="How co2gap computes emissions and the gap against an ideal flight: trajectory processing, OpenAP fuel model, wind-corrected baseline, lateral/vertical decomposition, and the limits of what the figures mean.">
@@ -119,29 +119,34 @@ padding:1px 5px;border-radius:4px}
 <h2 id=what-the-data-shows-in-full>What the data shows, in full</h2>
 <p>The four findings summarised on the home page, with the qualifications that
 belong to them.</p>
-<h3 id=f1>1. A group of congested hubs sits well above the norm, and their gap is in the profile rather than the route.</h3><p>Flights to and from <b>Amsterdam Schiphol</b> (+10.8 points across 149,605
-movements) and <b>Adolfo Suárez Madrid–Barajas</b> (+10.1 across 100,759)
-deviate from comparable flights more than those of any other airport with
-substantial traffic, followed by Dublin at +8.0, against a
-median across all 152 airports of -2.4. A point is one percentage
-point of CO&#8322; relative to the ideal flight.<br><b>These are not places in a league table.</b> At the head of the ranking ten
-positions can be separated by as little as 3.1 points within a
+<h3 id=f1>1. Busier airports deviate more than quieter ones, and by little: the relationship holds across the table, the margin does not.</h3><p>The fifteen busiest airports sit at <b>+1.5 points</b> against
+<b>-0.9</b> for the other 137, and the deviation rises with
+traffic across the whole table (correlation +0.35 against the logarithm
+of movements). The highest of the fifteen is London Heathrow at
++2.9. <b>No airport in the table sits more than 7 points above the
+norm, or more than 7 below it.</b> The airports
+furthest from the norm are smaller ones: Jersey at +5.9 across
+4,206 movements, then London City at +4.0 &mdash; real
+deviations, measured on traffic too thin to move the European total. The median
+across all 152 airports is -0.6. A point is one percentage point
+of CO&#8322; relative to the ideal flight.<br><b>These are not places in a league table.</b> At the head of the ranking ten
+positions can be separated by as little as 1.7 points within a
 single month, so an individual position there is not resolvable — the same
 caution the methodology applies to the middle of the ranking applies to its top.
 What is stable is the distance from the norm: across the 7 months
-Adolfo Suárez Madrid–Barajas never leaves the top 8% of airports and
-stays at least 7.7 points above the median, even while its
-nominal position moves between 1 and 12. Its
-magnitude is seasonal (+16.0 in the strongest month, +5.1 in
-the weakest); Amsterdam Schiphol is steadier, never falling below rank
-4.<br>
-In both cases the deviation is not in the route — Amsterdam Schiphol flies routes of
-normal length (-0.2 lateral) — but in how the flights climb, cruise and
-descend (+11.1 vertical). The vertical component still dominates under
+London City never leaves the top 4% of airports and
+stays at least 4.1 points above the median, even while its
+nominal position moves between 2 and 6. Its
+magnitude is seasonal (+4.5 in the strongest month, +3.3 in
+the weakest); Jersey is steadier, never falling below rank
+7.<br>
+In both cases the deviation is not in the route — Jersey flies routes of
+normal length (+3.0 lateral) — but in how the flights climb, cruise and
+descend (+2.7 vertical). The vertical component still dominates under
 the alternative decomposition convention described in the methodology, so it is
 not an artefact of that choice.<br>
-10 of the twenty routes furthest from the norm have Amsterdam Schiphol at one
-end, against a base rate of 4% of all ranked routes — a real
+1 of the twenty routes furthest from the norm have Jersey at one
+end, against a base rate of 0% of all ranked routes — a real
 concentration, though a hub with many routes is over-represented in any tail.
 Profiles of this shape are what dense terminal areas produce: early descents,
 level segments, sequencing. ADS-B shows the profiles flown, not the noise
@@ -159,21 +164,21 @@ towards Turkey route around Belarus and Ukraine for the same reason. In total
 this is recoverable while those closures hold. And the overflight ban binds
 European carriers but not third-country ones, so each figure is an average
 across operators that must divert and operators that need not.</p>
-<h3 id=f3>3. The efficient end of the ranking is small and peripheral.</h3><p>Stavanger, Sola sits at <b>-20.1 points</b>, followed by other Nordic and
-island airports, more than thirty points away from the congested hubs.<br>Light
+<h3 id=f3>3. The efficient end of the ranking is small and peripheral.</h3><p>Stavanger, Sola sits at <b>-7.7 points</b>, followed by other Nordic and
+island airports, 9 points below where the fifteen busiest sit.<br>Light
 traffic buys continuous descents and direct clearances. It is a measure of how
 much congestion costs, not a target a hub could adopt.</p>
-<h3 id=f4>4. Most of this gap cannot be compressed — the part usually left out.</h3><p>Of the median flight's 14.0 points of vertical gap,
-<b>5.5 remain for a
+<h3 id=f4>4. Most of this gap cannot be compressed — the part usually left out.</h3><p>Of the median flight's 5.1 points of vertical gap,
+<b>2.2 remain for a
 flight going direct through an empty night sky</b> — which we read as the baseline
 staying out of reach rather than inefficiency, though nothing here separates the
-two.<br>Only 8.5 points move with traffic,
+two.<br>Only 2.9 points move with traffic,
 routing and profile. The distinction is the difference between "European
 aviation wastes X" and "between comparable flights there is a spread of this
 size" — and only the second is something these data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-28 10:15 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-28 16:20 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -203,11 +208,12 @@ CCO/CDO procedures</td><td class=num>~39 kg</td></tr>
 <tr><td>Pasutto et al. (EUROCONTROL, 2021) — cruise, against the best profile
 actually flown</td><td class=num>60–85 kg</td></tr>
 <tr><td><b>this site</b> — gap from the theoretical optimum, whole profile</td>
-<td class=num><b>~521 kg</b></td></tr>
+<td class=num><b>~165 kg</b></td></tr>
 </tbody></table>
 <p>Over the same distance range Pasutto uses (200–1500 NM), their
-4.6% median for cruise alone compares with our 13.1% for the
-whole profile: a factor of <b>2.8</b>, explained by three stated differences.
+4.6% median for cruise alone compares with our 12.0% for
+the whole profile: a factor of <b>2.6</b>, explained
+by three stated differences.
 Their reference is the <i>best observed profile</i>, ours a physical optimum;
 they cover cruise only, we also cover climb, descent and speed; they assume
 nominal mass and no wind, we use estimated mass and real wind.</p>
@@ -220,12 +226,12 @@ done.</p>
 <p>A flight going direct, departing at night into an empty sky, on a long
 sector, is about as close to the ideal trajectory as an airliner actually gets.
 Across 3,120 such flights the vertical gap still stands at
-<b>5.5%</b>, against a median across all flights of
-<b>14.0%</b>.</p>
+<b>2.2%</b>, against a median across all flights of
+<b>5.1%</b>.</p>
 <p><b>What is measured is that the gap does not disappear under near-ideal
-conditions.</b> The reading we place on it — that 5.5 points are a
+conditions.</b> The reading we place on it — that 2.2 points are a
 floor set by cost index, step climbs imposed by weight and discrete flight levels,
-and that the remaining 8.5 move with traffic, routing and profile — is
+and that the remaining 2.9 move with traffic, routing and profile — is
 an interpretation of that measurement, not a second measurement. Nothing here
 separates those causes from one another, and the residual may also carry
 variability of the model itself.</p>
@@ -245,14 +251,17 @@ by all. The flights above it may differ systematically in mass, type, airport, h
 or constraint.</p>
 <ul>
 <li>If flights above the median of comparable ones flew like that median:
-<b>2.2 Mt of CO&#8322; a year</b> (707 kt of fuel).</li>
+<b>1.1 Mt of CO&#8322; a year</b> (349 kt of fuel).</li>
 <li>Bringing only the worst quartile to the 75th percentile, a far more cautious
-assumption: <b>1.0 Mt a year</b>.</li>
+assumption: <b>0.5 Mt a year</b>.</li>
 </ul>
 <p>EUROCONTROL independently estimates <b>1.1 Mt of CO&#8322; a year</b> as
 recoverable in the ECAC area through continuous climb and descent procedures
-alone: the cautious scenario above comes close to it, while being built by an
-entirely different method.</p>
+alone. <b>The two figures coincide, and that is not a confirmation.</b> They
+count different things: the spread between comparable flights on one side, what
+two named procedures recover on the other. A coincidence between measurements
+of different quantities is worth no more than a difference between them would
+have been.</p>
 <p><b>It remains counterfactual arithmetic.</b> It assumes the median level is
 reachable everywhere, and it is not: part of the spread is due to structural
 constraints — closed airspace, terrain, congestion — that no procedure removes.
@@ -442,6 +451,15 @@ larger, and that correction is still owed.</p>
 <ul>
 <li>We measure the gap from a <b>theoretical</b> optimum, not avoidable
 inefficiency (§2).</li>
+<li><b>Taxi and ground movement are outside every figure here.</b> The model
+that prices fuel is an aerodynamic model of flight, and an aircraft on the
+ground is far outside its domain: asked for an airliner at taxi speed it
+returns several times the fuel flow it gives for cruise. The reference
+trajectory never taxis either, so the comparison is flight against flight and
+both sides exclude the ground. One consequence is that the CO&#8322; total on
+this site is <b>CO&#8322; emitted in flight</b>, and understates what the same
+traffic actually emitted: taxi burns real fuel, and pricing it needs reference
+values this method does not have.</li>
 <li><b>Only the tails of the rankings are reliable.</b> Half the routes sit
 within a few points of the norm, inside the uncertainty of the method: between
 900th and 1000th place the ordering means nothing. Rankings show only routes
@@ -471,17 +489,17 @@ depend on it; the split itself does.</b> We correct the route first and the prof
 charging the extra kilometres at the <i>optimal</i> profile. The opposite
 convention charges them at the flight's <i>actual</i> CO<sub>2</sub> per kilometre,
 which moves weight towards the lateral component: for the <b>median flight</b> the
-split goes from 7.2 / 14.0 to
-9.4 / 11.6 points. <b>The vertical component still
+split goes from 7.2 / 5.1 to
+8.7 / 3.5 points. <b>The vertical component still
 dominates</b>, including for the airport named in the findings
-(7.9 / 33.0 becomes 12.2 / 28.3,
+(18.9 / 12.3 becomes 23.6 / 7.0,
 on raw medians rather than deviations from the norm). The total is identical under
 both conventions <i>for every individual flight</i>. The four figures above are
 medians, and medians do not add: summing each pair gives a different number again,
 and neither sum is the median total. That is a property of medians, not a
 discrepancy.<br>
 <b>Those four pairs describe the median flight, and are not the
-7.5 / 14.6 of the headline.</b> The headline is a ratio of sums over
+7.5 / 4.6 of the headline.</b> The headline is a ratio of sums over
 the whole period, where a long flight weighs more than a short one; the median
 flight is a different quantity and comes out lower. Both appear on this site, and
 every comparison in the rankings uses the aggregate.
@@ -645,7 +663,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026 — <a href="releases.html">what changes</a>.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-28 10:15 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-28 16:20 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>

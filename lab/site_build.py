@@ -48,6 +48,19 @@ COVERAGE = Path(os.environ.get("ADSB_COVERAGE_JSON") or (ROOT / "data/coverage.j
 # the page falls back to the earlier wording, so building the site never depends
 # on a step that may not have run.
 PHASE_DIR = Path(os.environ.get("ADSB_PHASE_DIR") or (ROOT / "data/decomposition_phase"))
+# Quota di carburante bruciata A TERRA, per volo. Corregge il difetto trovato il
+# 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra
+# venivano prezzati da FuelFlow.enroute, un modello aerodinamico di volo, che a
+# 20-60 kt restituisce ~7.750 kg/h contro i ~700 di un rullaggio reale. La
+# baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un
+# termine che il denominatore non aveva. Vale ~8% del carburante modellato.
+GROUND_DIR = Path(os.environ.get("ADSB_GROUND_DIR") or (ROOT / "data/ground_share_ecac"))
+# Definizione di "a terra". a3000t70 e' la scelta motivata: 3000 ft e' la stessa
+# soglia che trajectories.py usa gia' (GROUND_ALT_FT) e copre gli aeroporti in
+# quota anche quando manca il flag di superficie; sotto 70 kt nessun velivolo
+# della flotta modellata e' in volo. La sensibilita' rispetto a "suolo" (il solo
+# flag del transponder) vale ~1 punto sulla cifra di testa, ed e' dichiarata.
+GROUND_DEF = os.environ.get("ADSB_GROUND_DEF", "a3000t70")
 
 
 def phase_attribution(df):
@@ -341,8 +354,51 @@ def load() -> pd.DataFrame:
         c = json.loads(CALIB.read_text())
         calib = c.get("factors", c) if isinstance(c, dict) else {}
     k = df.typecode.map(lambda t: calib.get(t, 1.0)).astype(float).to_numpy()
+
+    # ---- correzione del carburante bruciato a terra -----------------------
+    # Il gap confronta volo con volo: la baseline ideale non rulla, quindi il
+    # consumo reale non deve rullare. FALLISCE RUMOROSAMENTE se le quote non
+    # ci sono: due variabili di questa pipeline gia' falliscono in silenzio e
+    # il runbook le documenta, non se ne aggiunge una terza.
+    gfiles = sorted(glob.glob(str(GROUND_DIR / "*.parquet")))
+    if not gfiles:
+        raise SystemExit(
+            f"nessuna quota di terra in {GROUND_DIR}. Senza, il gap conterrebbe "
+            f"il rullaggio prezzato a ~7.750 kg/h: e' il difetto corretto il "
+            f"2026-08-28. Genera con lab/ground_share.py oppure passa "
+            f"ADSB_GROUND_DIR.")
+    g = pd.concat([pq.read_table(f).to_pandas() for f in gfiles], ignore_index=True)
+    col = f"fuel_{GROUND_DEF}_kg"
+    if col not in g.columns:
+        raise SystemExit(f"{GROUND_DIR} non contiene {col}: definizione "
+                         f"ADSB_GROUND_DEF={GROUND_DEF!r} non disponibile")
+    g["share_ground"] = np.where(g.fuel_recomputed_kg > 0,
+                                 g[col] / g.fuel_recomputed_kg, 0.0)
+    n_before = len(df)
+    df = df.merge(g[["day", "flight_id", "share_ground"]],
+                  on=["day", "flight_id"], how="left")
+    assert len(df) == n_before, "il merge ha duplicato: flight_id e' un surrogato PER GIORNO"
+    cov = df.share_ground.notna().mean()
+    df["share_ground"] = df.share_ground.fillna(0.0)
+    print(f"  correzione terra [{GROUND_DEF}]: {cov*100:.1f}% dei voli, "
+          f"{df.share_ground.mean()*100:.2f}% del carburante escluso dal gap")
+
     # co2_kg_v0 is UNCALIBRATED. Percentages are calibration-invariant (the
     # factor multiplies real and ideal alike and cancels), tonnages are not.
+    # La correzione va applicata alla colonna GREZZA, non solo a quella
+    # calibrata: le percentuali (lat/vert/totale), le colonne excess_*_pct e la
+    # deviazione per aeroporto derivano tutte da co2_kg_v0. Correggerne una sola
+    # lascia il sito in uno stato incoerente che non fallisce, stampa e mente.
+    df["co2_gate_to_gate_kg"] = df.co2_kg_v0.to_numpy()      # conservata: inventario
+    df["co2_kg_v0"] = df.co2_kg_v0.to_numpy() * (1 - df.share_ground.to_numpy())
+    # le percentuali precalcolate nel parquet sono ora obsolete: si rifanno qui,
+    # con le stesse formule di pipeline/decompose.py:376-378
+    _id = df.ideal_gc_co2_kg.to_numpy()
+    df["excess_total_pct"] = (df.co2_kg_v0.to_numpy() - _id) / _id * 100.0
+    df["excess_lateral_pct"] = (df.hybrid_co2_kg.to_numpy() - _id) / _id * 100.0
+    df["excess_vertical_pct"] = (df.co2_kg_v0.to_numpy() - df.hybrid_co2_kg.to_numpy()) / _id * 100.0
+
+    df["co2_ground_kg"] = df.co2_gate_to_gate_kg.to_numpy() * df.share_ground.to_numpy() * k
     df["co2_real_kg"] = df.co2_kg_v0.to_numpy() * k
     df["co2_ideal_kg"] = df.ideal_gc_co2_kg.to_numpy() * k
     df["co2_hybrid_kg"] = df.hybrid_co2_kg.to_numpy() * k
@@ -415,6 +471,11 @@ SOCIAL = (
 )
 
 
+OG_ALT = "co2gap"   # ricomposto in main() con le cifre correnti: era
+                    # cablato con 25,4 Mt e 4,57 Mt, sopravvissuti a ogni
+                    # rigenerazione perche' il cancello non guarda le meta.
+
+
 def meta(title, desc, page=""):
     """Head tags for link previews and icons.
 
@@ -435,8 +496,7 @@ def meta(title, desc, page=""):
 <meta property=og:image content="{SITE_URL}/og.png">
 <meta property=og:image:width content=1200>
 <meta property=og:image:height content=630>
-<meta property=og:image:alt content="co2gap — 1,833,127 flights, 25.4 Mt CO2 emitted, \
-4.57 Mt gap from the theoretical optimum">
+<meta property=og:image:alt content="{esc(OG_ALT)}">
 <meta name=twitter:card content=summary_large_image>
 <meta name=twitter:title content="{esc(title)}">
 <meta name=twitter:description content="{esc(desc)}">
@@ -1116,6 +1176,12 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
     route deviates more than comparable ones, not that European aviation wastes
     N megatonnes. The absolute figure is context and is labelled as such.
     """
+    # Confronto con Pasutto sullo STESSO perimetro (200-1500 NM), calcolato
+    # e non battuto a mano: era 13,1% fisso nel template e dopo la correzione
+    # del rullaggio sarebbe rimasto li' a mentire.
+    _pas = df[(df.gc_km >= 370.4) & (df.gc_km <= 2778.0)]
+    pas_ours = float((_pas.co2_kg_v0.sum() - _pas.ideal_gc_co2_kg.sum())
+                     / _pas.ideal_gc_co2_kg.sum() * 100)
     biz_types = ", ".join(sorted(NON_AIRLINER))
     glossary_rows = "".join(
         f"<div id=g-{k}><dt>{t}</dt><dd>{d}</dd></div>"
@@ -1175,8 +1241,9 @@ actually flown</td><td class=num>{BENCH['pasutto_kg']}–{BENCH['pasutto_avg_kg'
 <td class=num><b>~{per_flight_vert:.0f} kg</b></td></tr>
 </tbody></table>
 <p>Over the same distance range Pasutto uses (200–1500 NM), their
-{BENCH['pasutto_pct']}% median for cruise alone compares with our 13.1% for the
-whole profile: a factor of <b>2.8</b>, explained by three stated differences.
+{BENCH['pasutto_pct']}% median for cruise alone compares with our {pas_ours:.1f}% for
+the whole profile: a factor of <b>{pas_ours/BENCH['pasutto_pct']:.1f}</b>, explained
+by three stated differences.
 Their reference is the <i>best observed profile</i>, ours a physical optimum;
 they cover cruise only, we also cover climb, descent and speed; they assume
 nominal mass and no wind, we use estimated mass and real wind.</p>
@@ -1220,8 +1287,11 @@ assumption: <b>{sc_b:.1f} Mt a year</b>.</li>
 </ul>
 <p>EUROCONTROL independently estimates <b>1.1 Mt of CO&#8322; a year</b> as
 recoverable in the ECAC area through continuous climb and descent procedures
-alone: the cautious scenario above comes close to it, while being built by an
-entirely different method.</p>
+alone. <b>The two figures coincide, and that is not a confirmation.</b> They
+count different things: the spread between comparable flights on one side, what
+two named procedures recover on the other. A coincidence between measurements
+of different quantities is worth no more than a difference between them would
+have been.</p>
 <p><b>It remains counterfactual arithmetic.</b> It assumes the median level is
 reachable everywhere, and it is not: part of the spread is due to structural
 constraints — closed airspace, terrain, congestion — that no procedure removes.
@@ -1409,6 +1479,15 @@ larger, and that correction is still owed.</p>
 <ul>
 <li>We measure the gap from a <b>theoretical</b> optimum, not avoidable
 inefficiency (§2).</li>
+<li><b>Taxi and ground movement are outside every figure here.</b> The model
+that prices fuel is an aerodynamic model of flight, and an aircraft on the
+ground is far outside its domain: asked for an airliner at taxi speed it
+returns several times the fuel flow it gives for cruise. The reference
+trajectory never taxis either, so the comparison is flight against flight and
+both sides exclude the ground. One consequence is that the CO&#8322; total on
+this site is <b>CO&#8322; emitted in flight</b>, and understates what the same
+traffic actually emitted: taxi burns real fuel, and pricing it needs reference
+values this method does not have.</li>
 <li><b>Only the tails of the rankings are reliable.</b> Half the routes sit
 within a few points of the norm, inside the uncertainty of the method: between
 900th and 1000th place the ordering means nothing. Rankings show only routes
@@ -1632,6 +1711,14 @@ def main():
                               df.hybrid_co2_kg.sum())
     lat_w = (hyb_u - ideal_u) / ideal_u * 100
     vert_w = (real_u - hyb_u) / ideal_u * 100
+    # Quale delle due componenti sia la maggiore e' un FATTO che cambia con i
+    # dati: affermarlo nel testo significa vederlo invertirsi in silenzio.
+    _hi, _lo = ('vertical', 'lateral') if vert_w > lat_w else ('lateral', 'vertical')
+    _ratio = max(vert_w, lat_w) / max(min(vert_w, lat_w), 1e-9)
+    _where = ('how flights climb, cruise and descend' if vert_w > lat_w
+              else 'how far flights go')
+    vert_vs_lat = (f'The {_hi} component is about {_ratio:.1f} times the {_lo} one: '
+                   f'the gap is mostly in {_where}.')
     # KEA is weighted by the EN-ROUTE great circle, not the full one: the
     # indicator only describes the portion outside the 40 NM cylinders.
     enr = df.dropna(subset=["dist_ratio_enroute"])
@@ -1865,16 +1952,39 @@ def main():
     # caveat, va nella metodologia sotto la propria ancora. Scriverli due volte
     # significherebbe vederli divergere al primo aggiornamento, e sarebbe il
     # caveat quello che resta indietro.
+    # La conclusione f1 e' una TENDENZA, non una classifica: si calcola qui,
+    # come tutto il resto della sezione. Nominare gli estremi senza la tendenza
+    # darebbe a scali minuscoli un rilievo che il loro traffico non giustifica.
+    _big = ga.nlargest(15, 'n')
+    big_med = float(_big.d.median())
+    rest_med = float(ga.drop(_big.index).d.median())
+    big_top = _big.d.idxmax()
+    big_top_d = float(_big.d.max())
+    traf_r = float(np.corrcoef(np.log(ga.n.to_numpy()), ga.d.to_numpy())[0, 1])
+    global OG_ALT
+    OG_ALT = (f"co2gap — {len(df):,} flights, {co2_t/1e6:,.1f} Mt CO2 emitted in "
+              f"flight, {excess_t/1e6:,.2f} Mt gap from the theoretical optimum")
+    # L'escursione va DERIVATA: scritta a mano diceva 'no more than six points'
+    # mentre la f3 della stessa pagina nominava Stavanger a -7,7. La cifra
+    # battuta a mano e' sempre quella che mente.
+    ap_span = float(ga.d.max() - ap_med)
+    ap_span_lo = float(ap_med - ga.d.min())
+
     FINDINGS = [
         ("f1",
-         "A group of congested hubs sits well above the norm, and their gap is "
-         "in the profile rather than the route.",
-         f"""Flights to and from <b>{ap1_name}</b> ({ap1_d:+.1f} points across {ap1_n:,}
-movements) and <b>{esc(aname(ap2))}</b> ({ap2r.d:+.1f} across {int(ap2r.n):,})
-deviate from comparable flights more than those of any other airport with
-substantial traffic, followed by {esc(aname(ap3))} at {ap3r.d:+.1f}, against a
-median across all {len(ga)} airports of {ap_med:+.1f}. A point is one percentage
-point of CO&#8322; relative to the ideal flight.""",
+         "Busier airports deviate more than quieter ones, and by little: the "
+         "relationship holds across the table, the margin does not.",
+         f"""The fifteen busiest airports sit at <b>{big_med:+.1f} points</b> against
+<b>{rest_med:+.1f}</b> for the other {len(ga)-15}, and the deviation rises with
+traffic across the whole table (correlation {traf_r:+.2f} against the logarithm
+of movements). The highest of the fifteen is {esc(aname(big_top))} at
+{big_top_d:+.1f}. <b>No airport in the table sits more than {ap_span:.0f} points above the
+norm, or more than {ap_span_lo:.0f} below it.</b> The airports
+furthest from the norm are smaller ones: {esc(ap1_name)} at {ap1_d:+.1f} across
+{ap1_n:,} movements, then {esc(aname(ap2))} at {ap2r.d:+.1f} &mdash; real
+deviations, measured on traffic too thin to move the European total. The median
+across all {len(ga)} airports is {ap_med:+.1f}. A point is one percentage point
+of CO&#8322; relative to the ideal flight.""",
          f"""<b>These are not places in a league table.</b> At the head of the ranking ten
 positions can be separated by as little as {head_span_min:.1f} points within a
 single month, so an individual position there is not resolvable — the same
@@ -1916,7 +2026,7 @@ across operators that must divert and operators that need not."""),
         ("f3",
          "The efficient end of the ranking is small and peripheral.",
          f"""{apb_name} sits at <b>{apb_d:+.1f} points</b>, followed by other Nordic and
-island airports, more than thirty points away from the congested hubs.""",
+island airports, {big_med - apb_d:.0f} points below where the fifteen busiest sit.""",
          """Light
 traffic buys continuous descents and direct clearances. It is a measure of how
 much congestion costs, not a target a hub could adopt."""),
@@ -1985,7 +2095,7 @@ much aviation weighs in the first place, is on the
 
 <div class=stats>
   <div class=stat><div class=v>{len(df):,}</div><div class=l>flights analysed</div></div>
-  <div class=stat><div class=v>{co2_t/1e6:,.1f} Mt</div><div class=l>CO&#8322; emitted</div></div>
+  <div class=stat><div class=v>{co2_t/1e6:,.1f} Mt</div><div class=l>CO&#8322; emitted in flight</div></div>
   <div class=stat><div class=v>{excess_t/1e6:,.2f} Mt</div><div class=l>gap from the theoretical optimum</div></div>
   <div class=stat><div class=v>{len(g_all):,}</div><div class=l>routes with n≥{MIN_N}</div></div>
 </div>
@@ -2025,8 +2135,7 @@ lateral <b>{lat_w:.1f}%</b> and vertical <b>{vert_w:.1f}%</b>.</p>
 <p class=caveat style="margin-top:14px">Schematic, not a real flight: the shapes are
 drawn to show what the two terms mean, not to depict a particular trajectory.</p></div>
 <div class=card><div class=vizwrap>{viz_split(lat_w, vert_w)}</div></div>
-<p class=cap>The vertical component is about twice the lateral one: the gap is mostly in
-how flights climb, cruise and descend, not in how far they go.</p>
+<p class=cap>{vert_vs_lat}</p>
 </section>
 
 <section id=findings>
@@ -2056,9 +2165,9 @@ intervals.</p>
 <tr><td>— <b>operational margin</b> (traffic, routing, profile)</td>
 <td class=num><b>{vert_oper:.1f}</b></td></tr>
 </tbody></table>
-<p>The floor measured here is close to the value a EUROCONTROL study obtains for
-cruise by comparing each flight with the <i>best profile actually observed</i> —
-a reference that already embeds those constraints.</p>
+<p>How this floor compares with references built on the <i>best profile actually
+observed</i> is set out in the methodology: those measure a different quantity,
+and the comparison needs its caveats stated beside it.</p>
 </div>
 </section>
 
@@ -2075,7 +2184,11 @@ the worst quartile up to the 75th percentile — the most cautious assumption �
 gives <b>{sc_b:.1f} Mt a year</b>.</p>
 <p>For comparison, <b>EUROCONTROL estimates 1.1 Mt of CO&#8322; a year</b> as
 recoverable in the ECAC area through continuous climb and descent procedures
-alone. Two independent methods, the same order of magnitude.</p>
+alone. <b>The two figures coincide, and that is not a confirmation.</b> They
+count different things: the spread between comparable flights on one side,
+what two named procedures recover on the other. A coincidence between
+measurements of different quantities is worth no more than a difference
+between them would have been.</p>
 <p><b>This is counterfactual arithmetic, not a forecast.</b> It assumes the
 median level is reachable everywhere, and it is not: some routes sit above the
 median because of structural constraints — closed airspace, terrain, congestion
@@ -2262,21 +2375,25 @@ otherwise a detour would quietly earn itself a better cruise level. The wind
 along the real track is sampled along the path and weighted by distance.<br><br>
 
 <b>Stated limitations.</b>
-(1) We measure the gap from a <b>theoretical</b> optimum, not avoidable
+(1) <b>Taxi and ground movement are outside every figure here</b>, on both
+sides of the comparison: the fuel model is a model of flight and an aircraft on
+the ground is outside its domain, and the reference trajectory never taxis. The
+CO&#8322; total is therefore CO&#8322; <i>in flight</i> and understates what the
+traffic emitted. (2) We measure the gap from a <b>theoretical</b> optimum, not avoidable
 inefficiency.
-(2) The period is 2026 only, January to July: no year-on-year comparison.
-(3) Four days are missing inside the period, absent at the source; the window
+(3) The period is 2026 only, January to July: no year-on-year comparison.
+(4) Four days are missing inside the period, absent at the source; the window
 ends on 20 July because the four days after it have flight data but no wind data
 yet.
-(4) <b>Only the tails of the rankings are reliable</b>: half the routes sit
+(5) <b>Only the tails of the rankings are reliable</b>: half the routes sit
 within a few points of the norm, inside the uncertainty of the method, and their
 ordering is not meaningful.
-(5) Routes flagged ⚑ <i>cannot</i> fly the direct path: the airspace is closed.
+(6) Routes flagged ⚑ <i>cannot</i> fly the direct path: the airspace is closed.
 The ban applies to European carriers and not to third-country ones, so the
 figure shown is an average between those who must divert and those who need not.
-(6) No data about an individual flight or aircraft is published: every row
+(7) No data about an individual flight or aircraft is published: every row
 aggregates at least {MIN_N} flights.
-(7) ADS-B coverage does not include oceanic sectors.<br><br>
+(8) ADS-B coverage does not include oceanic sectors.<br><br>
 <b><a href="methodology.html">Full methodology, validations and external
 comparisons →</a></b>
 </div>

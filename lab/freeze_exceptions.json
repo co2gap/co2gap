@@ -178,5 +178,161 @@
   {
     "match": "where early descents and terminal-area holding show up",
     "reason": "27/08, revisione stilistica (intervento C1, l'ultimo dei quindici): il trattino lungo e' UN CONFINE DI FRASE per questo cancello (il regex di taglio a freeze_check.py:47 include `\\s+\\u2014\\s+`), quindi toglierne uno fonde due frasi della fotografia e ne fa sparire due. Seconda meta' della frase spezzata dal trattino. Trattino appositivo sostituito con una virgola: «The vert. column isolates the profile component, where early descents and terminal-area holding show up». ⚠️ Qui la variante a costo zero NON esisteva. Altrove si e' scelto il punto con le STESSE parole, che il cancello non vede (norm() minuscola e toglie la punteggiatura finale); qui il seguito e' un frammento («Where early descents...») e il punto avrebbe prodotto una frase sgrammaticata. La virgola fonde, quindi costa due voci. Era l'intervento segnalato in revisione come il meno redditizio rispetto al costo, e la scelta di farlo comunque e' stata esplicita. Nessuna cifra toccata, nessuna affermazione numerica persa, nessuna antitesi «X, not Y» e nessuna frase-scudo coinvolta."
+  },
+  {
+    "match": "over the period observed: total 22.1%",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Totale 22,1 -> 12,1%, verticale 14,6 -> 4,6%. Il LATERALE non si muove (7,5%) perche' ideale e ibrido nascono dallo stesso profilo sintetico, che non rulla."
+  },
+  {
+    "match": "flights to and from amsterdam schiphol (+10.8 points",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Schiphol passa da +10,8 (1a su 152) a +0,0 (59a): l'intera deviazione pubblicata era rullaggio. Misurato: lo spostamento per aeroporto vale 0,99 punti per minuto di rullaggio, Pearson +0,82, 68% di varianza spiegata, e Schiphol sta al 96o percentile di tempo a terra. La conclusione f1 e' stata riscritta come TENDENZA (i piu' trafficati deviano di piu', +1,5 contro -0,9) invece che come classifica di hub congestionati."
+  },
+  {
+    "match": "the median across all 152 airports is -2.4",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. La mediana delle deviazioni passa da -2,4 a -0,6."
+  },
+  {
+    "match": "stavanger, sola sits at -20.1 points",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Da -20,1 a -7,7. E' caduta anche la coda 'more than thirty points away from the congested hubs': l'escursione totale passa da 30,8 a 13,5 punti, e ora la frase e' derivata dai dati invece che scritta a mano."
+  },
+  {
+    "match": "across 3,120 such flights the vertical gap still stands at 5.5%",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Il floor passa da 5,5 a 2,2 punti. Anche i voli diretti nel cielo vuoto di notte rullavano, quindi il termine spurio stava dentro il floor."
+  },
+  {
+    "match": "only 8.5 points move with traffic, routing and profile",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Il margine operativo e' la differenza fra verticale mediano e floor: si muove con entrambi."
+  },
+  {
+    "match": "amsterdam schiphol flies routes of normal length",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. La componente laterale di Schiphol non cambia; cambia la verticale, che era +11,1 ed era quasi tutta rullaggio."
+  },
+  {
+    "match": "but in how the flights climb, cruise and descend",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Vedi sopra: era la frase che attribuiva al PROFILO cio' che era congestione a terra."
+  },
+  {
+    "match": "10 of the twenty routes furthest from the norm have amsterdam schiphol",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. La classifica delle rotte si ricompone dopo la correzione."
+  },
+  {
+    "match": "josep tarradellas barcelona-el prat stands at +17.2 and +0.3",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Le deviazioni per ruolo si ricalcolano sul consumo corretto."
+  },
+  {
+    "match": "its magnitude is seasonal (+16.0 in the strongest month",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. La stagionalita' della deviazione si ricalcola sui valori corretti."
+  },
+  {
+    "match": "what is stable is the distance from the norm: across the 7 months",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Il testo esteso della f1 si ricompone sui valori corretti. Il PRINCIPIO resta: e' stabile la distanza dalla norma, non la posizione."
+  },
+  {
+    "match": "at the head of the ranking ten positions can be separated by as little as 3.1 points",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. L'escursione fra posizioni si ricalcola: con deviazioni residue piu' piccole, le posizioni ballano di piu' a parita' di stabilita' dei valori."
+  },
+  {
+    "match": "measured across the 118 airports whose departures deviate by at least two points",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Le quote per fase si ricalcolano: i punti a terra stavano nei secchielli TMA di partenza e arrivo, cioe' proprio quelli che producevano queste percentuali. Il burn di terra si divide 48/52 fra i due capi."
+  },
+  {
+    "match": "for arrivals (123 airports) it is 84% within 40 nm and 90% in the descent",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Vedi sopra: entrambi i secchielli TMA erano contaminati."
+  },
+  {
+    "match": "if the flights sitting above the median of comparable ones flew like that median, the co2 avoided would be 2.2",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Lo scenario passa da 2,2 a 1,1 Mt/anno: la dispersione fra voli comparabili si riduce quando si toglie un termine che dipende dall'aeroporto e non dal volo."
+  },
+  {
+    "match": "if flights above the median of comparable ones flew like that median: 2.2 mt",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Stessa cifra, resa in metodologia."
+  },
+  {
+    "match": "bringing only the worst quartile to the 75th percentile, a far more cautious assumption: 1.0 mt",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Lo scenario cauto passa da 1,0 a 0,5 Mt/anno."
+  },
+  {
+    "match": "eurocontrol independently estimates 1.1 mt of co2 a year as recoverable",
+    "reason": "La cifra EUROCONTROL (1,1 Mt) NON cambia ed e' verificata alla fonte. Cambia la frase che la seguiva: diceva 'due metodi indipendenti, lo stesso ordine di grandezza', formulazione modesta finche' i due numeri erano 2,2 e 1,1. Dopo la correzione il nostro scenario vale 1,1 Mt esatti, e accanto a due numeri identici quella frase si leggerebbe come conferma. Ora il sito dice esplicitamente che la coincidenza NON e' una conferma, perche' le due grandezze contano cose diverse."
+  },
+  {
+    "match": "their 4.6% median for cruise alone compares with our 13.1%",
+    "reason": "Corretto il 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra venivano prezzati da FuelFlow.enroute, un modello aerodinamico di VOLO, che a 20-60 kt restituisce ~7.750 kg/h contro i ~800 di un rullaggio reale (databank ICAO). La baseline ideale non rulla (parte da 250 kt), quindi il numeratore conteneva un termine che il denominatore non aveva. Valeva l'8,9% del carburante modellato. Il nostro valore sullo stesso perimetro (200-1500 NM) passa da 13,1 a 12,0% e il fattore da 2,8 a 2,6. ⚠️ Erano entrambi BATTUTI A MANO nel template, in violazione del principio del sito stesso: ora sono derivati dai dati."
+  },
+  {
+    "match": "1) we measure the gap from a theoretical optimum, not avoidable inefficiency",
+    "reason": "Rinumerazione: e' entrata al primo posto una limitazione NUOVA — rullaggio e movimento a terra sono fuori da ogni cifra, su entrambi i lati del confronto, e il totale CO2 e' quindi CO2 in volo. Questa voce e' ora la (2)."
+  },
+  {
+    "match": "2) the period is 2026 only, january to july",
+    "reason": "Rinumerata da (2) a (3)."
+  },
+  {
+    "match": "4) only the tails of the rankings are reliable",
+    "reason": "Rinumerata da (4) a (5)."
+  },
+  {
+    "match": "5) routes flagged",
+    "reason": "Rinumerata da (5) a (6)."
+  },
+  {
+    "match": "6) no data about an individual flight or aircraft is published",
+    "reason": "Rinumerata da (6) a (7)."
+  },
+  {
+    "match": "7) ads-b coverage does not include oceanic sectors",
+    "reason": "Rinumerata da (7) a (8)."
+  },
+  {
+    "match": "a group of congested hubs sits well above the norm",
+    "reason": "Titolo della conclusione f1, RISCRITTO il 2026-08-28. Diceva che un gruppo di hub congestionati sta ben sopra la norma e che il loro gap e' nel profilo, non nella rotta. Dopo la correzione del rullaggio Schiphol sta a +0,0 e i piu' lontani dalla norma sono scali piccoli, quindi la frase sarebbe stata falsa in entrambe le meta'. Ora afferma una TENDENZA misurata (i piu' trafficati deviano di piu': +1,5 contro -0,9, correlazione +0,35 col logaritmo dei movimenti) e nomina gli estremi qualificandoli come traffico troppo sottile per muovere il totale europeo."
+  },
+  {
+    "match": "the floor measured here is close to the value a eurocontrol study obtains for cruise",
+    "reason": "Il floor passa da 5,5 a 2,2 punti, quindi non e' piu' 'close to' il 4,6% di Pasutto: sarebbe un fattore due. Il confronto e' stato tolto dall'apertura e lasciato alla metodologia, dove ha i suoi caveat accanto."
+  },
+  {
+    "match": "a reference that already embeds those constraints",
+    "reason": "Coda della frase precedente, tolta con essa."
+  },
+  {
+    "match": "two independent methods, the same order of magnitude",
+    "reason": "Il nostro controfattuale passa da 2,2 a 1,1 Mt/anno e la stima EUROCONTROL e' 1,1 Mt: accanto a due numeri IDENTICI quella formulazione modesta si leggerebbe come conferma. Sostituita da una frase che dichiara esplicitamente che la coincidenza NON e' una conferma, perche' le due grandezze contano cose diverse — la dispersione fra voli comparabili da un lato, cio' che due procedure nominate recuperano dall'altro."
+  },
+  {
+    "match": "↔ amsterdam schiphol",
+    "reason": "Le tabelle delle rotte piu' lontane dalla norma si ricompongono dopo la correzione del rullaggio: le rotte che avevano un capo a Schiphol o a Madrid erano in cima perche' quegli aeroporti rullano a lungo, non perche' i voli volassero peggio. Nomi di rotta, nessuna cifra."
+  },
+  {
+    "match": "↔ adolfo suárez madrid–barajas",
+    "reason": "Vedi sopra: ricomposizione della tabella rotte."
+  },
+  {
+    "match": "adolfo suárez madrid–barajas ↔",
+    "reason": "Vedi sopra: ricomposizione della tabella rotte."
+  },
+  {
+    "match": "athens eleftherios venizelos ↔",
+    "reason": "Ricomposizione della tabella rotte."
+  },
+  {
+    "match": "stockholm-arlanda ↔",
+    "reason": "Ricomposizione della tabella rotte."
+  },
+  {
+    "match": "åre östersund ↔",
+    "reason": "Ricomposizione della tabella rotte."
+  },
+  {
+    "match": "copenhagen kastrup ↔",
+    "reason": "Ricomposizione della tabella rotte."
+  },
+  {
+    "match": "trieste ↔",
+    "reason": "Ricomposizione della tabella rotte."
+  },
+  {
+    "match": "josep tarradellas barcelona-el prat ↔",
+    "reason": "Ricomposizione della tabella rotte."
   }
 ]

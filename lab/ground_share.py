@@ -1,0 +1,120 @@
+"""Quota di carburante bruciata A TERRA, per volo.
+
+Prodotto: data/ground_share_ecac/<giorno>.parquet, letto da site_build.py.
+Senza, il gap conterrebbe il rullaggio prezzato da FuelFlow.enroute a
+~7.750 kg/h contro i ~800 reali: e' il difetto corretto il 2026-08-28.
+
+  PYTHONPATH=pipeline:ingest lab-venv/bin/python lab/ground_share.py \\
+      --root $PWD --src data/flights_ecac --out data/ground_share_ecac
+SOLA LETTURA sui dati congelati.
+"""
+import os, sys, argparse, time
+from pathlib import Path
+import numpy as np, pandas as pd
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--root", default=os.environ.get("ADSB_ROOT", "/mnt/wd_elements/adsb-co2"))
+ap.add_argument("--src", default=None, help="cartella flights_ecac")
+ap.add_argument("--out", required=True)
+ap.add_argument("--days", default=None, help="es. 2026-01-01:2026-07-20")
+ap.add_argument("--limit-days", type=int, default=None)
+ap.add_argument("--alt-ft", type=float, default=1000.0)
+ap.add_argument("--tas-kt", type=float, default=70.0)
+a = ap.parse_args()
+
+sys.path[:0] = [f"{a.root}/pipeline", f"{a.root}/ingest", a.root]
+from trajectories import Point, Flight                      # noqa
+from emissions import openap_model, estimate_fuel, _steps_from_flight  # noqa
+
+SRC = Path(a.src or f"{a.root}/data/flights_ecac")
+OUT = Path(a.out); OUT.mkdir(parents=True, exist_ok=True)
+
+days = sorted(p.name for p in SRC.iterdir() if p.is_dir())
+if a.days:
+    lo, hi = a.days.split(":"); days = [d for d in days if lo <= d <= hi]
+if a.limit_days: days = days[:a.limit_days]
+print(f"  {len(days)} giorni da elaborare · soglia terra: alt<{a.alt_ft:.0f} ft e tas<{a.tas_kt:.0f} kt", flush=True)
+
+PCOLS = ["flight_id","t","lat","lon","alt_ft","gs_kt","ias_kt","vs_fpm"]
+FCOLS = ["flight_id","typecode","co2_kg_v0","fuel_kg_v0","load_factor",
+         "reserve_kg","tas_mode","origin_icao","dest_icao","gc_km"]
+
+for day in days:
+    dst = OUT / f"{day}.parquet"
+    if dst.exists():
+        print(f"  {day}  gia' fatto, salto", flush=True); continue
+    t0 = time.time()
+    try:
+        fl_df = pd.read_parquet(SRC/day/"flights.parquet", columns=FCOLS)
+        pt_df = pd.read_parquet(SRC/day/"points.parquet", columns=PCOLS)
+    except Exception as e:
+        print(f"  {day}  ⚠️ illeggibile: {e}", flush=True); continue
+
+    pt_df = pt_df.sort_values(["flight_id","t"])
+    groups = dict(tuple(pt_df.groupby("flight_id", sort=False)))
+    rows = []
+    for r in fl_df.itertuples(index=False):
+        if openap_model(r.typecode) is None:      # stesso filtro della produzione
+            continue
+        g = groups.get(r.flight_id)
+        if g is None or len(g) < 11:
+            continue
+        pts = [Point(t=float(t), lat=float(la), lon=float(lo),
+                     alt=(None if np.isnan(al) else float(al)),
+                     gs=(None if np.isnan(gs) else float(gs)),
+                     ias=(None if np.isnan(ia) else float(ia)),
+                     vs_rep=(None if np.isnan(vs) else float(vs)))
+                for t,la,lo,al,gs,ia,vs in zip(g.t, g.lat, g.lon, g.alt_ft,
+                                               g.gs_kt, g.ias_kt, g.vs_fpm)]
+        fl = Flight(icao="X", typecode=r.typecode, reg=None, points=pts)
+        mode = r.tas_mode if isinstance(r.tas_mode, str) and r.tas_mode else "ias"
+        res = estimate_fuel(fl, load_factor=float(r.load_factor),
+                            reserve_kg=float(r.reserve_kg), tas_mode=mode,
+                            with_steps=True)
+        if not res.ok or res.burn_kg_step is None:
+            continue
+        st = _steps_from_flight(fl, mode)
+        if st is None: continue
+        dt, alt, vs, tas, d_km, valid = st
+        burn = np.asarray(res.burn_kg_step, dtype=float)
+        if len(burn) != len(alt): continue
+        # PIU' DEFINIZIONI INSIEME: lo stadio 2 sceglie la soglia senza rifare
+        # questo stadio. "suolo" e' la definizione letterale del parser
+        # (trajectories.py:77 mappa la stringa "ground" a 0 ft): non ha soglie.
+        masks = {
+            "suolo":     (alt <= 0.0),
+            "a1000t40":  (alt < 1000) & (tas <  40),
+            "a1000t70":  (alt < 1000) & (tas <  70),
+            "a1000t100": (alt < 1000) & (tas < 100),
+            "a3000t70":  (alt < 3000) & (tas <  70),
+        }
+        # semitratto per frazione d'arco: i secchielli TMA di phase_split partizionano
+        # cosi'. Senza queste due colonne, correggere l'84%/90% costa un'altra passata.
+        arc = np.cumsum(d_km); tot_arc = arc[-1] if len(arc) and arc[-1] > 0 else 1.0
+        first_half = (arc - d_km/2.0) / tot_arc < 0.5
+        tb = float(burn.sum())
+        vals = []
+        for k, m in masks.items():
+            vals += [float(burn[m].sum()), float(dt[m].sum()), float(m.sum()),
+                     float(burn[m & first_half].sum()), float(burn[m & ~first_half].sum())]
+        rows.append((day, r.flight_id, r.typecode, r.origin_icao, r.dest_icao,
+                     float(r.gc_km), float(r.co2_kg_v0), tb, float(len(burn)),
+                     float(np.nanmin(tas)), float(np.nanmin(alt))) + tuple(vals))
+    MK = ["suolo","a1000t40","a1000t70","a1000t100","a3000t70"]
+    cols = ["day","flight_id","typecode","origin_icao","dest_icao","gc_km",
+            "co2_kg_v0_frozen","fuel_recomputed_kg","n_steps","tas_min_kt","alt_min_ft"]
+    for k in MK:
+        cols += [f"fuel_{k}_kg", f"t_{k}_s", f"n_{k}",
+                 f"fuel_{k}_dep_kg", f"fuel_{k}_arr_kg"]
+    out = pd.DataFrame(rows, columns=cols)
+    for k in MK:   # quota da applicare al livello congelato nello stadio 2
+        out[f"share_{k}"] = np.where(out.fuel_recomputed_kg > 0,
+                                     out[f"fuel_{k}_kg"] / out.fuel_recomputed_kg, 0.0)
+    out.to_parquet(dst, index=False)
+    # 🔑 CONTROLLO DI EQUIVALENZA: il burn ricalcolato dal diradato deve stare
+    # vicino al congelato (atteso ~-0,3% per il diradamento, gia' misurato).
+    ratio = (out.fuel_recomputed_kg.sum()*3.16) / out.co2_kg_v0_frozen.sum()
+    print(f"  {day}  voli {len(out):6,}  suolo {out.fuel_suolo_kg.sum()/out.fuel_recomputed_kg.sum()*100:5.2f}%"
+          f"  a1000t70 {out.fuel_a1000t70_kg.sum()/out.fuel_recomputed_kg.sum()*100:5.2f}%"
+          f"  ricalc/congelato {ratio:6.4f}  {time.time()-t0:5.1f}s", flush=True)
+print("  fatto.", flush=True)

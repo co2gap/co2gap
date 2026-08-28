@@ -31,11 +31,11 @@ no real flight can reach: separation, route structure, constrained airspace and
 arrival queues put it out of reach. Published estimates of what is actually
 recoverable are far smaller — EUROCONTROL puts roughly 39 kg per flight on
 continuous climb and descent procedures, recoverable from current practice,
-against roughly 521 kg of vertical gap measured here. Those two figures are not
+against roughly 165 kg of vertical gap measured here. Those two figures are not
 rival estimates of one quantity: theirs is measured against what aircraft do
 today and is recoverable by a known procedure, ours against a theoretical
-optimum that no flight can fly. The total gap is roughly 788 kg per flight;
-the 521 kg is its vertical component, which is the part continuous climb and
+optimum that no flight can fly. The total gap is roughly 432 kg per flight;
+the 165 kg is its vertical component, which is the part continuous climb and
 descent procedures address.
 
 The distinction matters enough that the site states it above the fold, and this
@@ -52,10 +52,10 @@ ECAC area, 2026-01-01 → 2026-07-20, **197 days, 1,833,127 flights**:
 
 | | |
 |---|---|
-| CO₂ emitted | **25.4 Mt** |
-| Gap against the theoretical optimum | **4.57 Mt** (22.1%) |
+| CO₂ emitted **in flight** | **23.4 Mt** |
+| Gap against the theoretical optimum | **2.50 Mt** (12.1%) |
 | — lateral (routing) | 7.5% |
-| — vertical (profile) | 14.6% |
+| — vertical (profile) | 4.6% |
 | Routes with n≥10 | 5,483 (2,787 ranked at n≥100) |
 | Airports with n≥2,000 movements | 152 |
 
@@ -238,7 +238,7 @@ than loudly: without `ADSB_DECOMP_DIR` the script reads whichever decomposition
 directory it finds by default, and without `ADSB_PHASE_DIR` it does not error at
 all — it falls back to older wording that says the gap cannot be located inside
 the flight, and drops the whole phase attribution. The run must print
-**1,833,127 flights · 197 days · 25.44 Mt · lat 7.51 · vert 14.55 · KEA +2.26 ·
+**1,833,127 flights · 197 days · 23.38 Mt · lat 7.51 · vert 4.63 · KEA +2.26 ·
 152 airports · 208 flagged routes**; anything else means a different dataset was
 read. `lab/freeze_check.py check` compares the rebuilt pages against a snapshot
 of what the site claims and is what caught that fallback in the first place.
