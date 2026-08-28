@@ -77,8 +77,9 @@ Splitting the same vertical gap by the part of the path it was burnt on gives a
 second, independent reading. Across the 118 airports whose departures deviate by
 at least two points, a median of **79%** of that deviation was produced within
 40 NM of the airport itself and 83% of it in the climb; for arrivals (123
-airports) it is **84%** within 40 NM and **90%** in the descent. A 2009 study of
-US traffic, found afterwards, put 80% in descent and arrival. **That is a
+airports) it is **84%** within 40 NM and **90%** in the descent. EUROCONTROL's own
+figures point the same way: they put the fuel recoverable by continuous descent
+at around ten times that recoverable by continuous climb. **That is a
 location, not a cause**: it says where the fuel was burnt, not whether the
 profile was chosen by the operator or imposed by the traffic, and nothing here
 distinguishes the two.

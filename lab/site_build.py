@@ -214,10 +214,14 @@ STAB = {"pairs": 21, "median": 0.867, "worst": 0.789,
 BENCH = {"cco_cdo_kg": 39, "cco_cdo_pct": 1.1,
          "pasutto_pct": 4.6, "pasutto_kg": 60, "pasutto_avg_pct": 7.5,
          "pasutto_avg_kg": 85, "kea_published": 3.0,
-         # Alcabin et al., AIAA 2009, traffico USA: quota dell'eccesso
-         # verticale che cade in discesa e arrivo. E' il riferimento
-         # esterno indipendente per la nostra scomposizione per fase.
-         "alcabin_desc_pct": 80,
+         # RIMOSSO il 2026-08-28: "alcabin_desc_pct": 80. Il numero veniva da
+         # una bibliografia altrui (rif. [14] in reports/), non dal paper, che
+         # e' a pagamento (AIAA, 10.2514/6.2009-6959) e non e' mai stato letto.
+         # In piu' il sito lo accostava al nostro 90% (quota della discesa sulla
+         # deviazione in ARRIVO) mentre la cifra confrontabile e' 75,7%
+         # (reports/fase3.md), che non pubblichiamo. Sostituito con il rapporto
+         # CDO:CCO ~10:1 di EUROCONTROL, verificato alla fonte e citato in forma
+         # direzionale, non numerica.
          # Quota massima realmente raggiunta contro quella che il baseline chiede,
          # per fascia di distanza. Riproducibile con:
          #   PYTHONPATH=pipeline:ingest lab-venv/bin/python lab/altitude_check.py
@@ -2181,8 +2185,9 @@ say if you asked them something harder than <i>where is that plane</i>.</p>
 own indicator, this comes out at <b>+{kea:.2f}%</b> against the
 ~{BENCH['kea_published']:.0f}% they publish. Split by phase,
 <b>{pa['arr_desc']:.0f}% of an airport's arrival deviation is burnt in the descent
-into it</b> — and a 2009 study of US traffic, which I found afterwards, put
-{BENCH['alcabin_desc_pct']}% in descent and arrival. I did not expect open data, an open
+into it</b>. EUROCONTROL's own figures point the same way: they put the fuel
+recoverable by continuous descent at around ten times that recoverable by
+continuous climb. I did not expect open data, an open
 performance model and a laptop to land that close to institutions that do this for
 a living.</p>
 
