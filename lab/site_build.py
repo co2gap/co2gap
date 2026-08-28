@@ -2484,7 +2484,15 @@ carries — the headline {vert_w:.1f} is the fleet aggregate, which weighs long 
 more heavily —
 <b>{vert_floor:.1f} remain even for a flight going direct through an empty night
 sky</b>. We read that as the baseline being unreachable rather than anybody's
-inefficiency — a reading, not a second measurement."""),
+inefficiency — a reading, not a second measurement.</p>
+<p>That is not the only figure on this site. Alongside the distance from the
+theoretical optimum, the front page reports what closing the spread between
+comparable flights would be worth: <b>{sc_a:.1f} Mt</b> of CO&#8322; a year if the
+flights above the median flew like that median, and <b>{sc_b:.1f} Mt</b> on the
+most cautious assumption. EUROCONTROL's own estimate for continuous climb and
+descent procedures is <b>1.1 Mt</b>. <b>Those are the figures to set beside
+published estimates of avoidable emissions; the {(lat_w+vert_w):.1f}% is not one
+of them.</b>"""),
         ("What does an airport's number actually mean?",
          f"""It describes <b>the flights that touch that airport</b>, not the
 conduct of the airport. Each flight is counted at both ends and its gap is
