@@ -87,6 +87,39 @@ def phase_attribution(df):
               f"{df.day.nunique()} published: attribution note omitted")
         return None
     m = df.merge(ph, on=["day", "flight_id"], how="inner", validate="one_to_one")
+
+    # ---- il rullaggio esce anche dalle FASI -------------------------------
+    # Le colonne di fase sono congelate e ricostruiscono il verticale
+    # GATE-TO-GATE; il verticale che arriva da df e' gia' corretto. Dividere le
+    # prime per il secondo dava quote oltre il 100% (231% entro 40 NM, 245% in
+    # discesa, pubblicate il 2026-08-28). Il burn di terra sta nei secchielli
+    # che lo contengono: la TMA del capo dov'e' avvenuto, e la salita o la
+    # discesa della partizione per fase, perche' il rullaggio cade a frazione
+    # d'arco ~0 e ~1 e i confini di CUT A vengono dal nominale, che parte in
+    # salita e finisce in discesa. Crociera ed en-route non lo vedono mai.
+    m["excess_vert_dep_pct"] = m.excess_vert_dep_pct - m.ground_pct_dep
+    m["excess_vert_arr_pct"] = m.excess_vert_arr_pct - m.ground_pct_arr
+    m["excess_vert_climb_pct"] = m.excess_vert_climb_pct - m.ground_pct_dep
+    m["excess_vert_desc_pct"] = m.excess_vert_desc_pct - m.ground_pct_arr
+
+    # La prova che le due partizioni e il totale stanno sulla stessa base. E' il
+    # controllo che avrebbe fatto fallire il build invece di lasciarlo stampare
+    # 245%: additive per costruzione, quindi il residuo e' epsilon o e' un bug.
+    for cols, nome in ((["excess_vert_dep_pct", "excess_vert_enr_pct",
+                         "excess_vert_arr_pct"], "posizione"),
+                       (["excess_vert_climb_pct", "excess_vert_cruise_pct",
+                         "excess_vert_desc_pct"], "fase")):
+        ok = m[cols + ["excess_vertical_pct"]].notna().all(axis=1)
+        res = float((m.loc[ok, cols].sum(axis=1)
+                     - m.loc[ok, "excess_vertical_pct"]).abs().max())
+        if res > 1e-6:
+            raise SystemExit(
+                f"lo split per {nome} non somma al verticale pubblicato "
+                f"(residuo massimo {res:.4f} punti). Numeratore e denominatore "
+                f"stanno su basi diverse: le colonne di fase sono gate-to-gate "
+                f"e il verticale e' corretto per il rullaggio, oppure "
+                f"{PHASE_DIR} e' stato rigenerato con altre convenzioni.")
+
     return headline(by_airport(add_mean_norm(m, BINS, MIN_N_CELL),
                                MIN_N_AIRPORT))
 
@@ -372,14 +405,33 @@ def load() -> pd.DataFrame:
     if col not in g.columns:
         raise SystemExit(f"{GROUND_DIR} non contiene {col}: definizione "
                          f"ADSB_GROUND_DEF={GROUND_DEF!r} non disponibile")
-    g["share_ground"] = np.where(g.fuel_recomputed_kg > 0,
-                                 g[col] / g.fuel_recomputed_kg, 0.0)
+    # La quota si tiene anche SPEZZATA fra i due capi: serve allo split per
+    # fase, dove il burn di terra va sottratto al secchiello che lo contiene e
+    # non al totale. Senza, il numeratore resterebbe gate-to-gate sopra un
+    # denominatore corretto e le quote uscirebbero dal 100%.
+    for suf in ("", "_dep", "_arr"):
+        c = f"fuel_{GROUND_DEF}{suf}_kg"
+        if c not in g.columns:
+            raise SystemExit(f"{GROUND_DIR} non contiene {c}")
+        g["share_ground" + suf] = np.where(g.fuel_recomputed_kg > 0,
+                                           g[c] / g.fuel_recomputed_kg, 0.0)
+    # Un GIORNO senza quota entrerebbe nelle cifre con share 0, cioe' col
+    # rullaggio dentro, e il fillna lo renderebbe invisibile: e' successo con il
+    # 2026-02-14. Il buco di un giorno intero e' un errore, non una lacuna.
+    manca = sorted(set(df.day.unique()) - set(g.day.unique()))
+    if manca:
+        raise SystemExit(
+            f"quota di terra assente per {len(manca)} giorni pubblicati "
+            f"({manca[:3]}...): quei voli entrerebbero gate-to-gate. "
+            f"Genera con lab/ground_share.py --days.")
     n_before = len(df)
-    df = df.merge(g[["day", "flight_id", "share_ground"]],
+    df = df.merge(g[["day", "flight_id", "share_ground",
+                     "share_ground_dep", "share_ground_arr"]],
                   on=["day", "flight_id"], how="left")
     assert len(df) == n_before, "il merge ha duplicato: flight_id e' un surrogato PER GIORNO"
     cov = df.share_ground.notna().mean()
-    df["share_ground"] = df.share_ground.fillna(0.0)
+    for c in ("share_ground", "share_ground_dep", "share_ground_arr"):
+        df[c] = df[c].fillna(0.0)
     print(f"  correzione terra [{GROUND_DEF}]: {cov*100:.1f}% dei voli, "
           f"{df.share_ground.mean()*100:.2f}% del carburante escluso dal gap")
 
@@ -397,6 +449,13 @@ def load() -> pd.DataFrame:
     df["excess_total_pct"] = (df.co2_kg_v0.to_numpy() - _id) / _id * 100.0
     df["excess_lateral_pct"] = (df.hybrid_co2_kg.to_numpy() - _id) / _id * 100.0
     df["excess_vertical_pct"] = (df.co2_kg_v0.to_numpy() - df.hybrid_co2_kg.to_numpy()) / _id * 100.0
+
+    # Il burn di terra in PUNTI dell'ideale, per capo: e' l'unita' delle colonne
+    # di fase, che sono anch'esse percentuali di ideal_gc_co2_kg. Si sottrae
+    # cosi' dai secchielli in phase_attribution().
+    _gg = df.co2_gate_to_gate_kg.to_numpy()
+    df["ground_pct_dep"] = _gg * df.share_ground_dep.to_numpy() / _id * 100.0
+    df["ground_pct_arr"] = _gg * df.share_ground_arr.to_numpy() / _id * 100.0
 
     df["co2_ground_kg"] = df.co2_gate_to_gate_kg.to_numpy() * df.share_ground.to_numpy() * k
     df["co2_real_kg"] = df.co2_kg_v0.to_numpy() * k
@@ -1796,6 +1855,30 @@ def main():
             "deviate from comparable ones; it does not say who or what "
             "produced the deviation.")
     else:
+        # La chiusa INTERPRETA i quattro numeri appena dati, quindi non puo'
+        # essere una frase fissa. Fino al 2026-08-28 diceva che il resto del
+        # volo conta poco, ed era vera quando i due capi si somigliavano (79% e
+        # 84%, col rullaggio dentro). Tolto il rullaggio gli arrivi tengono e le
+        # partenze no, e una frase scritta a mano sarebbe rimasta vera per
+        # abitudine: qui la direzione e' letta dai dati, e se si inverte di
+        # nuovo si inverte anche il testo.
+        hi, lo = (("arrivals", "departures") if pa["arr_own"] >= pa["dep_own"]
+                  else ("departures", "arrivals"))
+        if min(pa["arr_own"], pa["dep_own"]) < 50.0:
+            asimmetria = (
+                f"The two ends are not alike: most of what appears on an "
+                f"airport's {hi} is produced within 40 NM of it, while most of "
+                f"what appears on its {lo} is not, and is carried in from "
+                f"further along the flight. EUROCONTROL's own figures point "
+                f"the same way, putting the fuel recoverable by continuous "
+                f"descent at around ten times that recoverable by continuous "
+                f"climb.")
+        else:
+            asimmetria = (
+                "Both ends behave alike: what happens at the far end of the "
+                "flight, and in the cruise between the two, accounts for very "
+                "little of what separates one airport from another.")
+
         phase_note = (
             "<b>Where inside the flight does it sit?</b> Splitting the same "
             "vertical gap by the part of the path it was burnt on gives a "
@@ -1807,13 +1890,12 @@ def main():
             f"<b>{pa['dep_climb']:.0f}%</b> of it in the climb. For arrivals "
             f"({pa['n_arr']} airports) it is "
             f"<b>{pa['arr_own']:.0f}%</b> within 40 NM and "
-            f"<b>{pa['arr_desc']:.0f}%</b> in the descent. What happens at the "
-            "far end of the flight, and in the cruise between the two, accounts "
-            "for very little of what separates one airport from another.<br><br>"
-            "<b>That is a location, not a cause.</b> It says the gap was burnt "
-            "near this airport, in the climb out of it or the descent into it. "
-            "It does not say whether the profile was chosen by the operator or "
-            "imposed by the traffic, and nothing here distinguishes the two.")
+            f"<b>{pa['arr_desc']:.0f}%</b> in the descent. {asimmetria}<br><br>"
+            "<b>That is a location, not a cause.</b> Where it does sit near an "
+            "airport, it says the fuel was burnt there, in the climb out of it "
+            "or the descent into it. It does not say whether the profile was "
+            "chosen by the operator or imposed by the traffic, and nothing here "
+            "distinguishes the two.")
 
     both = pd.concat([df.assign(ap=df.origin_icao, role="dep"),
                       df.assign(ap=df.dest_icao, role="arr")])

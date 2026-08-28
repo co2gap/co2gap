@@ -31,11 +31,11 @@ no real flight can reach: separation, route structure, constrained airspace and
 arrival queues put it out of reach. Published estimates of what is actually
 recoverable are far smaller — EUROCONTROL puts roughly 39 kg per flight on
 continuous climb and descent procedures, recoverable from current practice,
-against roughly 165 kg of vertical gap measured here. Those two figures are not
+against roughly 163 kg of vertical gap measured here. Those two figures are not
 rival estimates of one quantity: theirs is measured against what aircraft do
 today and is recoverable by a known procedure, ours against a theoretical
-optimum that no flight can fly. The total gap is roughly 432 kg per flight;
-the 165 kg is its vertical component, which is the part continuous climb and
+optimum that no flight can fly. The total gap is roughly 431 kg per flight;
+the 163 kg is its vertical component, which is the part continuous climb and
 descent procedures address.
 
 The distinction matters enough that the site states it above the fold, and this
@@ -74,10 +74,10 @@ obtains **+2.26%** against the roughly 3% EUROCONTROL publishes. That agreement
 is the main external check on the method, and it was not tuned for.
 
 Splitting the same vertical gap by the part of the path it was burnt on gives a
-second, independent reading. Across the 118 airports whose departures deviate by
-at least two points, a median of **79%** of that deviation was produced within
-40 NM of the airport itself and 83% of it in the climb; for arrivals (123
-airports) it is **84%** within 40 NM and **90%** in the descent. EUROCONTROL's own
+second, independent reading. Across the 28 airports whose departures deviate by
+at least two points, a median of **33%** of that deviation was produced within
+40 NM of the airport itself and 32% of it in the climb; for arrivals (52
+airports) it is **70%** within 40 NM and **88%** in the descent. EUROCONTROL's own
 figures point the same way: they put the fuel recoverable by continuous descent
 at around ten times that recoverable by continuous climb. **That is a
 location, not a cause**: it says where the fuel was burnt, not whether the
@@ -238,7 +238,7 @@ than loudly: without `ADSB_DECOMP_DIR` the script reads whichever decomposition
 directory it finds by default, and without `ADSB_PHASE_DIR` it does not error at
 all — it falls back to older wording that says the gap cannot be located inside
 the flight, and drops the whole phase attribution. The run must print
-**1,833,127 flights · 197 days · 23.38 Mt · lat 7.51 · vert 4.63 · KEA +2.26 ·
+**1,833,127 flights · 197 days · 23.37 Mt · lat 7.51 · vert 4.59 · KEA +2.26 ·
 152 airports · 208 flagged routes**; anything else means a different dataset was
 read. `lab/freeze_check.py check` compares the rebuilt pages against a snapshot
 of what the site claims and is what caught that fallback in the first place.
