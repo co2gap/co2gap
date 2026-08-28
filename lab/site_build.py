@@ -1404,7 +1404,7 @@ perimeter: KEA measures the en-route portion only, outside the 40 NM cylinders
 around each airport. How much of the difference between GAIA and EUROCONTROL
 that accounts for is not quantified here.</p>
 
-<h3>Where this baseline sits in EUROCONTROL's own vocabulary</h3>
+<h3>Where this baseline sits among EUROCONTROL's reference trajectories</h3>
 <p>The kind of reference used here is not particular to this project.
 EUROCONTROL's Performance Review Report 2024 is developing a ladder of
 comparison trajectories: the great circle route; then a <i>theoretical
