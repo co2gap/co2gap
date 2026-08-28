@@ -2702,7 +2702,13 @@ deviation was produced within {term('nm', '40 NM')} of the airport itself.
 <b>That is a location, not a cause.</b> It says where the fuel was burnt; it does
 not say whether the profile was chosen by the operator or imposed by the
 traffic, and nothing here distinguishes the two."""),
-        ("Your figures divide to 18%, not 22%. Which is right?",
+        # La domanda era DIGITATA con le cifre di prima della correzione del
+        # rullaggio (18 e 22) mentre la risposta sotto era gia' derivata e
+        # diceva 11 e 12,1. Correggere una frase non corregge le sue sorelle, e
+        # il titolo di una domanda e' una sorella: ora viene dagli stessi
+        # numeri della risposta.
+        (f"Your figures divide to {excess_t/co2_t*100:.0f}%, not "
+         f"{(lat_w+vert_w):.0f}%. Which is right?",
          f"""<b>Both, and the difference is the denominator.</b> Dividing
 {excess_t/1e6:,.2f} Mt of gap by the {co2_t/1e6:,.1f} Mt actually emitted gives
 {excess_t/co2_t*100:.0f}% — the gap as a share of what was <i>burnt</i>. The
