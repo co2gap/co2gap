@@ -76,6 +76,14 @@ def pct0(v) -> str:
     return "0%" if abs(v) < 0.5 else f"{v:+.0f}%"
 
 
+# ⚠️ SUPERFICI ANCORA SCOPERTE, censite il 2026-08-28 sera. Nessuna produce un
+# artefatto oggi — le cifre sono congelate fino al 31/01/2027 e i valori in
+# gioco stanno tutti lontani dallo zero — ma alla prossima rigenerazione
+# possono presentarsi: i tooltip SVG del dot-plot aeroporti (`:+.1f` su d, dep,
+# arr) e le cifre nella prosa dei findings (`:+.1f` diretti). Prima di
+# pubblicare una finestra nuova, passarle da pts().
+
+
 def pts(v, dp=0):
     """Punti col segno e la classe di colore, neutri quando arrotondano a zero.
 
@@ -118,8 +126,9 @@ def phase_attribution(df):
     # ---- il rullaggio esce anche dalle FASI -------------------------------
     # Le colonne di fase sono congelate e ricostruiscono il verticale
     # GATE-TO-GATE; il verticale che arriva da df e' gia' corretto. Dividere le
-    # prime per il secondo dava quote oltre il 100% (231% entro 40 NM, 245% in
-    # discesa, pubblicate il 2026-08-28). Il burn di terra sta nei secchielli
+    # prime per il secondo dava quote oltre il 100%: la pagina pubblicata
+    # diceva 233% entro 40 NM e 242% in discesa. (231,6 e 245,4 sono la
+    # ricostruzione odierna, che include il giorno 2026-02-14 recuperato.) Il burn di terra sta nei secchielli
     # che lo contengono: la TMA del capo dov'e' avvenuto, e la salita o la
     # discesa della partizione per fase, perche' il rullaggio cade a frazione
     # d'arco ~0 e ~1 e i confini di CUT A vengono dal nominale, che parte in
@@ -1183,7 +1192,7 @@ def viz_airports(ga, aname, nw=10, nb=6):
                        f'stroke="var(--grid)"/>'
                        f'<text x="{sx(v):.1f}" y="{H-24}" text-anchor="middle" font-size="11" '
                        f'fill="var(--mut)" style="font-variant-numeric:tabular-nums">'
-                       f'{v:+d}</text>')
+                       f'{pct0(v).rstrip("%")}</text>')
     out.append(f'<line x1="{sx(0):.1f}" x2="{sx(0):.1f}" y1="{TOP}" y2="{H-40}" '
                f'stroke="var(--axis)"/>'
                f'<text x="{sx(0)-8:.1f}" y="{TOP-9}" text-anchor="end" font-size="11" '
@@ -1742,7 +1751,7 @@ apply from the first release, while the number of such arrangements is zero.</p>
 organisation is analysis <i>of</i> a published figure — never a change <i>to</i>
 it, and never its removal or postponement.</li>
 <li><b>No privileged access, embargo or preview.</b> Where material is provided
-before publication — as it was, on request, to one organisation in July 2026 —
+before publication — as it was, on request, to one organisation in August 2026 —
 the same is available on the same terms to anyone named here, and it confers no
 ability to alter what is published. In July 2026, four organisations were written
 to about figures that a later correction changed substantially; those figures are
@@ -2112,7 +2121,7 @@ def main():
                 f"<span class=code>{esc(a)}–{esc(b)}</span></td>"
                 f"<td class=num>{int(r.n):,}</td><td class=num>{r.gc:,.0f}</td>"
                 f"<td class='num big {_dc}'>{_d}</td>"
-                f"<td class=num>{r.lat:.0f}%</td><td class=num>"
+                f"<td class=num>{'0%' if abs(r.lat) < 0.5 else f'{r.lat:.0f}%'}</td><td class=num>"
                 f"{'0%' if abs(r.vert) < 0.5 else f'{r.vert:.0f}%'}</td>"
                 f"<td class=num>{r.co2_t:,.0f}</td></tr>")
 
@@ -2878,9 +2887,10 @@ flights", never "third worst in Europe"."""),
          """<b>No.</b> It is an independent open-data project, not an institutional
 or academic publication. What it offers instead is verifiability: the source data
 is public, the method is documented in full, the code is open, and every figure
-can be recomputed from scratch. The organisations the findings single out were
-given advance notice before publication, and any reply from anyone named here is
-published in full and unconditionally."""),
+can be recomputed from scratch. In July 2026, four organisations were given
+advance notice of figures that a later correction changed substantially; those
+figures are not in this release. Any reply from anyone named here is published
+in full and unconditionally."""),
         ("Who pays for this?",
          """<b>Nobody.</b> There is no funder, client, sponsor or advertising, and
 no organisation has had sight of the figures before publication beyond material

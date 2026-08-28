@@ -23,11 +23,14 @@ number.
 
 **2. No privileged access, embargo or preview, customers included.**
 Where organisations are notified before publication, notice goes to those the
-findings single out, and every one of them is notified on the same terms and
-with the same lead time; notification confers no ability to alter what is
-published. Where material is provided before publication — as it was, on
-request, to one of the organisations notified — the same is available on the same
-terms to anyone named here. Advance notice is a matter of fairness, never a
+findings single out, every one of them is notified on the same terms and with
+the same lead time, and notification confers no ability to alter what is
+published. In July 2026, four organisations were written to about figures that
+a later correction changed substantially; those figures are not in the first
+release, and no organisation is singled out in it in the way they were. Where
+material is provided before publication — as it was, on request, to one
+organisation in August 2026 — the same is available on the same terms to anyone
+named here. Advance notice is a matter of fairness, never a
 commercial courtesy —
 and it is not what protects everyone else named here. That is rule 3, the right
 of reply, which is unconditional and carries no notice period.

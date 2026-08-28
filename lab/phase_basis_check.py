@@ -93,10 +93,22 @@ def main() -> int:
             x["excess_vert_climb_pct"] -= x.gpct_dep
             x["excess_vert_desc_pct"] -= x.gpct_arr
         parti = ["excess_vert_dep_pct", "excess_vert_enr_pct", "excess_vert_arr_pct"]
-        res = (x[parti].sum(axis=1) - x[vert]).abs()
+        # ⚠️ sum(axis=1) IGNORA i NaN: una riga con una fase mancante somma le
+        # altre due e produce un residuo enorme che non e' una rottura, e' un
+        # buco. Misurato: mediano 5,7e-14 e massimo 2,3e+02 sulla stessa base
+        # coerente. Uno script che stampa «un residuo che non e' epsilon sono
+        # due basi diverse» e poi mostra 228 insegna a ignorare i massimi, che
+        # e' il modo migliore per non vedere la rottura vera. Si misura solo
+        # dove le tre parti ci sono tutte, e si dice quante righe non lo sono —
+        # e' la stessa maschera dell'assert in site_build.phase_attribution().
+        ok = x[parti + [vert]].notna().all(axis=1)
+        res = (x.loc[ok, parti].sum(axis=1) - x.loc[ok, vert]).abs()
+        buchi = int((~ok).sum())
         h = headline(by_airport(add_mean_norm(x, BINS, MIN_N_CELL), MIN_N_AIRPORT))
         print(f"--- {label}")
-        print(f"    residuo additivo: mediano {res.median():.2e} · massimo {res.max():.2e}")
+        print(f"    residuo additivo: mediano {res.median():.2e} · massimo "
+              f"{res.max():.2e}  (su {int(ok.sum()):,} righe complete"
+              + (f", {buchi:,} incomplete escluse)" if buchi else ")"))
         print(f"    partenze {h['dep_own']:6.1f}% entro 40 NM · {h['dep_climb']:6.1f}% "
               f"in salita   ({h['n_dep']} aeroporti)")
         print(f"    arrivi   {h['arr_own']:6.1f}% entro 40 NM · {h['arr_desc']:6.1f}% "
@@ -108,8 +120,9 @@ def main() -> int:
          "vert_gg", False)
     giro("CORRETTO — le due basi allineate, quel che il sito pubblica ora",
          "vert_corr", True)
-    print("Le prime due righe di residuo dicono tutto: additive per costruzione,\n"
-          "quindi un residuo che non e' epsilon e' due basi diverse.")
+    print("I residui dicono tutto: sulle righe COMPLETE le parti sono additive per\n"
+          "costruzione, quindi un residuo che non e' epsilon e' due basi diverse.\n"
+          "Le righe incomplete sono escluse e contate: non sono una rottura.")
     return 0
 
 
