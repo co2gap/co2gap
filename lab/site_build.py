@@ -2092,7 +2092,7 @@ CO&#8322; totals: <a href="data.html#routes">on the data page</a>.</p>
 <section>
 <h2>Airports</h2>
 <p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT:,} flights.
-The <b>vert.</b> column isolates the profile component — where early descents
+The <b>vert.</b> column isolates the profile component, where early descents
 and terminal-area holding show up.</p>
 
 <div class=note>
