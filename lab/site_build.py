@@ -76,6 +76,20 @@ def pct0(v) -> str:
     return "0%" if abs(v) < 0.5 else f"{v:+.0f}%"
 
 
+def pts(v, dp=0):
+    """Punti col segno e la classe di colore, neutri quando arrotondano a zero.
+
+    Sotto mezza unita' dell'ultima cifra stampata il segno non sopravvive
+    all'arrotondamento: «-0» in rosso non e' una deviazione negativa, e' un
+    artefatto di stampa che il colore trasforma in un'affermazione. Restituisce
+    la stringa e la classe insieme, cosi' le due non possono divergere.
+    """
+    eps = 0.5 * 10 ** -dp
+    if abs(v) < eps:
+        return f"{0:.{dp}f}", ""
+    return f"{v:+.{dp}f}", "pos" if v > 0 else "neg"
+
+
 def phase_attribution(df):
     """Where the vertical gap of an airport was produced, or None.
 
@@ -2094,23 +2108,25 @@ def main():
         a, b = pair
         note = (f"<span class=flag title='the direct path crosses "
                 f"{esc(r.closed)}'>⚑</span>" if r.closed else "")
+        _d, _dc = pts(r.d, 0)
         return (f"<tr><td class=r>{esc(aname(a))} ↔ {esc(aname(b))}{note}"
                 f"<span class=code>{esc(a)}–{esc(b)}</span></td>"
                 f"<td class=num>{int(r.n):,}</td><td class=num>{r.gc:,.0f}</td>"
-                f"<td class='num big {'pos' if r.d>0 else 'neg'}'>{r.d:+.0f}</td>"
+                f"<td class='num big {_dc}'>{_d}</td>"
                 f"<td class=num>{r.lat:.0f}%</td><td class=num>"
                 f"{'0%' if abs(r.vert) < 0.5 else f'{r.vert:.0f}%'}</td>"
                 f"<td class=num>{r.co2_t:,.0f}</td></tr>")
 
     def arow(icao, r):
+        _d, _dc = pts(r.d, 1)
         return (f"<tr><td class=r>{esc(aname(icao))}"
                 f"<span class=code>{esc(icao)}</span></td>"
                 f"<td class=num>{int(r.n):,}</td>"
-                f"<td class='num big {'pos' if r.d>0 else 'neg'}'>{r.d:+.1f}</td>"
-                f"<td class=num>{r.dep:+.1f}</td>"
-                f"<td class=num>{r.arr:+.1f}</td>"
-                f"<td class=num>{r.lat:+.1f}</td>"
-                f"<td class='num big {'pos' if r.vert>0 else 'neg'}'>{r.vert:+.1f}</td></tr>")
+                f"<td class='num big {_dc}'>{_d}</td>"
+                f"<td class=num>{pts(r.dep, 1)[0]}</td>"
+                f"<td class=num>{pts(r.arr, 1)[0]}</td>"
+                f"<td class=num>{pts(r.lat, 1)[0]}</td>"
+                f"<td class='num big {pts(r.vert, 1)[1]}'>{pts(r.vert, 1)[0]}</td></tr>")
 
     worst = "\n".join(rrow(r, p) for p, r in g.sort_values("d", ascending=False).head(25).iterrows())
     best = "\n".join(rrow(r, p) for p, r in g.sort_values("d").head(15).iterrows())
