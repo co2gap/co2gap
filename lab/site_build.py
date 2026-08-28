@@ -1370,20 +1370,26 @@ our own baseline and criteria. The comparison says "consistent", not
 <b>GAIA</b> (Teoh, Engberg, Shapiro, Dray and Stettler, <i>Atmospheric Chemistry
 and Physics</i> 24, 725, 2024) reconstructs 103.7 million ADS-B trajectories
 worldwide, and along the way measures how much further flights fly than the
-great-circle distance. For Europe it reports <b>7.7% in 2019</b> and <b>7.5%
-across 2020 and 2021</b>. This site obtains <b>{lat_w:.1f}%</b> for 2026.</p>
+great-circle distance. For Europe it reports <b>7.7% in 2019</b> and <b>7.5% in
+2020</b>. This site obtains <b>{lat_w:.1f}%</b> for 2026.</p>
 <p>Different years, different authors, different code, and a reference built the
 same way. That last point is what gives the agreement its weight. Our lateral
 component is pure geometry, a comparison of the distance flown against the
 great-circle distance, and nothing in it depends on the performance model, on
 the wind field or on the calibration. Two projects comparing emissions would
 largely be measuring whether they had made the same modelling choices. This
-comparison is not doing that.</p>
-<p>It is agreement rather than replication, and three differences are worth
-naming. GAIA's European box is far smaller than the ECAC area used here (12&deg;W to
-20&deg;E, 35&deg;N to 60&deg;N), the years do not overlap, and GAIA discards about 1.5% of
-trajectories as erroneous where the quality gates here cut on different
-criteria.</p>
+comparison is not doing that. One dependency does remain: a ratio of distances
+is sensitive to how each project reconstructs a trajectory from patchy ADS-B
+coverage, and that is a choice each makes on its own.</p>
+<p>It is agreement rather than replication, and four differences are worth
+naming. GAIA's European box is far smaller than the ECAC area used here (12&deg;W
+to 20&deg;E, 35&deg;N to 60&deg;N). The flight populations are selected differently: this
+site counts only flights that both depart and land inside its area. GAIA
+discards about 1.5% of trajectories as erroneous, where the quality gates here
+cut on different criteria. And the years do not overlap, with a structural
+change to the European network in between, since the airspace closures date
+from 2022: that the figure survives it makes the agreement more interesting and
+less probative at the same time.</p>
 <p>A note on definitions, because the two external comparisons on this page
 divide by different references and the difference is easy to misread. GAIA
 attributes its distance from EUROCONTROL's published figure to the official
@@ -1395,32 +1401,40 @@ achieved distance, is built from great-circle distances. The shortest
 constrained route is what supplies the trajectory length in KES. What does
 separate a whole-flight great-circle figure from a KEA-style figure is the
 perimeter: KEA measures the en-route portion only, outside the 40 NM cylinders
-around each airport, which is also why the figure above comes out below the
-published one. How much of the difference between GAIA and EUROCONTROL that
-accounts for is not quantified here.</p>
+around each airport. How much of the difference between GAIA and EUROCONTROL
+that accounts for is not quantified here.</p>
 
 <h3>Where this baseline sits in EUROCONTROL's own vocabulary</h3>
-<p>The reference used here is not particular to this project. EUROCONTROL's
-Performance Review Report 2024 sets out a ladder of reference trajectories: the
-great circle route; then the <i>theoretical fuel-optimal trajectory</i>, which
-"follows the great circle route but is further optimised for wind conditions";
-then the realistic optimal trajectory, which adds weather phenomena such as
-thunderstorms and turbulence; and finally the <i>ATM fuel-optimal trajectory</i>,
-which folds in ATM and network constraints. The baseline on this site is the
-second of those: great circle, real wind, and a profile optimised for fuel.</p>
-<p>That placement is what the caveat at the top of this site rests on. Two named
-levels separate the reference used here from the one that accounts for network
-constraints, so the gap measured here necessarily contains everything those two
-levels would absorb. The figure is a distance from a theoretical optimum rather
-than an estimate of recoverable fuel, and that can be said in the vocabulary of
-the organisation that defines the constraints.</p>
-<p>The same report describes a property of its own optimiser that this site
-declares as a limitation. Its optimal trajectory lets the cruise climb
-continuously as the aircraft burns off mass, and EUROCONTROL notes an intention
-to constrain those levels to the Flight Level Allocation System in future
-updates. The cruise baseline here is generous for the same reason, and
-correcting it would make the headline figure larger. It is a known property of
-this class of reference, not a peculiarity of this implementation.</p>
+<p>The kind of reference used here is not particular to this project.
+EUROCONTROL's Performance Review Report 2024 is developing a ladder of
+comparison trajectories: the great circle route; then a <i>theoretical
+fuel-optimal trajectory</i>, which "follows the great circle route but is
+further optimised for wind conditions"; then a realistic optimal trajectory,
+which adds weather phenomena such as thunderstorms and turbulence; and finally
+an <i>ATM fuel-optimal trajectory</i>, which folds in ATM and network
+constraints.</p>
+<p><b>The baseline on this site is not any one of those rungs.</b> It sits
+between the first two: it holds to the great circle laterally, like the first,
+and optimises the profile in real wind, like the second. The difference is that
+their wind optimisation may also move the route sideways to use the wind, which
+their own worked example does, gaining time over a longer path. Ours may not.
+That makes the reference used here slightly the more expensive of the two, and
+therefore makes the gap reported here, if anything, smaller than the one their
+second rung would produce.</p>
+<p>What matters for the caveat at the top of this site is where the reference
+sits rather than which rung it is. It sits upstream of the levels at which
+weather and network constraints enter, which is why the figure is a distance
+from a theoretical optimum rather than an estimate of recoverable fuel. Those
+constraints are real, and something that measures against a reference placed
+before them is not measuring what could be recovered.</p>
+<p>The same report idealises the cruise, and in the opposite direction to this
+one. Its optimiser lets the cruise climb continuously as the aircraft burns off
+mass, past the levels flights can actually be assigned, and EUROCONTROL notes an
+intention to constrain it to the Flight Level Allocation System in future
+updates: that makes their reference too cheap and their gap too large. The
+baseline here errs the other way, cruising below what aircraft reach on the
+longest sectors, which makes the figure on this site too small. Correcting it
+would make the headline figure larger, and that correction is still owed.</p>
 
 <h2>8. Stated limitations</h2>
 <ul>
@@ -1990,10 +2004,10 @@ vertical gap measured here. Those two figures are not rival estimates of one
 quantity: theirs is measured against current practice and is recoverable by a
 known procedure, ours against a theoretical optimum that no flight can fly.
 <b>This site measures the distance from a theoretical optimum,
-not avoidable waste.</b> That reference has a name outside this project:
-EUROCONTROL's Performance Review Report calls it the <i>theoretical
-fuel-optimal trajectory</i>, and sets two further levels between it and the ATM
-fuel-optimal trajectory that accounts for weather and network constraints.
+not avoidable waste.</b> That reference sits near the bottom of a ladder
+EUROCONTROL is developing for the same purpose: two further rungs, one adding
+weather and one adding ATM and network constraints, stand between a
+wind-optimised ideal and the trajectory the network could actually deliver.
 The full comparison is in the methodology; how this
 figure sits beside EUROCONTROL's own estimate of what is recoverable, and how
 much aviation weighs in the first place, is on the
