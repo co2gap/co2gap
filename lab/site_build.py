@@ -63,6 +63,19 @@ GROUND_DIR = Path(os.environ.get("ADSB_GROUND_DIR") or (ROOT / "data/ground_shar
 GROUND_DEF = os.environ.get("ADSB_GROUND_DEF", "a3000t70")
 
 
+def pct0(v) -> str:
+    """Percentuale intera col segno, senza «-0%» e senza «+-0%».
+
+    Sotto il mezzo punto il segno non e' informazione: e' un artefatto di
+    stampa. E «-0%» accanto a un gap contro un ottimo irraggiungibile dice al
+    lettore ostile che quei voli battono l'ottimo, che e' l'opposto di cio' che
+    il numero misura. Il grafico per banda di distanza stampava perfino
+    «+-0%», perche' il segno era scritto a mano davanti a un formato che gia'
+    ne produce uno.
+    """
+    return "0%" if abs(v) < 0.5 else f"{v:+.0f}%"
+
+
 def phase_attribution(df):
     """Where the vertical gap of an airport was produced, or None.
 
@@ -1090,7 +1103,7 @@ def viz_bands(band):
                    f'fill="var(--mut)" style="font-variant-numeric:tabular-nums">{v}%</text>')
     for i, (lab, n, v) in enumerate(rows):
         x = L + slot * i + (slot - bw) / 2
-        out.append(f'<g><title>{esc(lab)} km · {n:,} flights · median gap +{v:.0f}%</title>'
+        out.append(f'<g><title>{esc(lab)} km · {n:,} flights · median gap {pct0(v)}</title>'
                    f'<path d="M{x:.1f} {sy(0):.1f} V{sy(v)+4:.1f} a4 4 0 0 1 4 -4 '
                    f'h{bw-8:.1f} a4 4 0 0 1 4 4 V{sy(0):.1f} Z" fill="var(--s1)"/></g>'
                    f'<text x="{x+bw/2:.1f}" y="{H-44}" text-anchor="middle" font-size="10.5" '
@@ -1099,10 +1112,10 @@ def viz_bands(band):
     for i in (0, len(rows) - 1):
         lab, n, v = rows[i]
         out.append(f'<text x="{L+slot*i+slot/2:.1f}" y="{sy(v)-8:.1f}" text-anchor="middle" '
-                   f'font-size="12" font-weight="600" fill="var(--fg)">+{v:.0f}%</text>')
+                   f'font-size="12" font-weight="600" fill="var(--fg)">{pct0(v)}</text>')
     return (f'<svg class=viz viewBox="0 0 {W} {H}" role="img" aria-label="Median gap by '
-            f'distance band: +{rows[0][2]:.0f}% on the shortest sectors, falling to '
-            f'+{rows[-1][2]:.0f}% on the longest">' + "".join(out) +
+            f'distance band: {pct0(rows[0][2])} on the shortest sectors, falling to '
+            f'{pct0(rows[-1][2])} on the longest">' + "".join(out) +
             f'<line x1="{L}" x2="{W-R}" y1="{sy(0):.1f}" y2="{sy(0):.1f}" stroke="var(--axis)"/>'
             f'<text x="{L}" y="{H-16}" font-size="11" fill="var(--mut)">'
             f'lower bound of the great-circle distance band, km</text></svg>')
@@ -1226,6 +1239,7 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
                       n_routes_all, n_routes_rank, n_airports, gen,
                       sc_a, sc_b, sc_a_fuel_kt,
                       vert_floor, vert_fleet, vert_oper, n_floor,
+                      vert_long, vert_oper_eq,
                       conv_fleet, conv_ap1,
                       finding_sections="", n_biz_routes=0,
                       non_airliner_pct=0.0) -> str:
@@ -1238,9 +1252,47 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
     # Confronto con Pasutto sullo STESSO perimetro (200-1500 NM), calcolato
     # e non battuto a mano: era 13,1% fisso nel template e dopo la correzione
     # del rullaggio sarebbe rimasto li' a mentire.
+    # Le due correlazioni erano DIGITATE. Quella grezza (-0,74) oggi coincide
+    # per combinazione col valore post-correzione; la residua era stampata
+    # +0,08 mentre il segno vero e' negativo. Una cifra digitata che per caso
+    # torna giusta e' piu' pericolosa di una sbagliata: non la ricontrolla piu'
+    # nessuno.
+    # ⚠️ E vanno calcolate SULLE ROTTE, che e' l'unita' di cui parla la frase:
+    # "a raw ranking would order routes by shortness". Per volo la stessa
+    # correlazione da' -0,54, ed e' un'altra grandezza. Sbagliare unita' qui
+    # sarebbe lo stesso errore che il paragrafo denuncia.
+    _rt = df.groupby("pair").agg(gc=("gc_km", "median"),
+                                 raw=("excess_total_pct", "median"),
+                                 res=("d_tot", "median"), n=("d_tot", "size"))
+    _rt = _rt[_rt.n >= RANK_MIN_N]
+    _r_raw = float(np.corrcoef(_rt.gc.to_numpy(), _rt.raw.to_numpy())[0, 1])
+    _r_res = float(np.corrcoef(_rt.gc.to_numpy(), _rt.res.to_numpy())[0, 1])
+
     _pas = df[(df.gc_km >= 370.4) & (df.gc_km <= 2778.0)]
-    pas_ours = float((_pas.co2_kg_v0.sum() - _pas.ideal_gc_co2_kg.sum())
-                     / _pas.ideal_gc_co2_kg.sum() * 100)
+    _pas_id = _pas.ideal_gc_co2_kg.sum()
+    pas_ours = float((_pas.co2_kg_v0.sum() - _pas_id) / _pas_id * 100)
+    # La cifra sopra e' il gap TOTALE, laterale incluso, mentre quella di
+    # Pasutto e' di sola crociera. Il fattore fra le due era attribuito a tre
+    # differenze dichiarate, e la causa maggiore non era fra quelle: e' la
+    # rotta. Si scompone qui, cosi' il testo puo' nominarla.
+    pas_lat = float((_pas.hybrid_co2_kg.sum() - _pas_id) / _pas_id * 100)
+    pas_vert = float((_pas.co2_kg_v0.sum() - _pas.hybrid_co2_kg.sum())
+                     / _pas_id * 100)
+
+    # Quale componente sia la maggiore sotto le DUE convenzioni e' un fatto che
+    # si e' invertito il 2026-08-28 con la correzione del rullaggio. Il testo
+    # diceva "The vertical component still dominates" accanto a quattro coppie
+    # lat/vert in cui il laterale era il maggiore in tutte e quattro.
+    _coppie = [(conv_fleet[0], conv_fleet[1]), (conv_fleet[2], conv_fleet[3]),
+               (conv_ap1[0], conv_ap1[1]), (conv_ap1[2], conv_ap1[3])]
+    if all(l > v for l, v in _coppie):
+        conv_ord = ("The lateral component is the larger one in all four pairs")
+    elif all(v > l for l, v in _coppie):
+        conv_ord = ("The vertical component is the larger one in all four pairs")
+    else:
+        conv_ord = ("Which of the two is the larger one changes between the "
+                    "conventions, so that ordering is a property of the "
+                    "convention and not of the flights")
     biz_types = ", ".join(sorted(NON_AIRLINER))
     glossary_rows = "".join(
         f"<div id=g-{k}><dt>{t}</dt><dd>{d}</dd></div>"
@@ -1301,11 +1353,19 @@ actually flown</td><td class=num>{BENCH['pasutto_kg']}–{BENCH['pasutto_avg_kg'
 </tbody></table>
 <p>Over the same distance range Pasutto uses (200–1500 NM), their
 {BENCH['pasutto_pct']}% median for cruise alone compares with our {pas_ours:.1f}% for
-the whole profile: a factor of <b>{pas_ours/BENCH['pasutto_pct']:.1f}</b>, explained
-by three stated differences.
-Their reference is the <i>best observed profile</i>, ours a physical optimum;
-they cover cruise only, we also cover climb, descent and speed; they assume
-nominal mass and no wind, we use estimated mass and real wind.</p>
+the whole flight: a factor of <b>{pas_ours/BENCH['pasutto_pct']:.1f}</b>, explained
+by four differences, of which the first is the largest.
+<b>Ours includes the route</b> — {pas_lat:.1f} of those {pas_ours:.1f} points are
+lateral — and theirs excludes it by construction; that one difference accounts for
+most of the factor. Then: their reference is the <i>best observed profile</i>,
+ours a physical optimum; they cover cruise only, we also cover climb, descent and
+speed; they assume nominal mass and no wind, we use estimated mass and real wind.</p>
+<p>Our vertical component alone over the same range is {pas_vert:.1f}%, which lands
+next to their {BENCH['pasutto_pct']}%. <b>We do not present that as agreement.</b>
+Ours covers the whole profile — climb and descent included, which is where our gap
+concentrates — while theirs is cruise only, so the two numbers are close without
+measuring the same thing. Read it as a coincidence worth knowing, not as a
+validation.</p>
 <p><b>Practical consequence:</b> multiplying our total by a carbon price and
 calling it "waste" would be wrong. We do not do it, and we ask that it not be
 done.</p>
@@ -1324,6 +1384,14 @@ and that the remaining {vert_oper:.1f} move with traffic, routing and profile �
 an interpretation of that measurement, not a second measurement. Nothing here
 separates those causes from one another, and the residual may also carry
 variability of the model itself.</p>
+<p><b>And the subtraction compares two groups of different length.</b> The floor
+is measured on sectors above 1,000 km; across <i>all</i> flights above 1,000 km
+the median vertical gap is {vert_long:.1f} points, not {vert_fleet:.1f}. At equal
+distance the margin is about <b>{vert_oper_eq:.1f} points</b> rather than
+{vert_oper:.1f}, and the difference between the two is the distance mix, which is
+not an operational quantity. The direction of that error is conservative for the
+reading above: on short sectors the incompressible share is likely larger than
+{vert_floor:.1f}, not smaller.</p>
 <p>The floor nearly coincides with the value a EUROCONTROL study obtains for
 cruise by comparing each flight with the <i>best observed profile</i>, a
 reference that already contains those constraints. Two independent routes, the
@@ -1367,10 +1435,10 @@ unreachability, which is common to both.</p>
 use the <b>Δ norm</b>: the deviation from the European median of flights of
 <i>the same length and the same aircraft type</i>. The theoretical optimum only
 serves as a shared unit of measurement.</p>
-<p>This correction is necessary, not cosmetic: the raw gap correlates about
-<b>−0.74</b> with sector length, so a raw ranking would order routes by
-shortness rather than by inefficiency. After normalisation the residual
-correlation with distance is about <b>+0.08</b>.</p>
+<p>This correction is necessary, not cosmetic: across the ranked routes the raw
+gap correlates about <b>{_r_raw:+.2f}</b> with sector length, so a raw ranking
+would order routes by shortness rather than by inefficiency. After normalisation
+the residual correlation with distance is about <b>{_r_res:+.2f}</b>.</p>
 <p>The comparison is also made <b>at equal aircraft type</b>. An A320 and a B767
 on the same sector are not comparable, and without this second normalisation
 part of what the method charges to the route would really be the aircraft
@@ -1466,6 +1534,12 @@ route ranking across all <b>{STAB['pairs']} available month pairs</b>, rank
 correlation stays high throughout: median <b>{STAB['median']:.3f}</b>, worst
 <b>{STAB['worst']:.3f}</b> ({STAB['worst_pair']}), consecutive months
 {STAB['consec']:.3f}.</p>
+<p><b>These two checks were computed before the ground-fuel exclusion</b>, on the
+gate-to-gate figures this site no longer publishes, and they are re-run at the
+next release. The direction is known: taxi burn is structural per airport and
+stable month to month, so leaving it in could only have flattered a stability
+measured across months — the corrected figures are, if anything, harder to keep
+stable than the ones these numbers describe.</p>
 <p>The more informative detail is that the correlation <b>decays in order</b>
 with the time distance between months. That is the signature of a structural
 signal with modest seasonal drift: noise would give low correlations everywhere,
@@ -1577,8 +1651,8 @@ charging the extra kilometres at the <i>optimal</i> profile. The opposite
 convention charges them at the flight's <i>actual</i> CO<sub>2</sub> per kilometre,
 which moves weight towards the lateral component: for the <b>median flight</b> the
 split goes from {conv_fleet[0]:.1f} / {conv_fleet[1]:.1f} to
-{conv_fleet[2]:.1f} / {conv_fleet[3]:.1f} points. <b>The vertical component still
-dominates</b>, including for the airport named in the findings
+{conv_fleet[2]:.1f} / {conv_fleet[3]:.1f} points. <b>{conv_ord}</b>, including for
+the airport named in the findings
 ({conv_ap1[0]:.1f} / {conv_ap1[1]:.1f} becomes {conv_ap1[2]:.1f} / {conv_ap1[3]:.1f},
 on raw medians rather than deviations from the norm). The total is identical under
 both conventions <i>for every individual flight</i>. The four figures above are
@@ -1797,6 +1871,13 @@ def main():
     vert_floor = float(df.loc[floor_mask, "excess_vertical_pct"].median())
     vert_fleet = float(df.excess_vertical_pct.median())
     vert_oper = vert_fleet - vert_floor
+    # ⚠️ Le due coorti non hanno la stessa lunghezza: il floor si misura sopra i
+    # 1.000 km, la mediana di flotta su tutte le tratte. Sottrarle mette nel
+    # "margine operativo" anche il mix di distanza, che non e' operativo. La
+    # differenza a parita' di distanza e' molto piu' piccola, e va detta: senza,
+    # la stat card afferma piu' di quanto sia stato misurato.
+    vert_long = float(df.loc[df.gc_km > 1000, "excess_vertical_pct"].median())
+    vert_oper_eq = vert_long - vert_floor
     conv_fleet = convention_medians(df)
     n_floor = int(floor_mask.sum())
 
@@ -1864,7 +1945,18 @@ def main():
         # nuovo si inverte anche il testo.
         hi, lo = (("arrivals", "departures") if pa["arr_own"] >= pa["dep_own"]
                   else ("departures", "arrivals"))
-        if min(pa["arr_own"], pa["dep_own"]) < 50.0:
+        # Due rami, tre casi. `min < 50` NON garantisce `max >= 50`: se un
+        # domani scendessero entrambi, il primo ramo direbbe "most ... is
+        # produced within 40 NM" del capo maggiore, che sarebbe falso. E il
+        # ramo simmetrico non segue da `min >= 50`. Si separano.
+        _hi_own = max(pa["arr_own"], pa["dep_own"])
+        _lo_own = min(pa["arr_own"], pa["dep_own"])
+        if _lo_own >= 50.0:
+            asimmetria = (
+                "Both ends behave alike: what happens at the far end of the "
+                "flight, and in the cruise between the two, accounts for very "
+                "little of what separates one airport from another.")
+        elif _hi_own >= 50.0:
             asimmetria = (
                 f"The two ends are not alike: most of what appears on an "
                 f"airport's {hi} is produced within 40 NM of it, while most of "
@@ -1875,9 +1967,9 @@ def main():
                 f"climb.")
         else:
             asimmetria = (
-                "Both ends behave alike: what happens at the far end of the "
-                "flight, and in the cruise between the two, accounts for very "
-                "little of what separates one airport from another.")
+                f"Neither end accounts for most of what it is charged with: on "
+                f"both roles the larger share of an airport's deviation is "
+                f"produced elsewhere in the flight, {hi} included.")
 
         phase_note = (
             "<b>Where inside the flight does it sit?</b> Splitting the same "
@@ -2006,7 +2098,8 @@ def main():
                 f"<span class=code>{esc(a)}–{esc(b)}</span></td>"
                 f"<td class=num>{int(r.n):,}</td><td class=num>{r.gc:,.0f}</td>"
                 f"<td class='num big {'pos' if r.d>0 else 'neg'}'>{r.d:+.0f}</td>"
-                f"<td class=num>{r.lat:.0f}%</td><td class=num>{r.vert:.0f}%</td>"
+                f"<td class=num>{r.lat:.0f}%</td><td class=num>"
+                f"{'0%' if abs(r.vert) < 0.5 else f'{r.vert:.0f}%'}</td>"
                 f"<td class=num>{r.co2_t:,.0f}</td></tr>")
 
     def arow(icao, r):
@@ -2026,7 +2119,7 @@ def main():
     by_co2 = "\n".join(rrow(r, p) for p, r in g.sort_values("co2_t", ascending=False).head(15).iterrows())
     bandrows = "\n".join(
         f"<tr><td>{esc(i)} km</td><td class=num>{int(r.n):,}</td>"
-        f"<td class=num>{r.med:+.0f}%</td></tr>" for i, r in band.iterrows())
+        f"<td class=num>{pct0(r.med)}</td></tr>" for i, r in band.iterrows())
     n_closed = int((g.closed != "").sum())
 
     # ---- i quattro risultati, scritti UNA volta e usati in DUE posti --------
@@ -2049,8 +2142,35 @@ def main():
     # L'escursione va DERIVATA: scritta a mano diceva 'no more than six points'
     # mentre la f3 della stessa pagina nominava Stavanger a -7,7. La cifra
     # battuta a mano e' sempre quella che mente.
-    ap_span = float(ga.d.max() - ap_med)
-    ap_span_lo = float(ap_med - ga.d.min())
+    # ⚠️ 28/08 sera, secondo giro: derivarla non bastava. Era derivata dalla
+    # MEDIANA degli aeroporti (-0,6) mentre la frase dice "above the norm", e la
+    # norma e' lo zero del glossario. Stampava 7/7 con Stavanger a -7,63 due
+    # findings piu' sotto. E per un "no more than X" il formato giusto e' il
+    # CEIL, non il round: con un minimo a -7,02 il round dava 7 e la frase era
+    # falsa di due centesimi, in silenzio.
+    ap_span = int(np.ceil(ga.d.max()))
+    ap_span_lo = int(np.ceil(-ga.d.min()))
+
+    # In quale delle due componenti sta la deviazione di un aeroporto: e' un
+    # FATTO che cambia con i dati, e fino a stasera era una frase fissa che
+    # diceva "not in the route" anche per Jersey, che ha +3,0 di laterale
+    # contro +2,7 di verticale. La soglia e' mezzo punto, cioe' la risoluzione
+    # con cui le due cifre vengono stampate accanto.
+    def _dove(l, v):
+        if abs(v - l) < 0.5:
+            return "is split almost evenly between the two"
+        return "sits in the profile" if v > l else "sits in the route"
+
+    # Concordanza e cautela dipendono dal conteggio: "1 ... have" era
+    # sgrammaticato, e "a real concentration" poggiava su una rotta sola.
+    _hanno = "has" if ap1_routes == 1 else "have"
+    _quante = ("a single route" if ap1_routes == 1
+               else f"{ap1_routes} routes")
+
+    # Il formato :+.0f su un valore vicino allo zero produce "-0%", che al
+    # lettore ostile dice "i voli battono l'ottimo irraggiungibile". Sotto il
+    # mezzo punto il segno non e' informazione, e' un artefatto di stampa.
+    _band_hi = pct0(float(band.iloc[-1].med)).lstrip("+")
 
     FINDINGS = [
         ("f1",
@@ -2060,8 +2180,8 @@ def main():
 <b>{rest_med:+.1f}</b> for the other {len(ga)-15}, and the deviation rises with
 traffic across the whole table (correlation {traf_r:+.2f} against the logarithm
 of movements). The highest of the fifteen is {esc(aname(big_top))} at
-{big_top_d:+.1f}. <b>No airport in the table sits more than {ap_span:.0f} points above the
-norm, or more than {ap_span_lo:.0f} below it.</b> The airports
+{big_top_d:+.1f}. <b>No airport in the table sits more than {ap_span} points above the
+norm, or more than {ap_span_lo} below it.</b> The airports
 furthest from the norm are smaller ones: {esc(ap1_name)} at {ap1_d:+.1f} across
 {ap1_n:,} movements, then {esc(aname(ap2))} at {ap2r.d:+.1f} &mdash; real
 deviations, measured on traffic too thin to move the European total. The median
@@ -2078,16 +2198,16 @@ nominal position moves between {ap2_best_rank} and {ap2_worst_rank}. Its
 magnitude is seasonal ({ap2_hi:+.1f} in the strongest month, {ap2_lo:+.1f} in
 the weakest); {ap1_name} is steadier, never falling below rank
 {ap1_worst_rank}.<br>
-In both cases the deviation is not in the route — {ap1_name} flies routes of
-normal length ({ap1_l:+.1f} lateral) — but in how the flights climb, cruise and
-descend ({ap1_v:+.1f} vertical). The vertical component still dominates under
-the alternative decomposition convention described in the methodology, so it is
-not an artefact of that choice.<br>
-{ap1_routes} of the twenty routes furthest from the norm have {ap1_name} at one
-end, against a base rate of {ap1_share:.0f}% of all ranked routes — a real
-concentration, though a hub with many routes is over-represented in any tail.
-Profiles of this shape are what dense terminal areas produce: early descents,
-level segments, sequencing. ADS-B shows the profiles flown, not the noise
+The two do not deviate for the same reason. {ap1_name}'s gap {_dove(ap1_l, ap1_v)}
+({ap1_l:+.1f} lateral, {ap1_v:+.1f} vertical); {esc(aname(ap2))}'s
+{_dove(ap2r.lat, ap2r.vert)} ({ap2r.lat:+.1f} lateral, {ap2r.vert:+.1f}
+vertical). A single figure per airport does not say which of the two it is.<br>
+{ap1_routes} of the twenty routes furthest from the norm {_hanno} {ap1_name} at one
+end, against a base rate of {ap1_share:.1f}% of all ranked routes — consistent
+with a concentration, though it rests on {_quante} and a hub with many routes is
+over-represented in any tail.
+Where the gap sits in the profile, that shape is what dense terminal areas
+produce: early descents, level segments, sequencing. ADS-B shows the profiles flown, not the noise
 abatement rules, sequencing constraints or capacity limits that require them.
 <b>This describes what these flights fly. It does not measure what the airports,
 their airlines or their controllers could do differently.</b>"""),
@@ -2120,9 +2240,12 @@ flight going direct through an empty night sky</b> — which we read as the base
 staying out of reach rather than inefficiency, though nothing here separates the
 two.""",
          f"""Only {vert_oper:.1f} points move with traffic,
-routing and profile. The distinction is the difference between "European
-aviation wastes X" and "between comparable flights there is a spread of this
-size" — and only the second is something these data support."""),
+routing and profile — and that subtraction compares two groups of different
+length, since the floor is measured above 1,000 km. At equal distance the margin
+is about {vert_oper_eq:.1f} points; the rest is the distance mix. The distinction
+is the difference between "European aviation wastes X" and "between comparable
+flights there is a spread of this size" — and only the second is something these
+data support."""),
     ]
     finding_cards = "\n".join(
         f'<div class=card><h3>{i}. {t}</h3><p>{lead}</p>'
@@ -2247,6 +2370,12 @@ intervals.</p>
 <tr><td>— <b>operational margin</b> (traffic, routing, profile)</td>
 <td class=num><b>{vert_oper:.1f}</b></td></tr>
 </tbody></table>
+<p><b>Most of that margin is sector length, not operations.</b> The floor is
+measured above 1,000 km, where the median across all flights is
+{vert_long:.1f} points rather than {vert_fleet:.1f}. At equal distance the margin
+is about <b>{vert_oper_eq:.1f} points</b>, and the rest of the {vert_oper:.1f} is
+the distance mix between the two groups. If anything that makes the
+incompressible share larger than {vert_floor:.1f} on short sectors, not smaller.</p>
 <p>How this floor compares with references built on the <i>best profile actually
 observed</i> is set out in the methodology: those measure a different quantity,
 and the comparison needs its caveats stated beside it.</p>
@@ -2395,7 +2524,7 @@ airline decides on its own.</p>
 
 <p><b>The shorter the flight, the worse the arithmetic.</b> Below 200 km a flight
 burns about {band.iloc[0].med:.0f}% more than its ideal; on the longest sectors it
-is {band.iloc[-1].med:.0f}%. Climbing to altitude costs the same whether you then
+is {_band_hi}. Climbing to altitude costs the same whether you then
 fly for twenty minutes or for four hours, so on a short sector that fixed cost is
 most of the flight. This is geometry, not blame. But it is the clearest pattern in
 the whole dataset.</p>
@@ -2975,6 +3104,7 @@ replies are published on this site, in full and unconditionally.</p>
                              co2_t, excess_t, len(g_all), len(g), len(ga), gen,
                              sc_a, sc_b, sc_a_fuel_kt,
                              vert_floor, vert_fleet, vert_oper, n_floor,
+                             vert_long, vert_oper_eq,
                              conv_fleet, conv_ap1,
                              finding_sections, n_biz_routes, non_airliner_pct)
     OUT_METH.write_text(add_toc(meth))

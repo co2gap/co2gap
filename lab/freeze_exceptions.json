@@ -342,5 +342,33 @@
   {
     "match": "it says the gap was burnt near this airport, in the climb out of it or the descent into it",
     "reason": "Coda della stessa correzione: «in the climb out of it» reggeva quando le partenze erano all'83%; a 32% la frase prometteva una localizzazione che il dato non sostiene per quel capo. Riscritta come condizionale — «Where it does sit near an airport, it says the fuel was burnt there» — cosi' descrive cosa dice lo split dove lo dice, senza estenderlo a entrambi i capi. Nessuna cifra toccata, e la distinzione luogo/causa resta parola per parola."
+  },
+  {
+    "match": "this correction is necessary, not cosmetic: the raw gap correlates about −0.74 with sector length, so a raw ranking would order routes by shortness rather than by inefficiency",
+    "reason": "Corretto il 2026-08-28 in tarda serata, revisione di lettura di Fable 5 sul sito costruito, ogni rilievo riprodotto eseguendo il generatore sul dataset pubblicato. Le due correlazioni erano DIGITATE. Ora sono derivate, e SULLE ROTTE IN CLASSIFICA, che e' l'unita' di cui la frase parla: «a raw ranking would order routes». Il valore non cambia (-0,74 sulle rotte, ricalcolato), ma la frase ora dichiara l'unita' — per volo la stessa correlazione da' -0,54, ed e' un'altra grandezza."
+  },
+  {
+    "match": "after normalisation the residual correlation with distance is about +0.08",
+    "reason": "Corretto il 2026-08-28 in tarda serata, revisione di lettura di Fable 5 sul sito costruito, ogni rilievo riprodotto eseguendo il generatore sul dataset pubblicato. Il segno era SBAGLIATO, non solo la cifra: il residuo e' -0,04 sulle rotte in classifica (-0,08 per volo). La sostanza — residuo trascurabile — reggeva, il numero no. Ora derivato. Una cifra digitata che per caso torna giusta, come il -0,74 accanto, e' piu' pericolosa di una sbagliata: non la ricontrolla piu' nessuno."
+  },
+  {
+    "match": "in both cases the deviation is not in the route",
+    "reason": "Corretto il 2026-08-28 in tarda serata, revisione di lettura di Fable 5 sul sito costruito, ogni rilievo riprodotto eseguendo il generatore sul dataset pubblicato. FALSA per Jersey: +3,0 di laterale contro +2,7 di verticale, cioe' la deviazione sta anche nella rotta. La frase generalizzava a due aeroporti cio' che vale solo per London City (+1,2 lat / +2,6 vert). Riscritta per dire che i due NON deviano per lo stesso motivo, con la direzione derivata da _dove(lat, vert) invece che affermata."
+  },
+  {
+    "match": "the vertical component still dominates under the alternative decomposition convention described in the methodology, so it is not an artefact of that choice",
+    "reason": "Corretto il 2026-08-28 in tarda serata, revisione di lettura di Fable 5 sul sito costruito, ogni rilievo riprodotto eseguendo il generatore sul dataset pubblicato. FALSA due volte. Sotto la convenzione alternativa il verticale di Jersey scende a 7,0 contro 23,6 di laterale, quindi il laterale domina; e la frase serviva a difendere un'affermazione («non e' nella rotta») che era gia' falsa. Rimossa: la questione della convenzione resta in §8, dove ora l'ordinamento e' derivato."
+  },
+  {
+    "match": "a real concentration, though a hub with many routes is over-represented in any tail",
+    "reason": "Corretto il 2026-08-28 in tarda serata, revisione di lettura di Fable 5 sul sito costruito, ogni rilievo riprodotto eseguendo il generatore sul dataset pubblicato. «A real concentration» poggiava su UNA rotta su venti, contro un base rate dello 0,25% stampato come «0%» dal formato :.0f — un confronto assurdo come stampato (5% contro 0%). Sotto l'ipotesi nulla P(>=1 su 20) e' circa 0,05, al margine esatto. Ora: base rate a un decimale, «consistent with a concentration», e la fragilita' detta («it rests on a single route»), con singolare e plurale derivati dal conteggio."
+  },
+  {
+    "match": "profiles of this shape are what dense terminal areas produce: early descents, level segments, sequencing",
+    "reason": "Corretto il 2026-08-28 in tarda serata, revisione di lettura di Fable 5 sul sito costruito, ogni rilievo riprodotto eseguendo il generatore sul dataset pubblicato. La spiegazione causale era scritta per la storia verticale e seguiva una frase che attribuiva a entrambi gli aeroporti una deviazione di profilo. Per Jersey, che si divide quasi a meta', non e' sostenuta. Ora e' condizionale: «Where the gap sits in the profile, that shape is what dense terminal areas produce»."
+  },
+  {
+    "match": "their reference is the best observed profile , ours a physical optimum; they cover cruise only, we also cover climb, descent and speed; they assume nominal mass and no wind, we use estimated mass and real wind",
+    "reason": "Corretto il 2026-08-28 in tarda serata, revisione di lettura di Fable 5 sul sito costruito, ogni rilievo riprodotto eseguendo il generatore sul dataset pubblicato. Il fattore 2,6 su Pasutto era «explained by three stated differences», e la causa MAGGIORE non era fra le tre: pas_ours e' il gap TOTALE su 200-1500 NM (11,94 = 7,32 laterale + 4,63 verticale) mentre il 4,6% di Pasutto e' di sola crociera. Sette punti su dodici sono la rotta, che loro escludono per costruzione. Aggiunta come PRIMA delle quattro differenze. ⚠️ Aggiunto anche il verticale nostro sullo stesso perimetro (4,63% contro il loro 4,6%) ma dichiarando esplicitamente che NON e' una validazione: il nostro copre tutto il profilo, il loro la sola crociera, e la vicinanza e' una coincidenza fra due misure diverse. Presentarla come accordo sarebbe lo stesso errore del confronto con GAIA, ritirato il 28/08."
   }
 ]

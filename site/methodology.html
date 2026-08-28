@@ -123,8 +123,8 @@ belong to them.</p>
 <b>-0.9</b> for the other 137, and the deviation rises with
 traffic across the whole table (correlation +0.35 against the logarithm
 of movements). The highest of the fifteen is London Heathrow at
-+2.9. <b>No airport in the table sits more than 7 points above the
-norm, or more than 7 below it.</b> The airports
++2.9. <b>No airport in the table sits more than 6 points above the
+norm, or more than 8 below it.</b> The airports
 furthest from the norm are smaller ones: Jersey at +5.9 across
 4,206 movements, then London City at +4.0 &mdash; real
 deviations, measured on traffic too thin to move the European total. The median
@@ -140,16 +140,16 @@ nominal position moves between 2 and 6. Its
 magnitude is seasonal (+4.5 in the strongest month, +3.3 in
 the weakest); Jersey is steadier, never falling below rank
 7.<br>
-In both cases the deviation is not in the route — Jersey flies routes of
-normal length (+3.0 lateral) — but in how the flights climb, cruise and
-descend (+2.7 vertical). The vertical component still dominates under
-the alternative decomposition convention described in the methodology, so it is
-not an artefact of that choice.<br>
-1 of the twenty routes furthest from the norm have Jersey at one
-end, against a base rate of 0% of all ranked routes — a real
-concentration, though a hub with many routes is over-represented in any tail.
-Profiles of this shape are what dense terminal areas produce: early descents,
-level segments, sequencing. ADS-B shows the profiles flown, not the noise
+The two do not deviate for the same reason. Jersey's gap is split almost evenly between the two
+(+3.0 lateral, +2.7 vertical); London City's
+sits in the profile (+1.2 lateral, +2.6
+vertical). A single figure per airport does not say which of the two it is.<br>
+1 of the twenty routes furthest from the norm has Jersey at one
+end, against a base rate of 0.3% of all ranked routes — consistent
+with a concentration, though it rests on a single route and a hub with many routes is
+over-represented in any tail.
+Where the gap sits in the profile, that shape is what dense terminal areas
+produce: early descents, level segments, sequencing. ADS-B shows the profiles flown, not the noise
 abatement rules, sequencing constraints or capacity limits that require them.
 <b>This describes what these flights fly. It does not measure what the airports,
 their airlines or their controllers could do differently.</b></p>
@@ -173,12 +173,15 @@ much congestion costs, not a target a hub could adopt.</p>
 flight going direct through an empty night sky</b> — which we read as the baseline
 staying out of reach rather than inefficiency, though nothing here separates the
 two.<br>Only 2.9 points move with traffic,
-routing and profile. The distinction is the difference between "European
-aviation wastes X" and "between comparable flights there is a spread of this
-size" — and only the second is something these data support.</p>
+routing and profile — and that subtraction compares two groups of different
+length, since the floor is measured above 1,000 km. At equal distance the margin
+is about 0.9 points; the rest is the distance mix. The distinction
+is the difference between "European aviation wastes X" and "between comparable
+flights there is a spread of this size" — and only the second is something these
+data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-28 18:05 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-28 18:37 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -212,11 +215,19 @@ actually flown</td><td class=num>60–85 kg</td></tr>
 </tbody></table>
 <p>Over the same distance range Pasutto uses (200–1500 NM), their
 4.6% median for cruise alone compares with our 11.9% for
-the whole profile: a factor of <b>2.6</b>, explained
-by three stated differences.
-Their reference is the <i>best observed profile</i>, ours a physical optimum;
-they cover cruise only, we also cover climb, descent and speed; they assume
-nominal mass and no wind, we use estimated mass and real wind.</p>
+the whole flight: a factor of <b>2.6</b>, explained
+by four differences, of which the first is the largest.
+<b>Ours includes the route</b> — 7.3 of those 11.9 points are
+lateral — and theirs excludes it by construction; that one difference accounts for
+most of the factor. Then: their reference is the <i>best observed profile</i>,
+ours a physical optimum; they cover cruise only, we also cover climb, descent and
+speed; they assume nominal mass and no wind, we use estimated mass and real wind.</p>
+<p>Our vertical component alone over the same range is 4.6%, which lands
+next to their 4.6%. <b>We do not present that as agreement.</b>
+Ours covers the whole profile — climb and descent included, which is where our gap
+concentrates — while theirs is cruise only, so the two numbers are close without
+measuring the same thing. Read it as a coincidence worth knowing, not as a
+validation.</p>
 <p><b>Practical consequence:</b> multiplying our total by a carbon price and
 calling it "waste" would be wrong. We do not do it, and we ask that it not be
 done.</p>
@@ -235,6 +246,14 @@ and that the remaining 2.9 move with traffic, routing and profile — is
 an interpretation of that measurement, not a second measurement. Nothing here
 separates those causes from one another, and the residual may also carry
 variability of the model itself.</p>
+<p><b>And the subtraction compares two groups of different length.</b> The floor
+is measured on sectors above 1,000 km; across <i>all</i> flights above 1,000 km
+the median vertical gap is 3.1 points, not 5.1. At equal
+distance the margin is about <b>0.9 points</b> rather than
+2.9, and the difference between the two is the distance mix, which is
+not an operational quantity. The direction of that error is conservative for the
+reading above: on short sectors the incompressible share is likely larger than
+2.2, not smaller.</p>
 <p>The floor nearly coincides with the value a EUROCONTROL study obtains for
 cruise by comparing each flight with the <i>best observed profile</i>, a
 reference that already contains those constraints. Two independent routes, the
@@ -278,10 +297,10 @@ unreachability, which is common to both.</p>
 use the <b>Δ norm</b>: the deviation from the European median of flights of
 <i>the same length and the same aircraft type</i>. The theoretical optimum only
 serves as a shared unit of measurement.</p>
-<p>This correction is necessary, not cosmetic: the raw gap correlates about
-<b>−0.74</b> with sector length, so a raw ranking would order routes by
-shortness rather than by inefficiency. After normalisation the residual
-correlation with distance is about <b>+0.08</b>.</p>
+<p>This correction is necessary, not cosmetic: across the ranked routes the raw
+gap correlates about <b>-0.74</b> with sector length, so a raw ranking
+would order routes by shortness rather than by inefficiency. After normalisation
+the residual correlation with distance is about <b>-0.04</b>.</p>
 <p>The comparison is also made <b>at equal aircraft type</b>. An A320 and a B767
 on the same sector are not comparable, and without this second normalisation
 part of what the method charges to the route would really be the aircraft
@@ -379,6 +398,12 @@ route ranking across all <b>21 available month pairs</b>, rank
 correlation stays high throughout: median <b>0.867</b>, worst
 <b>0.789</b> (Feb→Jul), consecutive months
 0.924.</p>
+<p><b>These two checks were computed before the ground-fuel exclusion</b>, on the
+gate-to-gate figures this site no longer publishes, and they are re-run at the
+next release. The direction is known: taxi burn is structural per airport and
+stable month to month, so leaving it in could only have flattered a stability
+measured across months — the corrected figures are, if anything, harder to keep
+stable than the ones these numbers describe.</p>
 <p>The more informative detail is that the correlation <b>decays in order</b>
 with the time distance between months. That is the signature of a structural
 signal with modest seasonal drift: noise would give low correlations everywhere,
@@ -490,8 +515,8 @@ charging the extra kilometres at the <i>optimal</i> profile. The opposite
 convention charges them at the flight's <i>actual</i> CO<sub>2</sub> per kilometre,
 which moves weight towards the lateral component: for the <b>median flight</b> the
 split goes from 7.2 / 5.1 to
-8.7 / 3.5 points. <b>The vertical component still
-dominates</b>, including for the airport named in the findings
+8.7 / 3.5 points. <b>The lateral component is the larger one in all four pairs</b>, including for
+the airport named in the findings
 (18.9 / 12.3 becomes 23.6 / 7.0,
 on raw medians rather than deviations from the norm). The total is identical under
 both conventions <i>for every individual flight</i>. The four figures above are
@@ -663,7 +688,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026 — <a href="releases.html">what changes</a>.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-28 18:05 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-28 18:37 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>
