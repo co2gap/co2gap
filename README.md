@@ -229,6 +229,16 @@ chain. `requirements.txt` remains a compatibility alias for the lab lock.
 and every direct pin before a rerun. The Pi record is necessarily only Python
 3.11: its patch version was not captured with the first release.
 
+The fast regression suite is independent of the frozen data and network:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+It runs in CI and exercises download failure semantics, truncated and partial
+artefacts, release keysets and perimeters, ERA5 coverage, required phase and
+coverage inputs, exact headlines, and whole-generation site promotion.
+
 Production (per-day accumulation):
 
 ```bash
