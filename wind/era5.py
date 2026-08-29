@@ -23,6 +23,8 @@ import numpy as np
 
 # pressure levels from the surface to above airliner cruise (~45 kft).
 LEVELS = [1000, 925, 850, 700, 600, 500, 400, 300, 250, 200, 150]
+VARIABLES = ("u", "v")
+GRID = (0.25, 0.25)
 
 # ERA5 area order is [North, West, South, East]. Default = the EU-South box.
 # A wider box (e.g. full ECAC) is selected with ERA5_AREA="72,-32,27,45".
@@ -70,6 +72,101 @@ def alt_ft_to_hpa(alt_ft):
     return p
 
 
+class ERA5ValidationError(ValueError):
+    """A NetCDF is readable but does not contain the requested ERA5 field."""
+
+
+def _expected_axis(start: float, stop: float, step: float) -> np.ndarray:
+    intervals = (stop - start) / step
+    rounded = round(intervals)
+    if not np.isclose(intervals, rounded, rtol=0.0, atol=1e-9):
+        raise ERA5ValidationError(
+            f"ERA5 area boundary {start}..{stop} is not divisible by grid {step}"
+        )
+    return np.linspace(start, stop, rounded + 1, dtype=float)
+
+
+def validate_era5_dataset(ds, day_iso: str, *, levels=LEVELS, area=AREA,
+                          grid=GRID, variables=VARIABLES) -> None:
+    """Require the exact hourly wind cube requested for one UTC day."""
+    expected_vars = set(variables)
+    actual_vars = set(ds.data_vars)
+    if actual_vars != expected_vars:
+        raise ERA5ValidationError(
+            f"{day_iso}: ERA5 variables {sorted(actual_vars)!r}, expected "
+            f"{sorted(expected_vars)!r}"
+        )
+
+    required_coords = {"valid_time", "pressure_level", "latitude", "longitude"}
+    missing_coords = sorted(required_coords - set(ds.coords))
+    if missing_coords:
+        raise ERA5ValidationError(
+            f"{day_iso}: ERA5 coordinate(s) missing: {', '.join(missing_coords)}"
+        )
+
+    start = np.datetime64(day_iso, "h")
+    expected_times = start + np.arange(24).astype("timedelta64[h]")
+    actual_seconds = ds["valid_time"].values.astype("datetime64[s]")
+    expected_seconds = expected_times.astype("datetime64[s]")
+    if not np.array_equal(np.sort(actual_seconds), expected_seconds):
+        raise ERA5ValidationError(
+            f"{day_iso}: ERA5 valid_time must be exactly 00:00..23:00 UTC "
+            f"({len(actual_seconds)} timestamp(s) found)"
+        )
+
+    actual_levels = ds["pressure_level"].values.astype(float)
+    if not np.array_equal(np.sort(actual_levels),
+                          np.sort(np.asarray(levels, dtype=float))):
+        raise ERA5ValidationError(
+            f"{day_iso}: ERA5 pressure levels {actual_levels.tolist()!r}, "
+            f"expected {list(levels)!r}"
+        )
+
+    north, west, south, east = map(float, area)
+    lat_step, lon_step = map(float, grid)
+    expected_lats = _expected_axis(north, south, -lat_step)
+    expected_lons = _expected_axis(west, east, lon_step)
+    actual_lats = ds["latitude"].values.astype(float)
+    actual_lons = ds["longitude"].values.astype(float)
+    if (actual_lats.shape != expected_lats.shape
+            or not np.allclose(np.sort(actual_lats), np.sort(expected_lats),
+                               rtol=0.0, atol=1e-9)):
+        raise ERA5ValidationError(
+            f"{day_iso}: ERA5 latitude grid/area differs from "
+            f"{north}..{south} by {lat_step} degrees"
+        )
+    if (actual_lons.shape != expected_lons.shape
+            or not np.allclose(np.sort(actual_lons), np.sort(expected_lons),
+                               rtol=0.0, atol=1e-9)):
+        raise ERA5ValidationError(
+            f"{day_iso}: ERA5 longitude grid/area differs from "
+            f"{west}..{east} by {lon_step} degrees"
+        )
+
+    expected_dims = ("valid_time", "pressure_level", "latitude", "longitude")
+    for variable in variables:
+        if set(ds[variable].dims) != set(expected_dims):
+            raise ERA5ValidationError(
+                f"{day_iso}: ERA5 {variable} dimensions {ds[variable].dims!r}, "
+                f"expected {expected_dims!r}"
+            )
+
+
+def validate_era5_file(path: Path, day_iso: str | None = None, **kwargs) -> None:
+    """Open and validate one daily NetCDF without loading its wind arrays."""
+    import xarray as xr
+
+    path = Path(path)
+    expected_day = day_iso or path.stem
+    try:
+        with xr.open_dataset(str(path)) as ds:
+            validate_era5_dataset(ds, expected_day, **kwargs)
+    except ERA5ValidationError:
+        raise
+    except Exception as exc:
+        raise ERA5ValidationError(f"{expected_day}: cannot read ERA5 file {path}: {exc}") from exc
+
+
 def download_day(day_iso: str, levels=LEVELS, area=AREA, force=False) -> Path:
     """Download one day of hourly u,v on pressure levels. Returns the netcdf path."""
     ERA5_DIR.mkdir(parents=True, exist_ok=True)
@@ -86,7 +183,7 @@ def download_day(day_iso: str, levels=LEVELS, area=AREA, force=False) -> Path:
         "pressure_level": [str(x) for x in levels],
         "year": y, "month": m, "day": d,
         "time": [f"{h:02d}:00" for h in range(24)],
-        "area": area, "grid": [0.25, 0.25],
+        "area": area, "grid": list(GRID),
         "data_format": "netcdf",
     }, str(tmp))
     tmp.replace(out)
@@ -108,7 +205,19 @@ class WindField:
         from scipy.interpolate import RegularGridInterpolator
 
         # open each day and concat on time (no dask / open_mfdataset needed)
-        parts = [xr.open_dataset(str(p)) for p in sorted(map(str, nc_paths))]
+        parts = []
+        for raw_path in sorted(map(Path, nc_paths)):
+            part = xr.open_dataset(str(raw_path))
+            try:
+                validate_era5_dataset(part, raw_path.stem)
+            except Exception:
+                part.close()
+                for opened in parts:
+                    opened.close()
+                raise
+            parts.append(part)
+        if not parts:
+            raise ERA5ValidationError("cannot build an ERA5 field from no files")
         ds = xr.concat(parts, dim="valid_time") if len(parts) > 1 else parts[0]
         ds = ds.sortby("valid_time").sortby("latitude").sortby("longitude")
         ds = ds.sortby("pressure_level")

@@ -32,7 +32,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from wind.era5 import download_day, ERA5_DIR, LEVELS, AREA  # noqa: E402
+from wind.era5 import (AREA, ERA5_DIR, LEVELS, download_day,  # noqa: E402
+                       validate_era5_file)
 sys.path.insert(0, str(ROOT / "pipeline"))
 from release_manifest import optional_manifest              # noqa: E402
 
@@ -91,13 +92,8 @@ def is_valid(path: Path) -> bool:
     if not path.exists() or path.stat().st_size < 10_000:
         return False
     try:
-        import xarray as xr
-        ds = xr.open_dataset(str(path))
-        ok = ("u" in ds.variables and "v" in ds.variables
-              and ds.sizes.get("valid_time", 0) >= 20
-              and ds.sizes.get("pressure_level", 0) == len(LEVELS))
-        ds.close()
-        return ok
+        validate_era5_file(path, path.stem)
+        return True
     except Exception:
         return False
 

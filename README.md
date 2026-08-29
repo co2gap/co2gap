@@ -261,6 +261,11 @@ artefact. Verify it independently with
 Extra days may coexist in an accumulating *input cache*, but no release output
 directory may contain a missing or extra day.
 
+An ERA5 file counts as ready only when it contains the exact 24 UTC timestamps
+of its named date, all configured pressure levels, only the requested wind
+variables, and the complete configured area at the configured resolution. A
+readable partial day or a NetCDF from another box is retried, never interpolated.
+
 Every multi-day stage returns a non-zero status if any requested day fails or
 is missing. Exploratory accumulation may opt into `--allow-partial`; release
 mode rejects that flag. A failed Pi sync is fatal unless an update run explicitly

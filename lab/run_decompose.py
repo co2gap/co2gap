@@ -37,7 +37,8 @@ sys.path.insert(0, str(ROOT))
 
 from analysis import quality_gate, LOAD_FACTOR, RESERVE_KG   # noqa: E402
 from decompose import decompose_flight                        # noqa: E402
-from wind.era5 import WindField, required_wind_days           # noqa: E402
+from wind.era5 import (WindField, required_wind_days,         # noqa: E402
+                       validate_era5_file)
 from release_manifest import optional_manifest               # noqa: E402
 from artifact_contract import (file_fingerprint, read_contract,  # noqa: E402
                                validate_parquet, write_parquet)
@@ -97,27 +98,20 @@ def contract_inputs(day: str) -> dict:
 
 def era5_is_complete(path: Path) -> bool:
     """
-    A day counts as usable only if its ERA5 file is COMPLETE, not merely
-    present.
+    A day counts as usable only if its ERA5 field is the exact requested cube.
 
     This is the same trap the Pi backfill already learned about parquet
     ("valid footer, >0 rows" rather than "the file exists"), and it bites
     harder here. ERA5T trails real time by ~5 days, and at that boundary CDS
     happily returns a PARTIAL day — 2026-07-20 came back with 15 of 24 hours.
-    Nothing errors: WindField would build fine and RegularGridInterpolator,
-    which extrapolates by design, would silently invent wind for every flight
-    departing after the last available hour. Wrong numbers with no warning
-    are worse than a missing day, so we require all 11 pressure levels and
-    at least 20 of the 24 hourly steps, and skip the day otherwise.
+    Nothing errors merely because a NetCDF has fewer hours, a different level,
+    or a different box. Wrong numbers with no warning are worse than a missing
+    day, so the shared validator requires the date's exact 24 hourly timestamps,
+    levels, variables, area and resolution and skips the day otherwise.
     """
     try:
-        import xarray as xr
-        ds = xr.open_dataset(str(path))
-        ok = (ds.sizes.get("valid_time", 0) >= 20
-              and ds.sizes.get("pressure_level", 0) == 11
-              and "u" in ds.variables and "v" in ds.variables)
-        ds.close()
-        return ok
+        validate_era5_file(path, path.stem)
+        return True
     except Exception:
         return False
 

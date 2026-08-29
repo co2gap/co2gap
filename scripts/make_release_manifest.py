@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT))
 
 import track_quality  # noqa: E402
 from release_manifest import role_paths, set_checksum, sha256_file  # noqa: E402
-from wind.era5 import LEVELS  # noqa: E402
+from wind.era5 import GRID, LEVELS, VARIABLES  # noqa: E402
 import pyarrow.parquet as pq  # noqa: E402
 
 
@@ -112,8 +112,8 @@ def main() -> None:
             "ground": {"definition": "a3000t70", "altitude_below_ft": 3000.0,
                        "tas_below_kt": 70.0},
             "era5": {"area_nwse": [72.0, -32.0, 27.0, 45.0],
-                     "grid_degrees": [0.25, 0.25], "pressure_levels_hpa": LEVELS,
-                     "variables": ["u", "v"], "hours_utc": list(range(24))},
+                     "grid_degrees": list(GRID), "pressure_levels_hpa": LEVELS,
+                     "variables": list(VARIABLES), "hours_utc": list(range(24))},
             "openap_version": importlib.metadata.version("openap"),
             "track_quality": {
                 "gap_threshold_s": track_quality.GAP_THRESHOLD_S,
