@@ -277,6 +277,49 @@ a poststratification to the nominal aircraft-type/distance ideal-CO2 mix. The
 result measures a within-gate quality gradient. It is explicitly not an
 imputation, correction or bound for flights outside the gate.
 
+The next selection step is prepared, but cannot manufacture its missing input:
+
+```bash
+python lab/uncertainty.py selection-validation-sample \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --per-stratum 3 \
+  --target-sample 5000 \
+  --top-types 12 \
+  --seed 20260901 \
+  --out /tmp/co2gap-selection-validation-sample.json \
+  --match-out /tmp/co2gap-selection-validation-match-list.json
+```
+
+The first private file holds gate status and sampling weights. The second is a
+blinded list for an independent trajectory source: timestamps, aircraft type
+and endpoint coordinates, but no release flight id, gate result, quality band
+or resolved airport. On the frozen release the design selects 5,000 flights in
+843 cells, expands exactly to 2,115,824 pre-gate flights, has a maximum weight
+of 701.23 and a Kish effective size of 3,537.75. The aggregate registration in
+`selection-validation-design.json` freezes those parameters, partitions and
+the SHA-256 of both private files; regeneration fails if either digest changes.
+
+Independent results must follow
+`lab/selection-validation-outcomes.schema.json`. Analyse them with:
+
+```bash
+python lab/uncertainty.py selection-validation \
+  --sample /tmp/co2gap-selection-validation-sample.json \
+  --match-list /tmp/co2gap-selection-validation-match-list.json \
+  --outcomes /private/path/independent-outcomes.json \
+  --out /tmp/co2gap-selection-validation-result.json
+```
+
+The runner writes a blocked diagnostic and exits non-zero on partial response
+rather than modelling a second selection process. A measured row must also have
+one unambiguous match, report temporal
+and endpoint offsets, and pass the second source's documented trajectory-quality
+rule. A complete result carries a design-based sampling interval for the
+independent proxy; it is still not a general uncertainty interval or automatic
+correction of the published headline.
+
 ## Reproducing
 
 The two machines have separate direct-dependency locks:

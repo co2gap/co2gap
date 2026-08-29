@@ -15,20 +15,28 @@ sys.path[:0] = [str(ROOT / "pipeline"), str(ROOT / "ingest"),
                 str(ROOT / "lab"), str(ROOT)]
 
 from decompose import _bounded_cruise_alt_ft  # noqa: E402
+from release_manifest import ReleaseManifest, sha256_file  # noqa: E402
 from uncertainty import (UncertaintyError, _metrics, _require_nested_counts,  # noqa: E402
                          block_resample_days,
                          _require_outside_repository, poststratified_selection,
-                         stratified_sample,
+                         selection_validation_result, stratified_sample,
+                         stratified_selection_validation_sample,
                          selection_audit, selection_flags, validate_registry,
-                         validate_scenarios)
+                         validate_scenarios, validate_selection_design,
+                         verify_registered_selection_artifacts,
+                         write_selection_validation_artifacts)
 
 
 class RegistryTests(unittest.TestCase):
     def test_tracked_register_and_scenarios_validate(self):
         registry = json.loads((ROOT / "uncertainty-register.json").read_text())
         scenarios = json.loads((ROOT / "uncertainty-scenarios.json").read_text())
+        design = json.loads((ROOT / "selection-validation-design.json").read_text())
         self.assertEqual(validate_registry(registry), {"estimands": 6, "sources": 16})
         self.assertEqual(validate_scenarios(scenarios)["nominal"], "nominal")
+        self.assertEqual(
+            validate_selection_design(design, ROOT / "release-manifest.json"),
+            {"population_rows": 2115824, "sample_rows": 5000, "strata": 843})
 
     def test_quantified_source_requires_a_range(self):
         registry = json.loads((ROOT / "uncertainty-register.json").read_text())
@@ -48,6 +56,17 @@ class RegistryTests(unittest.TestCase):
         broken["publication_status"] = "confidence_interval"
         with self.assertRaisesRegex(UncertaintyError, "diagnostic_only"):
             validate_scenarios(broken)
+
+    def test_selection_design_cannot_overclaim_or_break_its_partition(self):
+        design = json.loads((ROOT / "selection-validation-design.json").read_text())
+        broken = copy.deepcopy(design)
+        broken["primary_headline_bias_bounded"] = True
+        with self.assertRaisesRegex(UncertaintyError, "cannot claim"):
+            validate_selection_design(broken, ROOT / "release-manifest.json")
+        broken = copy.deepcopy(design)
+        broken["by_failure_mask"][0]["sample_rows"] -= 1
+        with self.assertRaisesRegex(UncertaintyError, "do not close on sample"):
+            validate_selection_design(broken, ROOT / "release-manifest.json")
 
 
 class SamplingTests(unittest.TestCase):
@@ -195,6 +214,188 @@ class SelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(UncertaintyError, "not nested"):
             _require_nested_counts(
                 {"loose": 10, "strict": 11}, [("loose", "strict")])
+
+
+class SelectionValidationTests(unittest.TestCase):
+    @staticmethod
+    def population():
+        rows = []
+        for flight_id in range(12):
+            passed = flight_id < 6
+            rows.append({
+                "day": "2026-01-01", "flight_id": flight_id,
+                "typecode": "A320" if flight_id % 2 == 0 else "B738",
+                "origin_icao": "LIRF", "dest_icao": "LIMC",
+                "failure_mask": "0000" if passed else "0100",
+                "gate_pass": passed, "distance_band": "300_500",
+                "coverage_band": "095_099" if passed else "050_085",
+                "dep_ts": 1767225600 + flight_id * 3600,
+                "arr_ts": 1767227400 + flight_id * 3600,
+                "o_lat": 41.8, "o_lon": 12.2,
+                "d_lat": 45.6, "d_lon": 8.7,
+            })
+        return pd.DataFrame(rows)
+
+    def test_private_validation_sample_is_deterministic_and_expands(self):
+        population = self.population()
+        first, common = stratified_selection_validation_sample(
+            population, per_stratum=2, top_types=1, target_sample=10, seed=19,
+            namespace="test-release")
+        second, _ = stratified_selection_validation_sample(
+            population, per_stratum=2, top_types=1, target_sample=10, seed=19,
+            namespace="test-release")
+        pd.testing.assert_frame_equal(first, second)
+        self.assertEqual(common, ["A320"])
+        self.assertAlmostEqual(first.weight.sum(), len(population))
+        self.assertEqual(set(first.failure_mask), {"0000", "0100"})
+        with self.assertRaisesRegex(UncertaintyError, "at least 2"):
+            stratified_selection_validation_sample(
+                population, per_stratum=1, top_types=1, target_sample=10, seed=19,
+                namespace="test-release")
+        with self.assertRaisesRegex(UncertaintyError, "below the"):
+            stratified_selection_validation_sample(
+                population, per_stratum=2, top_types=1, target_sample=7, seed=19,
+                namespace="test-release")
+
+    def test_match_list_is_blinded_and_complete_outcomes_are_estimable(self):
+        with tempfile.TemporaryDirectory(
+                prefix="co2gap-selection-validation-") as raw:
+            root = Path(raw)
+            manifest_path = root / "release-manifest.json"
+            manifest_path.write_text(json.dumps({
+                "schema_version": 1,
+                "release": {"id": "test-release", "days": ["2026-01-01"]},
+            }))
+            manifest = ReleaseManifest.load(manifest_path)
+            population = self.population()
+            sample, common = stratified_selection_validation_sample(
+                population, per_stratum=2, top_types=1, target_sample=10, seed=19,
+                namespace=manifest.release_id)
+            sample_path = root / "sample.json"
+            match_path = root / "match.json"
+            sample_value, match_value = write_selection_validation_artifacts(
+                manifest=manifest, population=population, sample=sample,
+                common_types=common, per_stratum=2, top_types=1, seed=19,
+                target_sample=10,
+                output=sample_path, match_output=match_path, verified=False)
+            registered = {"private_artifact_sha256": {
+                "sample": sha256_file(sample_path),
+                "match_list": sha256_file(match_path),
+            }}
+            verify_registered_selection_artifacts(
+                registered, sample_path=sample_path, match_path=match_path)
+            broken_registration = copy.deepcopy(registered)
+            broken_registration["private_artifact_sha256"]["sample"] = "0" * 64
+            with self.assertRaisesRegex(UncertaintyError, "differs"):
+                verify_registered_selection_artifacts(
+                    broken_registration, sample_path=sample_path,
+                    match_path=match_path)
+            self.assertEqual(len(sample_value["rows"]), len(match_value["rows"]))
+            self.assertFalse(match_value["gate_status_disclosed"])
+            for row in match_value["rows"]:
+                self.assertNotIn("flight_id", row)
+                self.assertNotIn("failure_mask", row)
+                self.assertNotIn("coverage_band", row)
+
+            outcomes = {
+                "schema_version": 1,
+                "kind": "co2gap-independent-selection-outcomes",
+                "publication_status": "private_per_flight",
+                "sample_sha256": sha256_file(sample_path),
+                "match_list_sha256": sha256_file(match_path),
+                "source": {
+                    "name": "synthetic independent source",
+                    "version": "test-v1",
+                    "method_reference": "test protocol",
+                    "quality_rule": "synthetic complete trajectory",
+                    "independent_of_primary_adsb_lol": True,
+                    "primary_trajectory_used": False,
+                    "matching_received_gate_status": False,
+                },
+                "rows": [],
+            }
+            gate_by_id = {
+                row["sample_id"]: row["gate_pass"]
+                for row in sample_value["rows"]
+            }
+            for sample_id, passed in gate_by_id.items():
+                outcomes["rows"].append({
+                    "sample_id": sample_id, "status": "measured",
+                    "real_co2_kg": 110.0 if passed else 130.0,
+                    "ideal_co2_kg": 100.0,
+                    "hybrid_co2_kg": 105.0 if passed else 110.0,
+                    "match_candidate_count": 1,
+                    "departure_time_delta_s": 0.0,
+                    "arrival_time_delta_s": 0.0,
+                    "origin_distance_km": 0.0,
+                    "destination_distance_km": 0.0,
+                    "proxy_coverage_fraction": 1.0,
+                    "proxy_quality_pass": True,
+                })
+            outcomes_path = root / "outcomes.json"
+            outcomes_path.write_text(json.dumps(outcomes))
+            result = selection_validation_result(
+                sample_path=sample_path, match_path=match_path,
+                outcomes_path=outcomes_path)
+            self.assertEqual(result["estimation_status"], "complete_proxy_estimate")
+            effect = result["proxy_estimate"][
+                "selection_effect_full_minus_gate_pass"]["gap_total_pct"]
+            self.assertAlmostEqual(effect["point_percentage_points"], 10.0)
+            self.assertAlmostEqual(effect["design_standard_error_percentage_points"], 0.0)
+
+            outcomes["rows"][0]["match_candidate_count"] = 2
+            outcomes_path.write_text(json.dumps(outcomes))
+            with self.assertRaisesRegex(UncertaintyError, "exactly one"):
+                selection_validation_result(
+                    sample_path=sample_path, match_path=match_path,
+                    outcomes_path=outcomes_path)
+            outcomes["rows"][0]["match_candidate_count"] = 1
+            outcomes["rows"][0]["proxy_quality_pass"] = False
+            outcomes_path.write_text(json.dumps(outcomes))
+            with self.assertRaisesRegex(UncertaintyError, "quality rule"):
+                selection_validation_result(
+                    sample_path=sample_path, match_path=match_path,
+                    outcomes_path=outcomes_path)
+            outcomes["rows"][0]["proxy_quality_pass"] = True
+
+            outcomes["rows"][0].update({
+                "status": "not_found", "reason": "not present in second source"})
+            outcomes_path.write_text(json.dumps(outcomes))
+            with self.assertRaisesRegex(UncertaintyError, "contains real_co2_kg"):
+                selection_validation_result(
+                    sample_path=sample_path, match_path=match_path,
+                    outcomes_path=outcomes_path)
+            outcomes["rows"][0].update({
+                "real_co2_kg": None, "ideal_co2_kg": None,
+                "hybrid_co2_kg": None,
+            })
+            outcomes_path.write_text(json.dumps(outcomes))
+            blocked = selection_validation_result(
+                sample_path=sample_path, match_path=match_path,
+                outcomes_path=outcomes_path)
+            self.assertEqual(
+                blocked["estimation_status"],
+                "blocked_incomplete_independent_outcomes")
+            self.assertNotIn("proxy_estimate", blocked)
+
+            tampered_match = copy.deepcopy(match_value)
+            tampered_match["rows"][0]["failure_mask"] = "0000"
+            match_path.write_text(json.dumps(tampered_match))
+            outcomes["match_list_sha256"] = sha256_file(match_path)
+            outcomes_path.write_text(json.dumps(outcomes))
+            with self.assertRaisesRegex(UncertaintyError, "discloses gate"):
+                selection_validation_result(
+                    sample_path=sample_path, match_path=match_path,
+                    outcomes_path=outcomes_path)
+
+            match_path.write_text(json.dumps(match_value))
+            outcomes["match_list_sha256"] = sha256_file(match_path)
+            outcomes["source"]["independent_of_primary_adsb_lol"] = False
+            outcomes_path.write_text(json.dumps(outcomes))
+            with self.assertRaisesRegex(UncertaintyError, "must declare"):
+                selection_validation_result(
+                    sample_path=sample_path, match_path=match_path,
+                    outcomes_path=outcomes_path)
 
 
 class MetricTests(unittest.TestCase):

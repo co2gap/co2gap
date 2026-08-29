@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-selection-validation-design",
+  "publication_status": "aggregate_preregistration",
+  "analysis_status": "awaiting_independent_outcomes",
+  "release_id": "2026-09-01",
+  "release_manifest_sha256": "db69266d5a4d9ce66f1d1f9bc4533cb31e6fd1b6d8e4fbcc600c53e6a5266a0c",
+  "population_boundary": "Durable complete, supported and successfully modelled pre-gate flights; upstream ingestion exclusions remain outside this design.",
+  "population_rows": 2115824,
+  "sample_rows": 5000,
+  "strata": 843,
+  "maximum_weight": 701.2272727272727,
+  "kish_effective_sample_size": 3537.746608018857,
+  "parameters": {
+    "seed": 20260901,
+    "minimum_per_stratum": 3,
+    "target_sample_rows": 5000,
+    "top_types": 12,
+    "allocation": "minimum per stratum, then proportional to remaining population",
+    "dimensions": [
+      "quality-gate failure mask",
+      "great-circle distance band",
+      "coverage band",
+      "aircraft type group"
+    ],
+    "common_types": [
+      "A320",
+      "B738",
+      "A20N",
+      "B38M",
+      "A21N",
+      "A319",
+      "A321",
+      "E190",
+      "E195",
+      "E295",
+      "E75L",
+      "CRJ9"
+    ]
+  },
+  "by_failure_mask": [
+    {"failure_mask": "0000", "gate_pass": true, "population_rows": 1833127, "sample_rows": 3061},
+    {"failure_mask": "0001", "gate_pass": false, "population_rows": 3088, "sample_rows": 110},
+    {"failure_mask": "0011", "gate_pass": false, "population_rows": 23, "sample_rows": 20},
+    {"failure_mask": "0100", "gate_pass": false, "population_rows": 108104, "sample_rows": 533},
+    {"failure_mask": "0101", "gate_pass": false, "population_rows": 369, "sample_rows": 49},
+    {"failure_mask": "0111", "gate_pass": false, "population_rows": 4, "sample_rows": 4},
+    {"failure_mask": "1000", "gate_pass": false, "population_rows": 150221, "sample_rows": 761},
+    {"failure_mask": "1001", "gate_pass": false, "population_rows": 150, "sample_rows": 45},
+    {"failure_mask": "1100", "gate_pass": false, "population_rows": 20684, "sample_rows": 385},
+    {"failure_mask": "1101", "gate_pass": false, "population_rows": 54, "sample_rows": 32}
+  ],
+  "private_artifact_sha256": {
+    "sample": "c8dd48e4486676c001c9df5c23ab527329ce48a02fc9fb62bc0f34a86e92112e",
+    "match_list": "0b8244faea95b2d0059545c66fef76de515607513ff5bcf43313011920d62ae3"
+  },
+  "outcome_contract": "lab/selection-validation-outcomes.schema.json",
+  "outcome_contract_sha256": "f3fcad06a9df104cd6c1e0bdd2408096613aa09892a138dbb93392708a72153d",
+  "primary_headline_bias_bounded": false,
+  "privacy": "Aggregate registration only; contains no sampled flight, time, endpoint or release-local flight key."
+}

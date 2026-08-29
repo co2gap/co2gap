@@ -174,9 +174,9 @@
       "correlation_scope": "coverage area, route and flight length",
       "nominal": "thresholds in pipeline/track_quality.py",
       "range": "exact conditional retention by flights, great-circle kilometres, flown kilometres and first-pass CO2",
-      "evidence": "release manifest; pipeline/track_quality.py; lab/uncertainty.py selection and selection-stress",
-      "propagation": "exact aggregate attrition plus nested stricter-quality and day-omission diagnostics with type/distance poststratification",
-      "notes": "The denominator begins after complete-flight reconstruction and successful modelling. Retention and the within-gate quality gradient are measured, but the resulting bias in the headline is not bounded because rejected flights lack a trustworthy decomposition. Changing a gate changes the target population and must be reported separately from model uncertainty."
+      "evidence": "release manifest; pipeline/track_quality.py; lab/uncertainty.py selection and selection-stress; selection-validation-design.json aggregate pre-registration",
+      "propagation": "exact aggregate attrition; nested internal stress; independent-proxy estimator prepared but blocked until complete external outcomes exist",
+      "notes": "The denominator begins after complete-flight reconstruction and successful modelling. Retention and the within-gate quality gradient are measured, and a 5,000-flight weighted validation sample is frozen outside git. The resulting bias in the headline remains unbounded because no independent outcome source has populated that sample. Changing a gate changes the target population and must be reported separately from model uncertainty."
     },
     {
       "id": "upstream_ingestion_selection",

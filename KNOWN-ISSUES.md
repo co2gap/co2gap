@@ -266,3 +266,16 @@ do not drive the headline. This is evidence of a within-gate quality gradient,
 not a correction or a bound for excluded flights. The strict 99%/120-second
 cases require maximum weights above 41 and are retained only as instability
 diagnostics.
+
+An independent validation design is now executable but has no outcome source
+yet. `lab/uncertainty.py selection-validation-sample` pre-registers 5,000
+private flights in 843 failure/quality/fleet cells and expands exactly to the
+2,115,824-flight durable pre-gate population. A minimum-plus-proportional
+allocation reduced the measured maximum weight from 22,541 under equal
+allocation to 701.23, and raised Kish effective size from about 299 to
+3,537.75. The separate external match list withholds release id, gate result,
+quality fields and resolved airports. Until a genuinely independent trajectory
+or operational source returns complete outcomes, the analyzer exits with an
+explicit blocked estimate and the headline bias remains unbounded. The design
+also cannot recover the earlier regional, incomplete-leg, unsupported-type or
+fuel-model exclusions.

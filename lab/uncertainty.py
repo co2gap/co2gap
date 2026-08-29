@@ -21,6 +21,7 @@ commands use /tmp); only aggregate JSON leaves the runner.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -69,6 +70,13 @@ RATIO_METRICS = (
     "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct",
     "gap_total_pct_calibrated",
 )
+VALIDATION_MATCH_COLUMNS = (
+    "dep_ts", "arr_ts", "o_lat", "o_lon", "d_lat", "d_lon",
+)
+VALIDATION_OUTCOME_STATUSES = {
+    "measured", "not_found", "unusable", "source_error",
+}
+NORMAL_95 = 1.959963984540054
 
 
 class UncertaintyError(RuntimeError):
@@ -184,6 +192,113 @@ def validate_scenarios(data: dict) -> dict:
         if not isinstance(scenario.get("purpose"), str) or not scenario["purpose"].strip():
             raise UncertaintyError(f"{sid} lacks a purpose")
     return {"scenarios": len(scenario_ids), "nominal": nominal}
+
+
+def validate_selection_design(data: dict, release_manifest: Path) -> dict:
+    """Validate the aggregate pre-registration without reading private rows."""
+    if (data.get("schema_version"), data.get("kind")) != (
+            1, "co2gap-selection-validation-design"):
+        raise UncertaintyError("unknown selection-validation design contract")
+    if data.get("publication_status") != "aggregate_preregistration":
+        raise UncertaintyError(
+            "selection-validation design must remain aggregate_preregistration")
+    if data.get("analysis_status") != "awaiting_independent_outcomes":
+        raise UncertaintyError(
+            "selection-validation design cannot claim outcomes before validation")
+    if data.get("primary_headline_bias_bounded") is not False:
+        raise UncertaintyError(
+            "selection-validation design cannot claim the headline bias is bounded")
+    if data.get("release_manifest_sha256") != sha256_file(release_manifest):
+        raise UncertaintyError(
+            "selection-validation design names another release manifest")
+    integer_fields = ("population_rows", "sample_rows", "strata")
+    for field in integer_fields:
+        if (not isinstance(data.get(field), int) or isinstance(data.get(field), bool)
+                or data[field] <= 0):
+            raise UncertaintyError(
+                f"selection-validation design has invalid {field}")
+    if data["sample_rows"] > data["population_rows"]:
+        raise UncertaintyError(
+            "selection-validation sample exceeds its population")
+    maximum_weight = _finite_number(
+        data.get("maximum_weight"), "selection design maximum_weight")
+    effective = _finite_number(
+        data.get("kish_effective_sample_size"),
+        "selection design kish_effective_sample_size")
+    if maximum_weight < 1 or not 0 < effective <= data["sample_rows"]:
+        raise UncertaintyError(
+            "selection-validation design has impossible weight diagnostics")
+    parameters = data.get("parameters")
+    if not isinstance(parameters, dict):
+        raise UncertaintyError("selection-validation design lacks parameters")
+    if parameters.get("target_sample_rows") != data["sample_rows"]:
+        raise UncertaintyError(
+            "selection-validation target differs from sample rows")
+    common_types = parameters.get("common_types")
+    if (not isinstance(common_types, list)
+            or len(common_types) != parameters.get("top_types")
+            or len(common_types) != len(set(common_types))):
+        raise UncertaintyError(
+            "selection-validation common aircraft types do not close")
+    masks = data.get("by_failure_mask")
+    if not isinstance(masks, list) or not masks:
+        raise UncertaintyError("selection-validation design lacks failure masks")
+    names = [row.get("failure_mask") for row in masks if isinstance(row, dict)]
+    if (len(names) != len(masks) or len(names) != len(set(names))
+            or any(len(str(name)) != 4 or set(str(name)) - {"0", "1"}
+                   for name in names)):
+        raise UncertaintyError("selection-validation failure masks are invalid")
+    for row in masks:
+        if (not isinstance(row.get("population_rows"), int)
+                or not isinstance(row.get("sample_rows"), int)
+                or not 0 < row["sample_rows"] <= row["population_rows"]):
+            raise UncertaintyError(
+                "selection-validation failure-mask counts are invalid")
+        if row.get("gate_pass") is not (row["failure_mask"] == "0000"):
+            raise UncertaintyError(
+                "selection-validation failure mask contradicts gate status")
+    if sum(row["population_rows"] for row in masks) != data["population_rows"]:
+        raise UncertaintyError(
+            "selection-validation failure masks do not close on population")
+    if sum(row["sample_rows"] for row in masks) != data["sample_rows"]:
+        raise UncertaintyError(
+            "selection-validation failure masks do not close on sample")
+    hashes = data.get("private_artifact_sha256")
+    if not isinstance(hashes, dict):
+        raise UncertaintyError(
+            "selection-validation design lacks private artifact hashes")
+    for name in ("sample", "match_list"):
+        value = hashes.get(name)
+        if (not isinstance(value, str) or len(value) != 64
+                or set(value) - set("0123456789abcdef")):
+            raise UncertaintyError(
+                f"selection-validation design has invalid {name} hash")
+    outcome_contract = data.get("outcome_contract")
+    if not isinstance(outcome_contract, str) or not outcome_contract.strip():
+        raise UncertaintyError(
+            "selection-validation design lacks an outcome contract")
+    outcome_path = ROOT / outcome_contract
+    if (not outcome_path.is_file()
+            or data.get("outcome_contract_sha256") != sha256_file(outcome_path)):
+        raise UncertaintyError(
+            "selection-validation outcome contract differs from pre-registration")
+    return {
+        "population_rows": data["population_rows"],
+        "sample_rows": data["sample_rows"],
+        "strata": data["strata"],
+    }
+
+
+def verify_registered_selection_artifacts(
+        design: dict, *, sample_path: Path, match_path: Path) -> None:
+    """Require regenerated private files to match the tracked registration."""
+    hashes = design["private_artifact_sha256"]
+    if sha256_file(sample_path) != hashes["sample"]:
+        raise UncertaintyError(
+            "private selection-validation sample differs from pre-registration")
+    if sha256_file(match_path) != hashes["match_list"]:
+        raise UncertaintyError(
+            "private selection-validation match list differs from pre-registration")
 
 
 def _require_columns(frame: pd.DataFrame, columns: Iterable[str], label: str) -> None:
@@ -553,6 +668,591 @@ def write_sample_manifest(*, manifest: ReleaseManifest, population: pd.DataFrame
     }
     _atomic_json(output, value)
     return value
+
+
+def build_selection_validation_population(
+        manifest: ReleaseManifest, flights_dir: Path,
+        decomposition_dir: Path, *, verify: bool) -> pd.DataFrame:
+    """Build the exact durable pre-gate frame for independent validation."""
+    import track_quality
+
+    manifest.verify_track_quality(track_quality)
+    if verify:
+        manifest.verify_set("flights", flights_dir)
+        manifest.verify_set("decomposition", decomposition_dir, artifact=True)
+    columns = list(dict.fromkeys(SELECTION_COLUMNS + VALIDATION_MATCH_COLUMNS))
+    frames = []
+    for day in manifest.days:
+        flight_path = flights_dir / day / "flights.parquet"
+        dec_path = decomposition_dir / f"{day}.parquet"
+        try:
+            flights = pq.read_table(flight_path, columns=columns).to_pandas()
+            decomposition = pq.read_table(
+                dec_path, columns=["flight_id"]).to_pandas()
+        except Exception as exc:
+            raise UncertaintyError(
+                f"cannot read selection-validation input for {day}: {exc}") from exc
+        if flights.flight_id.duplicated().any():
+            raise UncertaintyError(
+                f"duplicate source flight_id in selection validation for {day}")
+        if decomposition.flight_id.duplicated().any():
+            raise UncertaintyError(
+                f"duplicate decomposition flight_id in selection validation for {day}")
+        if set(flights.day.astype(str)) != {day}:
+            raise UncertaintyError(
+                f"selection-validation flight table identifies another day: {day}")
+        flags = selection_flags(
+            flights, coverage_min=track_quality.COV_MIN,
+            gc_min_km=track_quality.GC_MIN_KM)
+        expected = set(flights.loc[flags.all(axis=1), "flight_id"].astype(int))
+        actual = set(decomposition.flight_id.astype(int))
+        if expected != actual:
+            raise UncertaintyError(
+                f"{day}: selection-validation gate differs from release population: "
+                f"{len(expected - actual)} missing, {len(actual - expected)} extra")
+        frame = flights.copy()
+        frame["failure_mask"] = flags.apply(
+            lambda row: "".join("0" if bool(value) else "1" for value in row),
+            axis=1)
+        frame["gate_pass"] = flags.all(axis=1).to_numpy(bool)
+        bands = _selection_bands(frame)
+        frame["distance_band"] = bands["distance_band_km"].astype(
+            "string").fillna("UNKNOWN")
+        frame["coverage_band"] = bands["coverage_band"].astype(
+            "string").fillna("UNKNOWN")
+        frames.append(frame)
+    population = pd.concat(frames, ignore_index=True)
+    keys = list(zip(population.day.astype(str), population.flight_id.astype(int)))
+    if len(keys) != len(set(keys)):
+        raise UncertaintyError("selection-validation population has duplicate keys")
+    numeric = population[list(VALIDATION_MATCH_COLUMNS)].apply(
+        pd.to_numeric, errors="coerce").to_numpy(float)
+    if not np.isfinite(numeric).all():
+        raise UncertaintyError(
+            "selection-validation population has invalid matching coordinates or times")
+    if (pd.to_numeric(population.arr_ts) <=
+            pd.to_numeric(population.dep_ts)).any():
+        raise UncertaintyError(
+            "selection-validation population has non-positive flight duration")
+    return population
+
+
+def stratified_selection_validation_sample(
+        population: pd.DataFrame, *, per_stratum: int, top_types: int,
+        target_sample: int, seed: int,
+        namespace: str) -> tuple[pd.DataFrame, list[str]]:
+    """Draw a minimum-plus-proportional SRS inside validation cells."""
+    if per_stratum < 2:
+        raise UncertaintyError(
+            "selection-validation per-stratum must be at least 2 for variance estimation")
+    if top_types < 1:
+        raise UncertaintyError("selection-validation top-types must be positive")
+    required = (
+        "day", "flight_id", "typecode", "failure_mask", "gate_pass",
+        "distance_band", "coverage_band", *VALIDATION_MATCH_COLUMNS,
+    )
+    _require_columns(population, required, "selection-validation population")
+    pop = population.copy()
+    pop["typecode"] = pop.typecode.astype("string").fillna("UNKNOWN")
+    counts = pop.typecode.value_counts(dropna=False)
+    common_types = [
+        str(name) for name, _ in sorted(
+            counts.items(), key=lambda item: (-int(item[1]), str(item[0])))[:top_types]
+    ]
+    pop["type_group"] = pop.typecode.where(
+        pop.typecode.isin(common_types), "OTHER")
+    pop["stratum"] = (
+        pop.failure_mask.astype(str) + "|" + pop.distance_band.astype(str)
+        + "|" + pop.coverage_band.astype(str) + "|" + pop.type_group.astype(str))
+    stratum_sizes = pop.groupby("stratum", sort=True).size().astype(int)
+    allocation = stratum_sizes.clip(upper=per_stratum).astype(int)
+    minimum_total = int(allocation.sum())
+    target_sample = min(int(target_sample), len(pop))
+    if target_sample < minimum_total:
+        raise UncertaintyError(
+            f"selection-validation target-sample {target_sample} is below the "
+            f"{minimum_total}-row stratum minimum")
+    remaining = target_sample - minimum_total
+    capacity = stratum_sizes - allocation
+    while remaining:
+        total_capacity = int(capacity.sum())
+        if total_capacity <= 0:
+            raise UncertaintyError(
+                "selection-validation allocation cannot reach its target")
+        quotas = capacity.astype(float) * remaining / total_capacity
+        additions = np.floor(quotas).astype(int).clip(upper=capacity)
+        used = int(additions.sum())
+        if used == 0:
+            order = sorted(
+                capacity[capacity > 0].index,
+                key=lambda name: (
+                    -(float(quotas[name]) - math.floor(float(quotas[name]))),
+                    -int(capacity[name]), str(name)),
+            )
+            for name in order[:remaining]:
+                additions[name] = 1
+            used = int(additions.sum())
+        allocation += additions
+        capacity = stratum_sizes - allocation
+        remaining -= used
+    if int(allocation.sum()) != target_sample:
+        raise UncertaintyError("selection-validation allocation does not close")
+    rng = np.random.default_rng(seed)
+    selected = []
+    for stratum, group in pop.groupby("stratum", sort=True):
+        ordered = group.sort_values(["day", "flight_id"])
+        n_population = len(ordered)
+        n_sample = int(allocation[stratum])
+        positions = np.sort(
+            rng.choice(n_population, size=n_sample, replace=False))
+        chosen = ordered.iloc[positions].copy()
+        chosen["population_n"] = n_population
+        chosen["sample_n"] = n_sample
+        chosen["weight"] = n_population / n_sample
+        selected.append(chosen)
+    if not selected:
+        raise UncertaintyError("selection-validation population is empty")
+    sample = pd.concat(selected, ignore_index=True)
+    sample["sample_id"] = [
+        hashlib.sha256(
+            f"{namespace}\0{seed}\0{day}\0{int(fid)}".encode()).hexdigest()[:24]
+        for day, fid in zip(sample.day.astype(str), sample.flight_id)
+    ]
+    if sample.sample_id.duplicated().any():
+        raise UncertaintyError("selection-validation sample id collision")
+    sample = sample.sort_values(["day", "flight_id"]).reset_index(drop=True)
+    if not math.isclose(
+            float(sample.weight.sum()), float(len(pop)), rel_tol=0, abs_tol=1e-8):
+        raise UncertaintyError(
+            "selection-validation weights do not expand to the population")
+    return sample, common_types
+
+
+def write_selection_validation_artifacts(
+        *, manifest: ReleaseManifest, population: pd.DataFrame,
+        sample: pd.DataFrame, common_types: list[str], per_stratum: int,
+        top_types: int, target_sample: int, seed: int, output: Path,
+        match_output: Path,
+        verified: bool) -> tuple[dict, dict]:
+    """Write separate private design and blinded matching manifests."""
+    _require_outside_repository(output, "selection-validation sample")
+    _require_outside_repository(match_output, "selection-validation match list")
+    if output.resolve() == match_output.resolve():
+        raise UncertaintyError(
+            "selection-validation sample and match list must be different files")
+    design_rows = []
+    match_rows = []
+    for row in sample.itertuples(index=False):
+        design_rows.append({
+            "sample_id": str(row.sample_id),
+            "day": str(row.day),
+            "flight_id": int(row.flight_id),
+            "failure_mask": str(row.failure_mask),
+            "gate_pass": bool(row.gate_pass),
+            "stratum": str(row.stratum),
+            "distance_band": str(row.distance_band),
+            "coverage_band": str(row.coverage_band),
+            "type_group": str(row.type_group),
+            "population_n": int(row.population_n),
+            "sample_n": int(row.sample_n),
+            "weight": float(row.weight),
+        })
+        match_rows.append({
+            "sample_id": str(row.sample_id),
+            "day": str(row.day),
+            "typecode": str(row.typecode),
+            "dep_ts": int(row.dep_ts),
+            "arr_ts": int(row.arr_ts),
+            "o_lat": float(row.o_lat), "o_lon": float(row.o_lon),
+            "d_lat": float(row.d_lat), "d_lon": float(row.d_lon),
+        })
+    by_mask = []
+    for mask, group in sample.groupby("failure_mask", sort=True):
+        by_mask.append({
+            "failure_mask": str(mask),
+            "gate_pass": bool(group.gate_pass.iloc[0]),
+            "sample_rows": int(len(group)),
+            "expanded_population_rows": float(group.weight.sum()),
+        })
+    value = {
+        "schema_version": 1,
+        "kind": "co2gap-selection-validation-sample",
+        "publication_status": "private_per_flight",
+        "analysis_status": "awaiting_independent_outcomes",
+        "release_id": manifest.release_id,
+        "release_manifest_sha256": sha256_file(manifest.path),
+        "source_manifest_verified": bool(verified),
+        "seed": int(seed),
+        "population_boundary": (
+            "Durable complete, supported and successfully modelled pre-gate flights; "
+            "upstream ingestion exclusions remain outside this sample."
+        ),
+        "population_rows": int(len(population)),
+        "sample_rows": int(len(sample)),
+        "strata": int(sample.stratum.nunique()),
+        "weight_sum": float(sample.weight.sum()),
+        "max_weight": float(sample.weight.max()),
+        "kish_effective_sample_size": float(
+            sample.weight.sum() ** 2 / np.square(sample.weight).sum()),
+        "design": {
+            "method": "simple random sample without replacement inside every stratum",
+            "allocation": (
+                "minimum per stratum, then proportional to remaining population"),
+            "dimensions": [
+                "quality-gate failure mask", "great-circle distance band",
+                "coverage band", "aircraft type group",
+            ],
+            "failure_mask_order": list(SELECTION_GATE_ORDER),
+            "minimum_per_stratum": int(per_stratum),
+            "target_sample_rows": int(target_sample),
+            "top_types_requested": int(top_types),
+            "common_types": common_types,
+            "other_type_group": "OTHER",
+            "variance_estimable": True,
+        },
+        "by_failure_mask": by_mask,
+        "outcome_contract": {
+            "required_components_kg": [
+                "real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg"],
+            "required_match_diagnostics": [
+                "match_candidate_count=1", "departure_time_delta_s",
+                "arrival_time_delta_s", "origin_distance_km",
+                "destination_distance_km", "proxy_coverage_fraction",
+                "proxy_quality_pass=true",
+            ],
+            "required_source_declarations": [
+                "independent_of_primary_adsb_lol=true",
+                "primary_trajectory_used=false",
+                "matching_received_gate_status=false",
+                "quality_rule",
+            ],
+            "complete_sample_required_for_estimation": True,
+        },
+        "privacy": (
+            "Contains release-local flight keys and sampling weights. Keep outside git; "
+            "publish only aggregate validation results."
+        ),
+        "rows": design_rows,
+    }
+    _atomic_json(output, value)
+    sample_hash = sha256_file(output)
+    match_value = {
+        "schema_version": 1,
+        "kind": "co2gap-selection-validation-match-list",
+        "publication_status": "private_per_flight",
+        "release_id": manifest.release_id,
+        "sample_sha256": sample_hash,
+        "gate_status_disclosed": False,
+        "primary_track_quality_disclosed": False,
+        "matching_fields": [
+            "day", "typecode", "dep_ts", "arr_ts",
+            "o_lat", "o_lon", "d_lat", "d_lon",
+        ],
+        "privacy": (
+            "Times and endpoints can identify a flight. Share only with the independent "
+            "matcher under the validation protocol and do not publish."
+        ),
+        "rows": match_rows,
+    }
+    _atomic_json(match_output, match_value)
+    return value, match_value
+
+
+def _proxy_metrics(totals: np.ndarray) -> dict[str, float]:
+    real, ideal, hybrid = (float(value) for value in totals)
+    if not all(math.isfinite(value) and value >= 0 for value in totals):
+        raise UncertaintyError("independent proxy totals must be finite and non-negative")
+    if ideal <= 0:
+        raise UncertaintyError("independent proxy ideal CO2 must be positive")
+    return {
+        "co2_real_tonnes": real / 1000.0,
+        "co2_ideal_tonnes": ideal / 1000.0,
+        "co2_gap_tonnes": (real - ideal) / 1000.0,
+        "gap_total_pct": (real - ideal) / ideal * 100.0,
+        "gap_lateral_pct": (hybrid - ideal) / ideal * 100.0,
+        "gap_vertical_pct": (real - hybrid) / ideal * 100.0,
+    }
+
+
+def _proxy_ratio_gradient(totals: np.ndarray, metric: str) -> np.ndarray:
+    real, ideal, hybrid = (float(value) for value in totals)
+    if ideal <= 0:
+        raise UncertaintyError("cannot differentiate a proxy ratio with zero ideal CO2")
+    if metric == "gap_total_pct":
+        return np.asarray([100.0 / ideal, -100.0 * real / ideal ** 2, 0.0])
+    if metric == "gap_lateral_pct":
+        return np.asarray([0.0, -100.0 * hybrid / ideal ** 2, 100.0 / ideal])
+    if metric == "gap_vertical_pct":
+        return np.asarray([
+            100.0 / ideal, -100.0 * (real - hybrid) / ideal ** 2,
+            -100.0 / ideal,
+        ])
+    raise UncertaintyError(f"unknown independent proxy ratio: {metric}")
+
+
+def _complete_proxy_estimate(joined: pd.DataFrame) -> dict:
+    """Estimate full-minus-passing ratios and design-only sampling variance."""
+    totals = np.zeros(6, dtype=float)
+    covariance = np.zeros((6, 6), dtype=float)
+    for stratum, group in joined.groupby("stratum", sort=True):
+        population_values = group.population_n.unique()
+        sample_values = group.sample_n.unique()
+        if len(population_values) != 1 or len(sample_values) != 1:
+            raise UncertaintyError(
+                f"inconsistent selection-validation design metadata in {stratum}")
+        population_n, sample_n = int(population_values[0]), int(sample_values[0])
+        if len(group) != sample_n or not 0 < sample_n <= population_n:
+            raise UncertaintyError(
+                f"selection-validation sample count does not close in {stratum}")
+        outcome = group[[
+            "real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg"]].to_numpy(float)
+        passed = group.gate_pass.to_numpy(bool)[:, None]
+        vector = np.concatenate([outcome, outcome * passed], axis=1)
+        totals += population_n * vector.mean(axis=0)
+        if sample_n < population_n:
+            if sample_n < 2:
+                raise UncertaintyError(
+                    f"selection-validation variance is not estimable in {stratum}")
+            covariance += (
+                population_n ** 2 * (1.0 - sample_n / population_n)
+                * np.cov(vector, rowvar=False, ddof=1) / sample_n)
+    full_totals, accepted_totals = totals[:3], totals[3:]
+    full = _proxy_metrics(full_totals)
+    accepted = _proxy_metrics(accepted_totals)
+    effects = {}
+    for metric in ("gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"):
+        point = float(full[metric] - accepted[metric])
+        gradient = np.concatenate([
+            _proxy_ratio_gradient(full_totals, metric),
+            -_proxy_ratio_gradient(accepted_totals, metric),
+        ])
+        variance = float(gradient @ covariance @ gradient)
+        if variance < -1e-12:
+            raise UncertaintyError(
+                f"selection-validation variance is negative for {metric}")
+        standard_error = math.sqrt(max(0.0, variance))
+        effects[metric] = {
+            "point_percentage_points": point,
+            "design_standard_error_percentage_points": standard_error,
+            "normal_95_interval_percentage_points": [
+                point - NORMAL_95 * standard_error,
+                point + NORMAL_95 * standard_error,
+            ],
+        }
+    return {
+        "full_pre_gate_proxy": full,
+        "gate_pass_proxy": accepted,
+        "selection_effect_full_minus_gate_pass": effects,
+        "interval_scope": (
+            "Sampling-design uncertainty only, conditional on complete outcomes and "
+            "the validity of the declared independent proxy."
+        ),
+    }
+
+
+def selection_validation_result(*, sample_path: Path, match_path: Path,
+                                outcomes_path: Path) -> dict:
+    """Validate independent outcomes and estimate only a complete design."""
+    sample = _load_json(sample_path)
+    match = _load_json(match_path)
+    outcomes = _load_json(outcomes_path)
+    if (sample.get("schema_version"), sample.get("kind")) != (
+            1, "co2gap-selection-validation-sample"):
+        raise UncertaintyError("unknown selection-validation sample contract")
+    if (match.get("schema_version"), match.get("kind")) != (
+            1, "co2gap-selection-validation-match-list"):
+        raise UncertaintyError("unknown selection-validation match-list contract")
+    if (outcomes.get("schema_version"), outcomes.get("kind")) != (
+            1, "co2gap-independent-selection-outcomes"):
+        raise UncertaintyError("unknown independent-outcome contract")
+    if outcomes.get("publication_status") != "private_per_flight":
+        raise UncertaintyError(
+            "independent outcomes must be marked private_per_flight")
+    if match.get("sample_sha256") != sha256_file(sample_path):
+        raise UncertaintyError("match list names another validation sample")
+    if outcomes.get("sample_sha256") != sha256_file(sample_path):
+        raise UncertaintyError("independent outcomes name another validation sample")
+    if outcomes.get("match_list_sha256") != sha256_file(match_path):
+        raise UncertaintyError("independent outcomes name another match list")
+    if match.get("gate_status_disclosed") is not False:
+        raise UncertaintyError("match list discloses gate status")
+    if match.get("primary_track_quality_disclosed") is not False:
+        raise UncertaintyError("match list discloses primary track quality")
+    source = outcomes.get("source")
+    if not isinstance(source, dict):
+        raise UncertaintyError("independent outcomes lack source declarations")
+    for field in ("name", "version", "method_reference", "quality_rule"):
+        if not isinstance(source.get(field), str) or not source[field].strip():
+            raise UncertaintyError(f"independent outcome source lacks {field}")
+    required_declarations = {
+        "independent_of_primary_adsb_lol": True,
+        "primary_trajectory_used": False,
+        "matching_received_gate_status": False,
+    }
+    for field, expected in required_declarations.items():
+        if source.get(field) is not expected:
+            raise UncertaintyError(
+                f"independent outcome source must declare {field}={str(expected).lower()}")
+
+    sample_rows = sample.get("rows")
+    match_rows = match.get("rows")
+    outcome_rows = outcomes.get("rows")
+    for rows, label in ((sample_rows, "sample"), (match_rows, "match list"),
+                        (outcome_rows, "independent outcomes")):
+        if not isinstance(rows, list) or not rows:
+            raise UncertaintyError(f"selection-validation {label} has no rows")
+    sample_frame = pd.DataFrame(sample_rows)
+    match_frame = pd.DataFrame(match_rows)
+    outcome_frame = pd.DataFrame(outcome_rows)
+    for frame, label in ((sample_frame, "sample"), (match_frame, "match list"),
+                         (outcome_frame, "independent outcomes")):
+        _require_columns(frame, ("sample_id",), label)
+        if frame.sample_id.duplicated().any():
+            raise UncertaintyError(f"selection-validation {label} has duplicate ids")
+    expected_ids = set(sample_frame.sample_id.astype(str))
+    if set(match_frame.sample_id.astype(str)) != expected_ids:
+        raise UncertaintyError("match-list ids differ from the validation sample")
+    forbidden_match_fields = {
+        "flight_id", "failure_mask", "gate_pass", "coverage_frac",
+        "coverage_band", "max_gap_s", "flown_ge_09gc", "origin_icao",
+        "dest_icao", "weight", "population_n", "sample_n", "stratum",
+    }
+    disclosed = sorted(forbidden_match_fields.intersection(match_frame.columns))
+    if disclosed:
+        raise UncertaintyError(
+            f"match list discloses gate or design fields: {disclosed}")
+    if set(outcome_frame.sample_id.astype(str)) != expected_ids:
+        raise UncertaintyError("independent-outcome ids differ from the validation sample")
+    _require_columns(
+        sample_frame,
+        ("stratum", "failure_mask", "gate_pass", "population_n", "sample_n", "weight"),
+        "selection-validation sample")
+    _require_columns(outcome_frame, ("status",), "independent outcomes")
+    unknown_statuses = sorted(
+        set(outcome_frame.status.astype(str)) - VALIDATION_OUTCOME_STATUSES)
+    if unknown_statuses:
+        raise UncertaintyError(
+            f"independent outcomes contain unknown statuses: {unknown_statuses}")
+    joined = sample_frame.merge(
+        outcome_frame, on="sample_id", how="left", validate="one_to_one")
+    measured = joined.status == "measured"
+    for row in joined.loc[~measured].itertuples(index=False):
+        if not isinstance(getattr(row, "reason", None), str) or not row.reason.strip():
+            raise UncertaintyError(
+                f"non-measured independent outcome lacks a reason: {row.sample_id}")
+        for field in ("real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg"):
+            value = getattr(row, field, None)
+            if value is not None and not pd.isna(value):
+                raise UncertaintyError(
+                    f"non-measured independent outcome contains {field}: {row.sample_id}")
+    if measured.any():
+        _require_columns(
+            joined, (
+                "real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg",
+                "match_candidate_count", "departure_time_delta_s",
+                "arrival_time_delta_s", "origin_distance_km",
+                "destination_distance_km", "proxy_coverage_fraction",
+                "proxy_quality_pass",
+            ),
+            "independent outcomes")
+        values = joined.loc[measured, [
+            "real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg"]].apply(
+                pd.to_numeric, errors="coerce").to_numpy(float)
+        if (not np.isfinite(values).all() or (values < 0).any()
+                or (values[:, 1] <= 0).any()):
+            raise UncertaintyError(
+                "measured independent outcomes contain invalid CO2 components")
+        candidates = pd.to_numeric(
+            joined.loc[measured, "match_candidate_count"], errors="coerce")
+        if (candidates.isna().any() or (candidates != 1).any()):
+            raise UncertaintyError(
+                "measured independent outcomes require exactly one match candidate")
+        diagnostics = joined.loc[measured, [
+            "departure_time_delta_s", "arrival_time_delta_s",
+            "origin_distance_km", "destination_distance_km",
+            "proxy_coverage_fraction",
+        ]].apply(pd.to_numeric, errors="coerce")
+        if (not np.isfinite(diagnostics.to_numpy(float)).all()
+                or (diagnostics < 0).any().any()
+                or (diagnostics.proxy_coverage_fraction > 1).any()):
+            raise UncertaintyError(
+                "measured independent outcomes contain invalid match or quality diagnostics")
+        quality_values = joined.loc[measured, "proxy_quality_pass"].tolist()
+        if not all(
+                isinstance(value, (bool, np.bool_)) and bool(value)
+                for value in quality_values):
+            raise UncertaintyError(
+                "measured independent outcomes must pass the declared proxy quality rule")
+        joined.loc[measured, [
+            "real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg"]] = values
+
+    response = {
+        "sample_rows": int(len(joined)),
+        "measured_rows": int(measured.sum()),
+        "measured_row_share": float(measured.mean()),
+        "measured_weight_share": float(
+            joined.loc[measured, "weight"].sum() / joined.weight.sum()),
+        "status_counts": {
+            str(status): int(count)
+            for status, count in joined.status.value_counts().sort_index().items()
+        },
+        "by_failure_mask": [],
+    }
+    if measured.any():
+        response["measured_match_diagnostics"] = {
+            column: {
+                "median": float(joined.loc[measured, column].median()),
+                "q95": float(joined.loc[measured, column].quantile(0.95)),
+                "max": float(joined.loc[measured, column].max()),
+            }
+            for column in (
+                "departure_time_delta_s", "arrival_time_delta_s",
+                "origin_distance_km", "destination_distance_km",
+                "proxy_coverage_fraction",
+            )
+        }
+    for mask, group in joined.groupby("failure_mask", sort=True):
+        group_measured = group.status == "measured"
+        response["by_failure_mask"].append({
+            "failure_mask": str(mask),
+            "sample_rows": int(len(group)),
+            "measured_rows": int(group_measured.sum()),
+            "measured_weight_share": float(
+                group.loc[group_measured, "weight"].sum() / group.weight.sum()),
+        })
+    complete = bool(measured.all())
+    result = {
+        "schema_version": 1,
+        "kind": "co2gap-selection-validation-result",
+        "publication_status": "diagnostic_only",
+        "release_id": sample.get("release_id"),
+        "sample_sha256": sha256_file(sample_path),
+        "match_list_sha256": sha256_file(match_path),
+        "outcomes_sha256": sha256_file(outcomes_path),
+        "source": source,
+        "source_independence_declared_not_verified_by_code": True,
+        "response": response,
+        "estimation_status": (
+            "complete_proxy_estimate" if complete
+            else "blocked_incomplete_independent_outcomes"),
+        "primary_headline_bias_bounded": False,
+        "limitations": [
+            "The source-independence declarations are contract fields, not proof.",
+            "Match and proxy-quality diagnostics are reported, but their validity "
+            "still depends on the external method reference.",
+            "The design covers only the durable pre-gate population, not upstream exclusions.",
+            "A proxy selection effect is not automatically the bias of the published model.",
+            "The interval, when available, contains sampling-design uncertainty only.",
+        ],
+    }
+    if complete:
+        result["proxy_estimate"] = _complete_proxy_estimate(joined)
+    else:
+        result["blocked_reason"] = (
+            "Every sampled flight must have an independent measured outcome; response "
+            "weighting would add a second unvalidated selection model."
+        )
+    return result
 
 
 def _metrics(frame: pd.DataFrame) -> dict[str, float]:
@@ -1302,6 +2002,9 @@ def main(argv: list[str] | None = None) -> int:
     check = sub.add_parser("validate", help="validate register and diagnostic scenarios")
     check.add_argument("--registry", type=Path, default=ROOT / "uncertainty-register.json")
     check.add_argument("--scenarios", type=Path, default=ROOT / "uncertainty-scenarios.json")
+    check.add_argument(
+        "--selection-design", type=Path,
+        default=ROOT / "selection-validation-design.json")
 
     sample_parser = sub.add_parser("sample", help="write a weighted stratified sample manifest")
     sample_parser.add_argument("--release-manifest", type=Path, required=True)
@@ -1339,6 +2042,37 @@ def main(argv: list[str] | None = None) -> int:
                                default="a3000t70")
     stress_parser.add_argument("--out", type=Path, required=True)
 
+    validation_sample_parser = sub.add_parser(
+        "selection-validation-sample",
+        help="draw a private pre-gate sample and blinded external match list")
+    validation_sample_parser.add_argument(
+        "--release-manifest", type=Path, required=True)
+    validation_sample_parser.add_argument("--flights-dir", type=Path, required=True)
+    validation_sample_parser.add_argument(
+        "--decomposition-dir", type=Path, required=True)
+    validation_sample_parser.add_argument("--per-stratum", type=int, default=3)
+    validation_sample_parser.add_argument("--target-sample", type=int, default=5000)
+    validation_sample_parser.add_argument("--top-types", type=int, default=12)
+    validation_sample_parser.add_argument("--seed", type=int, default=20260901)
+    validation_sample_parser.add_argument("--out", type=Path, required=True)
+    validation_sample_parser.add_argument("--match-out", type=Path, required=True)
+    validation_sample_parser.add_argument(
+        "--selection-design", type=Path,
+        default=ROOT / "selection-validation-design.json")
+    validation_sample_parser.add_argument(
+        "--skip-manifest-verification", action="store_true")
+
+    validation_parser = sub.add_parser(
+        "selection-validation",
+        help="validate complete independent outcomes and estimate proxy selection")
+    validation_parser.add_argument("--sample", type=Path, required=True)
+    validation_parser.add_argument("--match-list", type=Path, required=True)
+    validation_parser.add_argument("--outcomes", type=Path, required=True)
+    validation_parser.add_argument("--out", type=Path, required=True)
+    validation_parser.add_argument(
+        "--selection-design", type=Path,
+        default=ROOT / "selection-validation-design.json")
+
     sensitivity_parser = sub.add_parser(
         "sensitivity", help="run paired finite-difference scenarios")
     _common_release_arguments(sensitivity_parser)
@@ -1355,10 +2089,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate":
         registry = validate_registry(_load_json(args.registry))
         scenarios = validate_scenarios(_load_json(args.scenarios))
+        design = validate_selection_design(
+            _load_json(args.selection_design), ROOT / "release-manifest.json")
         print(f"uncertainty register: {registry['estimands']} estimands, "
               f"{registry['sources']} sources")
         print(f"diagnostic scenarios: {scenarios['scenarios']}, "
               f"nominal={scenarios['nominal']}")
+        print(
+            f"selection validation: {design['sample_rows']:,} rows in "
+            f"{design['strata']:,} strata pre-registered")
         return 0
 
     if args.command == "sample":
@@ -1413,6 +2152,63 @@ def main(argv: list[str] | None = None) -> int:
             f"drop two worst days {deltas['drop_worst_2_retention_days']:+.3f} pp "
             f"-> {args.out}")
         return 0
+
+    if args.command == "selection-validation-sample":
+        _require_outside_repository(args.out, "selection-validation sample")
+        _require_outside_repository(
+            args.match_out, "selection-validation match list")
+        manifest = ReleaseManifest.load(args.release_manifest)
+        verify_sample = not args.skip_manifest_verification
+        population = build_selection_validation_population(
+            manifest, args.flights_dir, args.decomposition_dir,
+            verify=verify_sample)
+        sample, common_types = stratified_selection_validation_sample(
+            population, per_stratum=args.per_stratum,
+            top_types=args.top_types, target_sample=args.target_sample,
+            seed=args.seed,
+            namespace=manifest.release_id)
+        value, _ = write_selection_validation_artifacts(
+            manifest=manifest, population=population, sample=sample,
+            common_types=common_types, per_stratum=args.per_stratum,
+            top_types=args.top_types, target_sample=args.target_sample,
+            seed=args.seed, output=args.out,
+            match_output=args.match_out, verified=verify_sample)
+        design = _load_json(args.selection_design)
+        validate_selection_design(design, args.release_manifest)
+        verify_registered_selection_artifacts(
+            design, sample_path=args.out, match_path=args.match_out)
+        print(
+            f"selection validation sample: {value['sample_rows']:,} private rows "
+            f"in {value['strata']:,} strata expand to "
+            f"{value['weight_sum']:,.0f} pre-gate flights; independent outcomes "
+            f"still required -> {args.out} · {args.match_out}")
+        return 0
+
+    if args.command == "selection-validation":
+        design = _load_json(args.selection_design)
+        validate_selection_design(design, ROOT / "release-manifest.json")
+        verify_registered_selection_artifacts(
+            design, sample_path=args.sample, match_path=args.match_list)
+        result = selection_validation_result(
+            sample_path=args.sample, match_path=args.match_list,
+            outcomes_path=args.outcomes)
+        result["aggregate_preregistration_verified"] = True
+        _atomic_json(args.out, result)
+        if result["estimation_status"] != "complete_proxy_estimate":
+            print(
+                "selection validation: estimation BLOCKED because independent "
+                f"outcomes are incomplete -> {args.out}")
+            return 2
+        else:
+            effect = result["proxy_estimate"][
+                "selection_effect_full_minus_gate_pass"]["gap_total_pct"]
+            interval = effect["normal_95_interval_percentage_points"]
+            print(
+                "selection validation: independent-proxy full-minus-gate effect "
+                f"{effect['point_percentage_points']:+.3f} pp "
+                f"(design-only 95% {interval[0]:+.3f}..{interval[1]:+.3f}) "
+                f"-> {args.out}")
+            return 0
 
     verify = not args.skip_manifest_verification
     if args.command == "release-summary":

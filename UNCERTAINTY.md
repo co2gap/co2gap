@@ -193,6 +193,81 @@ reported as unstable stress cases. Even the moderate gradient is not a bound:
 poststratification does not make quality random within a type/distance cell, and
 it cannot establish the missing outcome on the rejected side.
 
+## 7. Pre-registered independent selection sample
+
+The durable pre-gate tables still contain the release-local keys, time window,
+endpoint coordinates and type of flights rejected by the four quality checks.
+They do not contain the raw dump or a second measurement of the trajectory.
+The next defensible step is therefore split in two: draw the sample now, before
+seeing a second-source outcome, and estimate only after an independent source
+returns it.
+
+```bash
+python lab/uncertainty.py selection-validation-sample \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --per-stratum 3 \
+  --target-sample 5000 \
+  --top-types 12 \
+  --seed 20260901 \
+  --out /tmp/co2gap-selection-validation-sample.json \
+  --match-out /tmp/co2gap-selection-validation-match-list.json
+```
+
+The design forms cells from the exact four-bit failure mask, distance band,
+coverage band and the twelve most common aircraft types plus `OTHER`. It takes
+at least three observations from each cell, then allocates the balance in
+proportion to the remaining population. Simple random sampling without
+replacement happens within every cell. The frozen frame contains 2,115,824
+flights; 5,000 are selected across 843 cells, including 3,061 passing controls
+and 1,939 rejected flights. The weights close exactly on the frame, the maximum
+is 701.23 and their Kish effective sample size is 3,537.75.
+
+`selection-validation-design.json` is the public, aggregate pre-registration.
+It contains no flight row, time or endpoint, but freezes the parameters, exact
+failure-mask partition and SHA-256 of both private outputs. The command verifies
+those hashes on every regeneration and fails on a different draw.
+
+The two outputs are deliberately different. The design file contains private
+release keys, failure mask and weight. The matching list withholds all of those
+and exposes only an opaque sample id, day, type, timestamps and endpoint
+coordinates. Those fields can still identify a flight, so both files stay
+outside git and only aggregate results may be published.
+
+The independent source must return real, ideal and hybrid CO2 components under
+the contract in `lab/selection-validation-outcomes.schema.json`, declare that
+it is independent of adsb.lol, use no primary trajectory and confirm that the
+matcher did not receive gate status. These declarations are recorded, not
+proved, by code. A suitable source could be an independently collected
+trajectory or an ANSP/operator record; another transformation of the same
+adsb.lol trace would not satisfy the contract.
+
+Every measured row must resolve to exactly one candidate and report departure
+and arrival time offsets, endpoint distances and coverage of the independent
+trajectory. It must pass the source's documented quality rule. These fields do
+not prove a correct match, but prevent an ambiguous or visibly incomplete
+second trace from silently becoming the answer.
+
+```bash
+python lab/uncertainty.py selection-validation \
+  --sample /tmp/co2gap-selection-validation-sample.json \
+  --match-list /tmp/co2gap-selection-validation-match-list.json \
+  --outcomes /private/path/independent-outcomes.json \
+  --out /tmp/co2gap-selection-validation-result.json
+```
+
+Every sampled id must be returned, including explicit `not_found`, `unusable`
+or `source_error` states. Unless all 5,000 are measured, estimation is blocked:
+the diagnostic is written but the command exits non-zero. Response weighting
+would merely replace the original selection problem with a second unvalidated
+model. With complete outcomes the estimator expands each
+cell to its known population size and reports full-pre-gate minus gate-passing
+ratios with finite-population, design-based standard errors. That interval is
+conditional on the proxy and sample design. It contains neither proxy error nor
+model uncertainty, does not cover upstream ingestion exclusions and cannot by
+itself be attached to the public 12.1% figure.
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:
