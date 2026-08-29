@@ -351,7 +351,6 @@ interrupted write leaves a temporary, never a truncated result.
 Site generation:
 
 ```bash
-ADSB_ROOT=$PWD \
 ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
 ADSB_PHASE_DIR=$PWD/data/decomposition_ecac_phase \
 ADSB_GROUND_DIR=$PWD/data/ground_share_ecac \
@@ -361,19 +360,17 @@ ADSB_COVERAGE_JSON=$PWD/data/coverage_ecac.json \
 ADSB_RELEASE_MANIFEST=$PWD/release-manifest.json \
 ADSB_RELEASE_HEADLINES=$PWD/release-headlines.json \
 ADSB_SITE_OUT=$PWD/site/index.html \
-python lab/site_build.py
+python lab/site_build.py --profile release
 ```
 
-None of those variables are optional, and two of them fail *silently* rather
-than loudly: without `ADSB_DECOMP_DIR` the script reads whichever decomposition
-directory it finds by default, and without `ADSB_PHASE_DIR` it does not error at
-all — it falls back to older wording that says the gap cannot be located inside
-the flight, and drops the whole phase attribution. `ADSB_GROUND_DIR` is the
-opposite case and deliberately so: without it the script *exits*, because the
-alternative is a gap that silently prices taxiing at a cruise fuel flow. It has
-a working default, which is why it is written out above rather than relied on —
-a runbook followed at midnight should not depend on a directory being where the
-code guesses. The run must print
+The `release` profile makes all nine variables above mandatory before staging
+starts. It verifies the manifest, the exact decomposition/phase/ground day sets
+and checksums, calibration, airports and coverage; an absent phase split or even
+an import error in its attribution code is fatal. The older wording that omits
+phase attribution exists only under the explicit `--profile exploratory`, which
+announces on stderr that release guarantees and the frozen-headline gate are
+disabled and reports the reason for every fallback. An exploratory build should
+always set `ADSB_SITE_OUT` to a disposable directory. The release run must print
 **1,833,127 flights · 197 days · 23.37 Mt · lat 7.51 · vert 4.59 · KEA +2.26 ·
 152 airports · 208 flagged routes**; anything else means a different dataset was
 read. Before rendering, `lab/headline_check.py` compares thirteen unrounded

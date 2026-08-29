@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
+import os
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
+
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "pipeline"))
@@ -50,7 +55,7 @@ class SiteBuildTests(unittest.TestCase):
             (destination / "old.html").write_text("old generation")
             before = self.snapshot(destination)
 
-            def fail_late():
+            def fail_late(*args, **kwargs):
                 site_build.OUT.write_text("<!doctype html>partial")
                 raise RuntimeError("injected late failure")
 
@@ -59,7 +64,7 @@ class SiteBuildTests(unittest.TestCase):
                                  destination / "methodology.html"), \
                     patch.object(site_build, "_build_site_tree", fail_late), \
                     self.assertRaisesRegex(RuntimeError, "injected late failure"):
-                site_build.main()
+                site_build.main(site_build.EXPLORATORY_PROFILE)
             self.assertEqual(self.snapshot(destination), before)
             self.assertFalse(list(parent.glob(".site.build-*")))
 
@@ -70,7 +75,7 @@ class SiteBuildTests(unittest.TestCase):
             destination.mkdir()
             (destination / "obsolete.html").write_text("stale")
 
-            def build_fixture():
+            def build_fixture(*args, **kwargs):
                 for relative in site_build.GENERATED_SITE_FILES:
                     content = ("<!doctype html>fixture" if relative.endswith(".html")
                                else "fixture")
@@ -80,11 +85,55 @@ class SiteBuildTests(unittest.TestCase):
                     patch.object(site_build, "OUT_METH",
                                  destination / "methodology.html"), \
                     patch.object(site_build, "_build_site_tree", build_fixture):
-                site_build.main()
+                site_build.main(site_build.EXPLORATORY_PROFILE)
             self.assertFalse((destination / "obsolete.html").exists())
             self.assertEqual(
                 {path.name for path in destination.iterdir()},
                 site_build.GENERATED_SITE_FILES | site_build.STATIC_SITE_FILES)
+
+
+class SiteProfileTests(unittest.TestCase):
+    def test_release_profile_requires_explicit_inputs_before_staging(self):
+        empty = {name: "" for name in site_build.RELEASE_REQUIRED_ENV}
+        with patch.dict(os.environ, empty), \
+                patch.object(site_build, "_prepare_site_stage") as prepare, \
+                self.assertRaisesRegex(SystemExit, "release profile requires explicit"):
+            site_build.main(site_build.RELEASE_PROFILE)
+        prepare.assert_not_called()
+
+    def test_phase_import_failure_is_fatal_in_release(self):
+        df = pd.DataFrame({"day": ["2026-01-01"], "flight_id": [1]})
+        with patch.object(site_build, "_phase_api", side_effect=ImportError("boom")), \
+                self.assertRaisesRegex(RuntimeError, "release profile requires.*boom"):
+            site_build.phase_attribution(df, release_required=True)
+
+    def test_phase_import_failure_is_a_loud_exploratory_fallback(self):
+        df = pd.DataFrame({"day": ["2026-01-01"], "flight_id": [1]})
+        output = io.StringIO()
+        with patch.object(site_build, "_phase_api", side_effect=ImportError("boom")), \
+                redirect_stderr(output):
+            result = site_build.phase_attribution(df, release_required=False)
+        self.assertIsNone(result)
+        self.assertIn("EXPLORATORY FALLBACK", output.getvalue())
+        self.assertIn("boom", output.getvalue())
+
+    def test_partial_phase_is_fatal_only_in_release(self):
+        df = pd.DataFrame({
+            "day": ["2026-01-01", "2026-01-01"],
+            "flight_id": [1, 2],
+        })
+        phase = pd.DataFrame({"day": ["2026-01-01"], "flight_id": [1]})
+        api = (lambda path: phase, None, None, None)
+        with patch.object(site_build, "_phase_api", return_value=api), \
+                self.assertRaisesRegex(RuntimeError, "1 missing"):
+            site_build.phase_attribution(df, release_required=True)
+
+        output = io.StringIO()
+        with patch.object(site_build, "_phase_api", return_value=api), \
+                redirect_stderr(output):
+            result = site_build.phase_attribution(df, release_required=False)
+        self.assertIsNone(result)
+        self.assertIn("1 missing", output.getvalue())
 
 
 if __name__ == "__main__":

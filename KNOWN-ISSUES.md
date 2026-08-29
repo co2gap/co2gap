@@ -193,3 +193,27 @@ asset name/size/URL, consumed and declared bytes, coverage threshold and result.
 A failure exits non-zero and removes only its staging tree. An older promoted
 day that fails the new contract is moved intact into a sibling quarantine and
 reported; no acquisition script deletes it automatically.
+
+## 8. Phase attribution could disappear from a site build without an error
+
+**Closed for release builds on `hardening-2027-01`; the September site was not
+affected.** `lab/site_build.py` used to catch every exception while importing
+`lab/phase_attrib.py` and return `None`. With no release manifest, an absent or
+partial phase directory also returned `None`. All three cases selected older
+wording that says the gap cannot be located inside the flight, while the build
+still exited successfully.
+
+The frozen release manifest contains and verifies **197 phase parquet files,
+234,489,062 bytes**, with set SHA-256
+`c10c5f585de9386e831a45dbd3f48ac8177324de6139c4e2053a8a846de5afb7`; the
+published page contains the phase-attribution paragraph. This defect could have
+removed a finding from a later build, but it did not change the September
+headline values or the currently published wording.
+
+Site generation now requires an explicit profile. `--profile release` refuses
+to start unless manifest, decomposition, phase, ground, calibration, airport,
+coverage, headline and output paths are all explicit; it verifies the manifest
+and treats import, read, day-set and keyset phase failures as fatal.
+`--profile exploratory` is the only mode allowed to omit phase attribution. It
+announces at startup that release guarantees are disabled, prints the precise
+fallback reason to stderr, and does not apply the frozen release-headline gate.

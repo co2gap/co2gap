@@ -13,13 +13,14 @@ It also publishes what report.py structurally could not: the lateral/vertical
 decomposition, which is the part of this work that is actually distinctive.
 
     ADSB_DECOMP_DIR=... ADSB_AIRPORTS_CSV=... ADSB_CALIB=... \
-        lab-venv/bin/python lab/site_build.py
+        lab-venv/bin/python lab/site_build.py --profile release
 
 Nothing here deploys. Publication is an explicit decision.
 """
 
 from __future__ import annotations
 
+import argparse
 import csv
 import html
 import json
@@ -53,10 +54,8 @@ OUT_METH = OUT.parent / "methodology.html"
 COVERAGE = Path(os.environ.get("ADSB_COVERAGE_JSON") or (ROOT / "data/coverage.json"))
 HEADLINES = Path(os.environ.get("ADSB_RELEASE_HEADLINES")
                  or (ROOT / "release-headlines.json"))
-# Optional. When the phase split has been produced, the airport note can say
-# WHERE in the flight the gap happened instead of admitting it cannot. Absent,
-# the page falls back to the earlier wording, so building the site never depends
-# on a step that may not have run.
+# Required by the release profile. Only an explicitly exploratory build may
+# omit it and fall back to the older, less informative airport wording.
 PHASE_DIR = Path(os.environ.get("ADSB_PHASE_DIR") or (ROOT / "data/decomposition_phase"))
 # Quota di carburante bruciata A TERRA, per volo. Corregge il difetto trovato il
 # 2026-08-28: il consumo reale era integrato gate-to-gate e i punti a terra
@@ -76,6 +75,40 @@ GROUND_DEF = os.environ.get("ADSB_GROUND_DEF", "a3000t70")
 # di testa dipende da quale si sceglie, e la scelta e' dichiarata in §8 con la
 # banda misurata: non e' un dettaglio implementativo, e' un grado di liberta'.
 GROUND_BAND: dict[str, float] = {}
+
+RELEASE_PROFILE = "release"
+EXPLORATORY_PROFILE = "exploratory"
+RELEASE_REQUIRED_ENV = (
+    "ADSB_DECOMP_DIR",
+    "ADSB_PHASE_DIR",
+    "ADSB_GROUND_DIR",
+    "ADSB_CALIB",
+    "ADSB_AIRPORTS_CSV",
+    "ADSB_COVERAGE_JSON",
+    "ADSB_RELEASE_MANIFEST",
+    "ADSB_RELEASE_HEADLINES",
+    "ADSB_SITE_OUT",
+)
+
+
+def _manifest_for_profile(profile: str):
+    if profile not in {RELEASE_PROFILE, EXPLORATORY_PROFILE}:
+        raise ValueError(f"unknown site-build profile: {profile!r}")
+    if profile == RELEASE_PROFILE:
+        missing = [name for name in RELEASE_REQUIRED_ENV if not os.environ.get(name)]
+        if missing:
+            raise SystemExit(
+                "release profile requires explicit paths; missing environment "
+                f"variables: {', '.join(missing)}")
+        manifest = optional_manifest()
+        if manifest is None:
+            raise SystemExit("release profile requires ADSB_RELEASE_MANIFEST")
+        return manifest
+    print(
+        "EXPLORATORY PROFILE: release manifest, phase attribution and frozen "
+        "headline guarantees are not mandatory",
+        file=sys.stderr)
+    return optional_manifest()
 
 
 def pct0(v) -> str:
@@ -113,7 +146,21 @@ def pts(v, dp=0):
     return f"{v:+.{dp}f}", "pos" if v > 0 else "neg"
 
 
-def phase_attribution(df, manifest=None):
+def _phase_api():
+    sys.path.insert(0, str(ROOT / "lab"))
+    from phase_attrib import load_phase, add_mean_norm, by_airport, headline
+    return load_phase, add_mean_norm, by_airport, headline
+
+
+def _phase_unavailable(reason: str, *, release_required: bool, exc=None):
+    message = f"phase attribution unavailable: {reason}"
+    if release_required:
+        raise RuntimeError(f"release profile requires {message}") from exc
+    print(f"EXPLORATORY FALLBACK: {message}; using legacy wording", file=sys.stderr)
+    return None
+
+
+def phase_attribution(df, manifest=None, *, release_required: bool):
     """Where the vertical gap of an airport was produced, or None.
 
     Numbers derived in code, never typed: this project's rule, and the reason
@@ -122,31 +169,49 @@ def phase_attribution(df, manifest=None):
     lab/phase_report.py, so the sentence on the page cannot drift away from the
     report it came from.
     """
-    sys.path.insert(0, str(ROOT / "lab"))
     try:
-        from phase_attrib import load_phase, add_mean_norm, by_airport, headline
-    except Exception:
-        return None
-    ph = load_phase(PHASE_DIR)
+        load_phase, add_mean_norm, by_airport, headline = _phase_api()
+    except Exception as exc:
+        return _phase_unavailable(
+            f"cannot import lab/phase_attrib.py ({exc})",
+            release_required=release_required, exc=exc)
+    try:
+        ph = load_phase(PHASE_DIR)
+    except Exception as exc:
+        return _phase_unavailable(
+            f"cannot read {PHASE_DIR} ({exc})",
+            release_required=release_required, exc=exc)
     if ph is None:
-        return None
+        return _phase_unavailable(
+            f"no phase parquet in {PHASE_DIR}",
+            release_required=release_required)
+    missing_columns = sorted({"day", "flight_id"} - set(ph.columns))
+    if missing_columns:
+        return _phase_unavailable(
+            f"phase parquet lacks columns {missing_columns}",
+            release_required=release_required)
     # A partial phase run would describe a different population from the one
-    # the table shows, so it is refused rather than quietly averaged in.
+    # the table shows: release builds reject it, exploratory builds announce
+    # the fallback instead of quietly averaging it in.
     if set(ph.day.unique()) != set(df.day.unique()):
-        print(f"phase split covers {ph.day.nunique()} days against "
-              f"{df.day.nunique()} published: attribution note omitted")
-        return None
+        return _phase_unavailable(
+            f"phase split covers {ph.day.nunique()} days against "
+            f"{df.day.nunique()} in the analysis",
+            release_required=release_required)
     dec_keys = set(zip(df.day.astype(str), df.flight_id.astype(int)))
     phase_keys = set(zip(ph.day.astype(str), ph.flight_id.astype(int)))
     if len(phase_keys) != len(ph):
-        raise SystemExit("phase split contains duplicate (day, flight_id) keys")
+        return _phase_unavailable(
+            "phase split contains duplicate (day, flight_id) keys",
+            release_required=release_required)
     allowed = manifest_allowed_missing(manifest, "phase") & dec_keys
     expected = dec_keys - allowed
     missing, extra = sorted(expected - phase_keys), sorted(phase_keys - expected)
     if missing or extra:
-        raise SystemExit(
-            f"phase keyset differs from the published population: "
-            f"{len(missing)} missing, {len(extra)} extra")
+        return _phase_unavailable(
+            f"phase keyset differs from the analysis population: "
+            f"{len(missing)} missing, {len(extra)} extra",
+            release_required=release_required)
     m = df.merge(ph, on=["day", "flight_id"], how="inner", validate="one_to_one")
 
     # ---- il rullaggio esce anche dalle FASI -------------------------------
@@ -434,8 +499,8 @@ def total_kg_per_flight(df) -> float:
     return (df.co2_real_kg.sum() - df.co2_ideal_kg.sum()) / 3.16 / len(df)
 
 
-def load(*, verify_manifest: bool = True) -> pd.DataFrame:
-    manifest = optional_manifest()
+def load(*, manifest=None, verify_manifest: bool = True) -> pd.DataFrame:
+    manifest = optional_manifest() if manifest is None else manifest
     loaded = load_release_data(
         DEC_DIR, GROUND_DIR, CALIB, ground_def=GROUND_DEF, bins=BINS,
         min_n_cell=MIN_N_CELL, manifest=manifest,
@@ -1813,8 +1878,7 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 """
 
 
-def _build_site_tree():
-    manifest = optional_manifest()
+def _build_site_tree(profile: str, manifest):
     if manifest:
         manifest.verify_track_quality(track_quality)
         expected_ground = manifest.data["configuration"]["ground"]["definition"]
@@ -1840,7 +1904,7 @@ def _build_site_tree():
             "sui giorni incompleti alla fonte invece di dichiararli.")
     # The site-specific preflight immediately above already verified these
     # three artefacts together with phase, airports and coverage.
-    df = load(verify_manifest=False)
+    df = load(manifest=manifest, verify_manifest=False)
     names = airport_names()
     coords = {}
     if AIRPORTS.exists():
@@ -1970,7 +2034,8 @@ def _build_site_tree():
     # Where inside the flight the gap sits, when the phase split has been run.
     # The fallback text is the older admission that we could not tell, so the
     # page never claims more than the data behind it supports.
-    pa = phase_attribution(df, manifest)
+    pa = phase_attribution(
+        df, manifest, release_required=(profile == RELEASE_PROFILE))
     if pa is None:
         phase_note = (
             "<b>What no column here can do is locate the gap inside the "
@@ -2167,7 +2232,7 @@ def _build_site_tree():
         f"<tr><td>{esc(i)} km</td><td class=num>{int(r.n):,}</td>"
         f"<td class=num>{pct0(r.med)}</td></tr>" for i, r in band.iterrows())
     n_closed = int((g.closed != "").sum())
-    verify_release_headlines({
+    headline_values = {
         "flights": len(df),
         "days": len(days),
         "co2_real_tonnes": float(co2_t),
@@ -2181,7 +2246,14 @@ def _build_site_tree():
         "ranked_routes": len(g),
         "airports": len(ga),
         "flagged_ranked_routes": n_closed,
-    }, HEADLINES, release_id=manifest.release_id if manifest else RELEASE)
+    }
+    if profile == RELEASE_PROFILE:
+        verify_release_headlines(
+            headline_values, HEADLINES,
+            release_id=manifest.release_id if manifest else RELEASE)
+    else:
+        print("EXPLORATORY PROFILE: frozen release-headline gate disabled",
+              file=sys.stderr)
 
     # ---- i quattro risultati, scritti UNA volta e usati in DUE posti --------
     # In home va il titolo con l'attacco; il seguito, che e' dove stanno i
@@ -3451,10 +3523,11 @@ def _promote_site_tree(stage: Path, destination: Path) -> None:
         shutil.rmtree(backup)
 
 
-def main():
+def main(profile: str):
     """Build, validate and promote the complete site as one generation."""
     global OUT, OUT_METH
 
+    manifest = _manifest_for_profile(profile)
     configured_out = OUT.absolute()
     if configured_out.name != "index.html":
         raise SystemExit("ADSB_SITE_OUT must name index.html for whole-site promotion")
@@ -3476,7 +3549,7 @@ def main():
         _prepare_site_stage(stage)
         OUT = stage / "index.html"
         OUT_METH = stage / "methodology.html"
-        _build_site_tree()
+        _build_site_tree(profile, manifest)
         _validate_site_stage(stage)
         _promote_site_tree(stage, destination)
         print(f"site generation promoted to {destination}")
@@ -3486,4 +3559,9 @@ def main():
             shutil.rmtree(stage)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--profile", required=True,
+        choices=(RELEASE_PROFILE, EXPLORATORY_PROFILE),
+        help="release is fail-closed; exploratory permits a loud phase fallback")
+    main(parser.parse_args().profile)
