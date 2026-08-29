@@ -19,13 +19,12 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
-import gate
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "pipeline"))
 sys.path.insert(0, str(ROOT / "ingest"))
 sys.path.insert(0, str(ROOT))
 
+import track_quality                               # noqa: E402
 from excess import build_nominal_flight            # noqa: E402
 from excess_wind import ideal_co2_windaware        # noqa: E402
 from emissions import estimate_fuel                 # noqa: E402
@@ -83,11 +82,11 @@ def build_windfield(days) -> WindField | None:
 
 
 def quality_gate(df) -> pd.DataFrame:
-    # Le soglie stanno in lab/gate.py, non qui: la metodologia le pubblica e le
-    # deve leggere, non riscrivere a parole.
+    # Le soglie stanno in pipeline/track_quality.py, non qui: le leggono anche
+    # flightproc.py e la metodologia, e devono essere le stesse.
     return df[(df.origin_icao.notna()) & (df.dest_icao.notna())
-              & (df.flown_ge_09gc) & (df.coverage_frac >= gate.COV_MIN)
-              & (df.gc_km >= gate.GC_MIN_KM)].copy()
+              & (df.flown_ge_09gc) & (df.coverage_frac >= track_quality.COV_MIN)
+              & (df.gc_km >= track_quality.GC_MIN_KM)].copy()
 
 
 _free_cache: dict = {}

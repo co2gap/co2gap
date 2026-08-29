@@ -37,7 +37,8 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import gate
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
+import track_quality
 
 ROOT = Path(__file__).resolve().parents[1]
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
@@ -1562,11 +1563,11 @@ with no correction at all.</p>
 
 <h2>6. Which flights are included</h2>
 <p>A flight enters the analysis only if its track is sufficiently complete,
-and the test is exactly this: <b>at least {gate.COV_MIN*100:.0f}% of the flight's
-duration lies outside gaps longer than {gate.GAP_THRESHOLD_S:.0f} seconds</b>,
-the reconstructed distance is <b>at least {gate.FLOWN_MIN_FRAC*100:.0f}% of the
+and the test is exactly this: <b>at least {track_quality.COV_MIN*100:.0f}% of the flight's
+duration lies outside gaps longer than {track_quality.GAP_THRESHOLD_S:.0f} seconds</b>,
+the reconstructed distance is <b>at least {track_quality.FLOWN_MIN_FRAC*100:.0f}% of the
 great circle</b>, both endpoints resolve to an airport, and the sector is at
-least {gate.GC_MIN_KM} km. <b>What the gate does not do is bound the single
+least {track_quality.GC_MIN_KM} km. <b>What the gate does not do is bound the single
 longest gap</b> — it constrains how much of the track is missing, not how that
 absence is distributed, so a track can pass with one long silence inside it.
 That is the same blind spot as the fuel gate described in the FAQ, and it is on

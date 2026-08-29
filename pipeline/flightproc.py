@@ -21,6 +21,7 @@ Two deliberate choices:
 
 from __future__ import annotations
 
+import track_quality
 from trajectories import Flight, haversine_km
 
 # thin the stored trajectory to at most ~1 point / MIN_SPACING_S seconds.
@@ -30,10 +31,10 @@ MIN_SPACING_S = 10.0
 
 # a native sampling gap longer than this is a real coverage hole (aircraft out
 # of receiver range), not just sparse sampling.
-# Unica definizione: lab/gate.py, che la pubblica anche in metodologia. Qui
-# resta un valore letterale perche' pipeline/ gira sul Pi senza lab/ nel path —
-# ma se cambia va cambiato la' e riportato qui, e i due devono restare uguali.
-GAP_THRESHOLD_S = 120.0     # == lab.gate.GAP_THRESHOLD_S
+# Unica definizione, condivisa con lab/ e con la metodologia: pipeline/track_quality.py.
+# Era un valore letterale qui e un altro la', e cambiarne uno cambiava il testo
+# pubblicato senza cambiare il comportamento.
+GAP_THRESHOLD_S = track_quality.GAP_THRESHOLD_S
 
 
 def _flown_km(points) -> float:
@@ -70,7 +71,7 @@ def process_flight(flight: Flight, gc_km: float) -> tuple[list, dict]:
     detour_pct = (flown_km - gc_km) / gc_km * 100.0 if gc_km > 0 else None
     # the phase-0 data-quality gate: enough of the great-circle path was actually
     # observed. Holes make flown *under*-count, so flown >= 0.9*GC is the guard.
-    flown_ge_09gc = gc_km > 0 and flown_km >= 0.9 * gc_km
+    flown_ge_09gc = gc_km > 0 and flown_km >= track_quality.FLOWN_MIN_FRAC * gc_km
 
     kept = _thin(pts)
 

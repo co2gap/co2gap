@@ -231,14 +231,28 @@ scripts/run_phase2.sh
 
 Two more stages have to run before the site can be built. Without the first,
 `site_build.py` exits; without the second it stays silent and drops the phase
-attribution altogether, which is the worse failure of the two:
+attribution altogether, which is the worse failure of the two. They are two
+separate commands and each carries its own environment — variables written in
+front of one `python` do not survive to the next, and the defaults they would
+fall back to are the old, smaller study area:
 
 ```bash
-ADSB_ROOT=$PWD ADSB_FLIGHTS_DIR=$PWD/data/flights_ecac \
-ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
-python lab/ground_share.py        # -> data/ground_share_ecac/
-python lab/run_phase_split.py     # -> data/decomposition_ecac_phase/
+ADSB_ROOT=$PWD python lab/ground_share.py \
+  --src $PWD/data/flights_ecac \
+  --out $PWD/data/ground_share_ecac
 ```
+
+```bash
+ADSB_ROOT=$PWD \
+ADSB_FLIGHTS_DIR=$PWD/data/flights_ecac \
+ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
+ADSB_PHASE_DIR=$PWD/data/decomposition_ecac_phase \
+python lab/run_phase_split.py
+```
+
+`--out` is required on the first: it has no default, deliberately, because it
+writes a directory that the site then treats as authoritative. Both are
+resumable and skip days already written.
 
 Site generation:
 
