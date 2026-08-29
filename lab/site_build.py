@@ -39,6 +39,7 @@ import pyarrow.parquet as pq
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import track_quality
+from release_manifest import optional_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
@@ -1958,6 +1959,22 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 
 
 def main():
+    manifest = optional_manifest()
+    if manifest:
+        manifest.verify_track_quality(track_quality)
+        expected_ground = manifest.data["configuration"]["ground"]["definition"]
+        if GROUND_DEF != expected_ground:
+            raise SystemExit(
+                f"ADSB_GROUND_DEF={GROUND_DEF!r} differs from release "
+                f"{manifest.release_id}: {expected_ground!r}")
+        for role, root in (("decomposition", DEC_DIR), ("phase", PHASE_DIR),
+                           ("ground", GROUND_DIR)):
+            manifest.require_exact_output_days(root, role)
+            manifest.verify_set(role, root, artifact=True)
+        for role, path in (("calibration", CALIB), ("airports", AIRPORTS),
+                           ("coverage", COVERAGE)):
+            manifest.verify_file(role, path)
+        print(f"release {manifest.release_id}: inputs and frozen artefacts verified")
     # Prima di scrivere QUALUNQUE pagina. Il controllo vive dentro
     # coverage_note(), che pero' gira a meta' della metodologia: fallire li'
     # lascia mezzo sito rigenerato e mezzo della build precedente, perche' le
@@ -1983,6 +2000,10 @@ def main():
         return n
 
     days = sorted(df.day.unique())
+    if manifest and days != manifest.days:
+        raise SystemExit(
+            f"site population differs from release {manifest.release_id}: "
+            f"{len(days)} day(s), expected {len(manifest.days)}")
     months = sorted({d[:7] for d in days})
 
     # ---- headline -------------------------------------------------------

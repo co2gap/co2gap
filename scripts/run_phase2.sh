@@ -6,9 +6,9 @@
 # thing to re-run today while the Pi backfill and the ERA5 queue are still
 # filling in days. It processes whatever is ready and skips what is done.
 #
-#   scripts/run_phase2.sh              # sync, ERA5, calibration, decomposition, report
-#   scripts/run_phase2.sh --no-sync    # skip pulling parquet from the Pi
-#   scripts/run_phase2.sh --no-era5    # skip the ERA5 fetch (already running)
+#   scripts/run_phase2.sh --update     # accumulating inputs; not a release
+#   scripts/run_phase2.sh --release-manifest release-manifest.json
+#                                      # exact immutable release population
 #
 # ⚠️ IT STOPS AT THE DECOMPOSITION REPORT, and the site needs two more stages
 # that this script does NOT run. It used to call itself "full chain", which was
@@ -52,14 +52,29 @@ export ERA5_AREA="${ERA5_AREA:-72,-32,27,45}"
 FROM_DAY="${FROM_DAY:-2026-01-01}"
 TO_DAY="${TO_DAY:-2026-07-23}"
 
-do_sync=1; do_era5=1
-for a in "$@"; do
-  case "$a" in
-    --no-sync) do_sync=0 ;;
-    --no-era5) do_era5=0 ;;
-    *) echo "unknown option: $a"; exit 2 ;;
+do_sync=1; do_era5=1; mode=""; manifest=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --update)
+      [ -z "$mode" ] || { echo "choose only one pipeline mode"; exit 2; }
+      mode="update"; shift ;;
+    --release-manifest)
+      [ "$#" -ge 2 ] || { echo "--release-manifest needs a path"; exit 2; }
+      [ -z "$mode" ] || { echo "choose only one pipeline mode"; exit 2; }
+      mode="release"; manifest="$2"; do_sync=0; shift 2 ;;
+    --no-sync) do_sync=0; shift ;;
+    --no-era5) do_era5=0; shift ;;
+    *) echo "unknown option: $1"; exit 2 ;;
   esac
 done
+[ -n "$mode" ] || {
+  echo "choose explicitly: --update OR --release-manifest PATH"; exit 2;
+}
+if [ "$mode" = "release" ]; then
+  manifest="$(cd "$(dirname "$manifest")" && pwd)/$(basename "$manifest")"
+  [ -f "$manifest" ] || { echo "release manifest not found: $manifest"; exit 2; }
+  export ADSB_RELEASE_MANIFEST="$manifest"
+fi
 
 cd "$ROOT" || exit 1
 step() { echo; echo "=== $* ==="; }
@@ -70,16 +85,31 @@ if [ "$do_sync" = 1 ]; then
 fi
 
 if [ "$do_era5" = 1 ]; then
-  step "2/5 ERA5 backfill ${FROM_DAY} → ${TO_DAY}"
-  "$PY" scripts/era5_backfill.py "$FROM_DAY" "$TO_DAY"
+  if [ "$mode" = "release" ]; then
+    step "2/5 ERA5 for immutable release manifest"
+    "$PY" scripts/era5_backfill.py --release-manifest "$manifest"
+  else
+    step "2/5 ERA5 update ${FROM_DAY} → ${TO_DAY}"
+    "$PY" scripts/era5_backfill.py "$FROM_DAY" "$TO_DAY"
+  fi
 fi
 
-step "3/5 per-type calibration anchored to ICAO ICEC"
-"$PY" lab/anchor_refs.py
-"$PY" lab/calibrate.py
+if [ "$mode" = "release" ]; then
+  step "3/5 verify frozen release inputs and calibration"
+  "$PY" scripts/verify_release_manifest.py "$manifest"
+else
+  step "3/5 update per-type calibration anchored to ICAO ICEC"
+  "$PY" lab/anchor_refs.py
+  "$PY" lab/calibrate.py
+fi
 
-step "4/5 lateral/vertical decomposition (all days with parquet + ERA5)"
-"$PY" lab/run_decompose.py
+if [ "$mode" = "release" ]; then
+  step "4/5 lateral/vertical decomposition (manifest days only)"
+  "$PY" lab/run_decompose.py --release-manifest "$manifest"
+else
+  step "4/5 lateral/vertical decomposition (all ready days)"
+  "$PY" lab/run_decompose.py
+fi
 
 step "5/5 decomposition report"
 "$PY" lab/decompose_report.py

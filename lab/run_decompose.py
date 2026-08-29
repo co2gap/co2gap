@@ -38,6 +38,7 @@ sys.path.insert(0, str(ROOT))
 from analysis import quality_gate, LOAD_FACTOR, RESERVE_KG   # noqa: E402
 from decompose import decompose_flight                        # noqa: E402
 from wind.era5 import WindField                               # noqa: E402
+from release_manifest import optional_manifest               # noqa: E402
 
 # All three follow the environment, because the box is not a property of the
 # code: running the ECAC box against the default paths would read the SMALLER
@@ -182,9 +183,19 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", nargs="*", default=None)
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--release-manifest", default=None,
+                    help="immutable release manifest; selects its exact days")
     args = ap.parse_args()
 
-    days = args.days if args.days else ready_days()
+    manifest = optional_manifest(args.release_manifest)
+    if manifest and args.days:
+        raise SystemExit("--days and --release-manifest are mutually exclusive")
+    if manifest:
+        available = ready_days()
+        days = manifest.select_required_days(available, "decomposition inputs")
+        manifest.require_no_extra_output_days(OUT_DIR, "decomposition")
+    else:
+        days = args.days if args.days else ready_days()
     todo = [d for d in days
             if args.force or not output_is_valid(OUT_DIR / f"{d}.parquet")]
     print(f"{len(days)} day(s) ready, {len(todo)} to process")
@@ -206,6 +217,10 @@ def main():
 
     print(f"\ndone: {total:,} flights across {len(todo)} day(s) in "
           f"{(time.time()-t0)/60:.1f} min -> {OUT_DIR}")
+    if manifest:
+        manifest.require_exact_output_days(OUT_DIR, "decomposition")
+        manifest.verify_set("decomposition", OUT_DIR, artifact=True)
+        print(f"release {manifest.release_id}: decomposition checksum verified")
 
 
 if __name__ == "__main__":

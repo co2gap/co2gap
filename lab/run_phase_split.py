@@ -45,6 +45,7 @@ sys.path.insert(0, str(ROOT))
 
 from analysis import LOAD_FACTOR, RESERVE_KG          # noqa: E402
 from phase_split import phase_split_flight            # noqa: E402
+from release_manifest import optional_manifest        # noqa: E402
 
 FLIGHTS_DIR = Path(os.environ.get("ADSB_FLIGHTS_DIR") or (ROOT / "data/flights"))
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
@@ -158,6 +159,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", nargs="*", default=None)
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--release-manifest", default=None,
+                    help="immutable release manifest; selects its exact days")
     args = ap.parse_args()
 
     if DEC_DIR.resolve() == OUT_DIR.resolve():
@@ -165,7 +168,14 @@ def main():
                          f"{DEC_DIR}")
     print(f"flights : {FLIGHTS_DIR}\nfrozen  : {DEC_DIR}\noutput  : {OUT_DIR}\n")
 
-    days = args.days if args.days else ready_days()
+    manifest = optional_manifest(args.release_manifest)
+    if manifest and args.days:
+        raise SystemExit("--days and --release-manifest are mutually exclusive")
+    if manifest:
+        days = manifest.select_required_days(ready_days(), "phase inputs")
+        manifest.require_no_extra_output_days(OUT_DIR, "phase")
+    else:
+        days = args.days if args.days else ready_days()
     todo = [d for d in days
             if args.force or not output_is_valid(OUT_DIR / f"{d}.parquet")]
     print(f"{len(days)} day(s) ready, {len(todo)} to process")
@@ -198,6 +208,10 @@ def main():
           f"(gate: must be 0)")
     print(f"worst additivity residual (pp)  : {worst_add:.3e}  "
           f"(gate: must be ~0)")
+    if manifest:
+        manifest.require_exact_output_days(OUT_DIR, "phase")
+        manifest.verify_set("phase", OUT_DIR, artifact=True)
+        print(f"release {manifest.release_id}: phase checksum verified")
 
 
 if __name__ == "__main__":

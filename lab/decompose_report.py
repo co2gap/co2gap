@@ -31,6 +31,8 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "pipeline"))
+from release_manifest import optional_manifest  # noqa: E402
 # Follows the environment for the same reason as run_decompose: a report built
 # from the wrong box's decomposition would look perfectly valid.
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
@@ -45,7 +47,13 @@ MIN_N_ROUTE = 30
 
 
 def load() -> pd.DataFrame:
-    files = sorted(DEC_DIR.glob("*.parquet"))
+    manifest = optional_manifest()
+    if manifest:
+        manifest.require_exact_output_days(DEC_DIR, "decomposition")
+        manifest.verify_set("decomposition", DEC_DIR, artifact=True)
+        files = [DEC_DIR / f"{day}.parquet" for day in manifest.days]
+    else:
+        files = sorted(DEC_DIR.glob("*.parquet"))
     if not files:
         raise SystemExit(f"no decomposition parquet under {DEC_DIR} "
                          "— run lab/run_decompose.py first")

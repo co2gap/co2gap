@@ -41,6 +41,8 @@ ap.add_argument("--days-from", default=None,
                 help="cartella da cui prendere l'ELENCO esatto dei giorni "
                      "(es. data/decomposition_ecac): il perimetro segue la "
                      "release invece della cartella che accumula")
+ap.add_argument("--release-manifest", default=None,
+                help="manifesto immutabile: sostituisce --days-from e fissa il perimetro")
 ap.add_argument("--limit-days", type=int, default=None)
 ap.add_argument("--alt-ft", type=float, default=1000.0)
 ap.add_argument("--tas-kt", type=float, default=70.0)
@@ -49,6 +51,7 @@ a = ap.parse_args()
 sys.path[:0] = [f"{a.root}/pipeline", f"{a.root}/ingest", a.root]
 from trajectories import Point, Flight                      # noqa
 from emissions import openap_model, estimate_fuel, _steps_from_flight  # noqa
+from release_manifest import optional_manifest              # noqa
 
 SRC = Path(a.src or f"{a.root}/data/flights_ecac")
 OUT = Path(a.out); OUT.mkdir(parents=True, exist_ok=True)
@@ -75,7 +78,13 @@ days = sorted(p.name for p in SRC.iterdir() if p.is_dir())
 #   selezione  cosa questo giro ELABORA adesso. Parte dal perimetro (o da tutto)
 #              e --days la restringe, senza ridefinire il perimetro.
 perimetro = None
-if a.days_from:
+manifest = optional_manifest(a.release_manifest)
+if manifest and a.days_from:
+    raise SystemExit("--days-from and --release-manifest are mutually exclusive")
+if manifest:
+    perimetro = set(manifest.select_required_days(days, "ground-share inputs"))
+    manifest.require_no_extra_output_days(OUT, "ground")
+elif a.days_from:
     src = Path(a.days_from)
     perimetro = {q.stem for q in src.glob("*.parquet")} or {q.name for q in src.iterdir() if q.is_dir()}
     if not perimetro:
@@ -207,3 +216,7 @@ for day in days:
           f"  a1000t70 {out.fuel_a1000t70_kg.sum()/out.fuel_recomputed_kg.sum()*100:5.2f}%"
           f"  ricalc/congelato {ratio:6.4f}  {time.time()-t0:5.1f}s", flush=True)
 print("  fatto.", flush=True)
+if manifest:
+    manifest.require_exact_output_days(OUT, "ground")
+    manifest.verify_set("ground", OUT, artifact=True)
+    print(f"  release {manifest.release_id}: ground checksum verified", flush=True)

@@ -230,11 +230,27 @@ WORKERS=3 python pipeline/run_daily.py --day 2026.07.19
 ```
 
 Analysis chain — idempotent and resumable, and **no step publishes anything**.
-It covers phases 2a/2b only and stops at the decomposition report:
+The two modes are deliberately different commands: `--update` consumes every
+ready day in the accumulating caches; `--release-manifest` selects and verifies
+the immutable published population. Omitting the mode is an error.
 
 ```bash
-scripts/run_phase2.sh
+scripts/run_phase2.sh --update
 ```
+
+To reproduce the frozen release instead:
+
+```bash
+scripts/run_phase2.sh --release-manifest $PWD/release-manifest.json
+```
+
+`release-manifest.json` records its exact 197 days, the separate historical
+201-day calibration population, geographic and ERA5 grids, ground definition,
+OpenAP and quality-gate versions, and SHA-256 checksums of every input and frozen
+artefact. Verify it independently with
+`python scripts/verify_release_manifest.py --include-artifacts release-manifest.json`.
+Extra days may coexist in an accumulating *input cache*, but no release output
+directory may contain a missing or extra day.
 
 Two more stages have to run before the site can be built. Without the first,
 `site_build.py` exits; without the second it stays silent and drops the phase
@@ -247,7 +263,7 @@ fall back to are the old, smaller study area:
 ADSB_ROOT=$PWD python lab/ground_share.py \
   --src $PWD/data/flights_ecac \
   --out $PWD/data/ground_share_ecac \
-  --days-from $PWD/data/decomposition_ecac
+  --release-manifest $PWD/release-manifest.json
 ```
 
 ```bash
@@ -255,17 +271,16 @@ ADSB_ROOT=$PWD \
 ADSB_FLIGHTS_DIR=$PWD/data/flights_ecac \
 ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
 ADSB_PHASE_DIR=$PWD/data/decomposition_ecac_phase \
-python lab/run_phase_split.py
+python lab/run_phase_split.py --release-manifest $PWD/release-manifest.json
 ```
 
 `--out` is required on the first: it has no default, deliberately, because it
-writes a directory that the site then treats as authoritative. `--days-from`
-takes the exact set of days from the frozen decomposition instead of from
-`data/flights_ecac`, which keeps accumulating every night and is already four
-days ahead of this release — without it the run adds days the release does not
-contain. It processes only those days and **refuses to run** if the output
-directory already holds any day outside the set; it does not delete them, since
-deciding what to discard is not a compute script's job. Both commands are
+writes a directory that the site then treats as authoritative. The manifest
+takes the exact set of days instead of deriving it from `data/flights_ecac`,
+which keeps accumulating every night and is already four days ahead of this
+release. It processes only those days and **refuses to run** if the output
+directory holds any day outside the set or if its final checksum differs; it
+does not delete anything. Both commands are
 resumable, and a day counts as done only if its file opens and has rows — an
 interrupted write leaves a temporary, never a truncated result.
 
@@ -279,6 +294,7 @@ ADSB_GROUND_DIR=$PWD/data/ground_share_ecac \
 ADSB_CALIB=$PWD/data/calibration_ecac.json \
 ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
 ADSB_COVERAGE_JSON=$PWD/data/coverage_ecac.json \
+ADSB_RELEASE_MANIFEST=$PWD/release-manifest.json \
 ADSB_SITE_OUT=$PWD/site/index.html \
 python lab/site_build.py
 ```

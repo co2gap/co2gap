@@ -53,6 +53,8 @@ from emissions import openap_model, estimate_fuel            # noqa: E402
 from flightproc import process_flight                        # noqa: E402
 from airports import Airports                                # noqa: E402
 from store import DayWriter, PIPELINE_VER                    # noqa: E402
+import track_quality                                         # noqa: E402
+from release_manifest import optional_manifest               # noqa: E402
 
 # Default box: EU-South, lat 35-52, lon -10..25 (Iberia, France, Italy, Alps,
 # Balkans, Greece, Malta, N-Africa coast). A wider box (full ECAC) is selected
@@ -315,8 +317,20 @@ def main():
     ap.add_argument("--workers", type=int, default=int(os.environ.get("WORKERS", "3")))
     ap.add_argument("--max-flights", type=int,
                     default=int(os.environ["MAX_FLIGHTS"]) if os.environ.get("MAX_FLIGHTS") else None)
+    ap.add_argument("--release-manifest", default=None,
+                    help="restrict this run to a day and box in an immutable release")
     args = ap.parse_args()
     day = args.day or (datetime.now(timezone.utc).date() - timedelta(days=1)).strftime("%Y.%m.%d")
+    manifest = optional_manifest(args.release_manifest)
+    if manifest:
+        day_iso = datetime.strptime(day.split("-")[0].lstrip("v"), "%Y.%m.%d").date().isoformat()
+        manifest.require_day(day_iso)
+        manifest.verify_track_quality(track_quality)
+        expected = manifest.data["configuration"]["geographic_box"]
+        actual = {"lat_min": BOX.lat_min, "lat_max": BOX.lat_max,
+                  "lon_min": BOX.lon_min, "lon_max": BOX.lon_max}
+        if actual != expected:
+            raise SystemExit(f"bounding box differs from release: {actual!r} != {expected!r}")
     run(day, args.workers, args.max_flights)
 
 

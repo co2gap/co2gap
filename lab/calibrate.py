@@ -23,8 +23,10 @@ Flights with poor coverage are excluded from the fit (flown>=0.9*GC, coverage).
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
+import sys
 import statistics as st
 from collections import defaultdict
 from pathlib import Path
@@ -32,6 +34,8 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "pipeline"))
+from release_manifest import optional_manifest  # noqa: E402
 # Overridable per box: fitting the factors on one box and then applying them to
 # another would be a silent mismatch — the run succeeds and reports numbers
 # calibrated on a sample that excludes half the geography being analysed.
@@ -76,9 +80,11 @@ def load_pub_cruise_ff() -> dict:
 PUB_CRUISE_FF, PUB_SOURCE = load_pub_cruise_ff()
 
 
-def load_clean():
+def load_clean(days=None):
     rows = defaultdict(list)   # type -> [cruise_ff]
-    for d in sorted(FLIGHTS_DIR.glob("*")):
+    dirs = ([FLIGHTS_DIR / day for day in days]
+            if days is not None else sorted(FLIGHTS_DIR.glob("*")))
+    for d in dirs:
         f = d / "flights.parquet"
         if not f.exists():
             continue
@@ -93,7 +99,19 @@ def load_clean():
 
 
 def main():
-    rows = load_clean()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--release-manifest", default=None)
+    args = ap.parse_args()
+    manifest = optional_manifest(args.release_manifest)
+    if manifest:
+        available = [p.name for p in FLIGHTS_DIR.iterdir() if p.is_dir()]
+        missing = sorted(set(manifest.calibration_days) - set(available))
+        if missing:
+            raise SystemExit(f"calibration inputs: missing {missing[0]}")
+        days = manifest.calibration_days
+    else:
+        days = None
+    rows = load_clean(days)
     factors = {}
     print(f"{'type':5} {'n':>4} {'obs_median':>10} {'published':>9} {'dev%':>6} {'factor':>7}")
     provisional = []
@@ -122,6 +140,9 @@ def main():
     OUT.write_text(json.dumps(factors, indent=2, sort_keys=True))
     print(f"\nwrote {OUT} with {len(factors)} correction factor(s):")
     print(json.dumps(factors, indent=2, sort_keys=True))
+    if manifest:
+        manifest.verify_file("calibration", OUT)
+        print(f"release {manifest.release_id}: calibration checksum verified")
 
     if provisional:
         print("\nPROVISIONAL (bias seen but sample too small to correct): "

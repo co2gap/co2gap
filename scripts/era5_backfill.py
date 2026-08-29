@@ -21,6 +21,7 @@ external interruption) is caught by the integrity check and redownloaded.
 
 from __future__ import annotations
 
+import argparse
 import os
 import sys
 import time
@@ -32,6 +33,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from wind.era5 import download_day, ERA5_DIR, LEVELS, AREA  # noqa: E402
+sys.path.insert(0, str(ROOT / "pipeline"))
+from release_manifest import optional_manifest              # noqa: E402
 
 # Only used to prioritise days that already have a parquet, but it must follow
 # the box being worked on or the ordering optimisation silently targets the
@@ -123,10 +126,19 @@ def fetch_one(day_iso: str):
 
 
 def main():
-    d_from = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_FROM
-    d_to = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_TO
-    days = prioritise(daterange(d_from, d_to))
-    log(f"==== ERA5 BACKFILL START {d_from} -> {d_to} ({len(days)} days, "
+    ap = argparse.ArgumentParser()
+    ap.add_argument("from_day", nargs="?", default=DEFAULT_FROM)
+    ap.add_argument("to_day", nargs="?", default=DEFAULT_TO)
+    ap.add_argument("--release-manifest", default=None)
+    args = ap.parse_args()
+    manifest = optional_manifest(args.release_manifest)
+    if manifest:
+        days = prioritise(manifest.era5_days)
+        range_label = f"release {manifest.release_id}"
+    else:
+        days = prioritise(daterange(args.from_day, args.to_day))
+        range_label = f"{args.from_day} -> {args.to_day}"
+    log(f"==== ERA5 BACKFILL START {range_label} ({len(days)} days, "
         f"{WORKERS} workers) ====")
 
     todo = [d for d in days if not is_valid(ERA5_DIR / f"{d}.nc")]
@@ -164,6 +176,9 @@ def main():
         f"valid, {el/60:.1f} min total, avg {avg_mb:.1f} MB/day ====")
     if n_fail:
         log("re-run the same command to retry only the failed/missing days")
+    if manifest:
+        manifest.verify_set("era5", ERA5_DIR)
+        log(f"release {manifest.release_id}: ERA5 checksum verified")
 
 
 if __name__ == "__main__":
