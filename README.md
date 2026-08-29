@@ -211,6 +211,11 @@ becoming a tool for tracking individual movements.
 
 ## Reproducing
 
+`requirements.txt` records the library versions that produced this release —
+OpenAP above all, since it is the fuel model and its version moves the
+kilograms. `scripts/setup_venv.sh` installs unpinned, so that file, not the
+script, is what a rerun should follow.
+
 Production (per-day accumulation):
 
 ```bash

@@ -1,0 +1,35 @@
+# The versions that produced the 2026-09-01 release.
+#
+# This is not a full lockfile. It is a record of what was actually running when
+# the published figures were computed, written because `scripts/setup_venv.sh`
+# installs unpinned and a `pip install openap` six months from now will not
+# rebuild this result. OpenAP is the fuel model: changing its version changes
+# the kilograms, not the arithmetic around them.
+#
+# The computation ran on TWO machines, and they did not have the same
+# environment. Both are listed on purpose; naming one would be tidier and false.
+#
+#   Raspberry Pi — daily accumulation and fuel burn:
+#     pipeline/run_daily.py, pipeline/emissions.py -> data/flights_ecac/
+#     Python 3.11 · numpy 2.5.1 · scipy 1.18.0
+#
+#   Mac (lab) — decomposition, aggregation and site build:
+#     lab/run_decompose.py, lab/site_build.py -> data/decomposition_ecac/, site/
+#     Python 3.11.5 · numpy 2.4.6 · scipy 1.17.1
+#
+# The two packages that matter for the published numbers — the fuel model and
+# the data format — were identical on both.
+
+openap==2.6.0
+pandas==3.0.5
+pyarrow==25.0.0
+requests
+
+# --- differed between the two machines: pick by the step being re-run ---
+# numpy==2.5.1 / scipy==1.18.0    Pi: fuel and trajectories
+# numpy==2.4.6 / scipy==1.17.1    Mac: decomposition and site
+numpy
+scipy
+
+# Contrail and NOx work only (phase C, not part of the September release):
+# pycontrails, installed in a separate environment (contrail-venv), never here.
