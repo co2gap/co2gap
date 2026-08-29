@@ -15,8 +15,10 @@ sys.path[:0] = [str(ROOT / "pipeline"), str(ROOT / "ingest"),
                 str(ROOT / "lab"), str(ROOT)]
 
 from decompose import _bounded_cruise_alt_ft  # noqa: E402
-from uncertainty import (UncertaintyError, _metrics, block_resample_days,  # noqa: E402
-                         _require_outside_repository, stratified_sample,
+from uncertainty import (UncertaintyError, _metrics, _require_nested_counts,  # noqa: E402
+                         block_resample_days,
+                         _require_outside_repository, poststratified_selection,
+                         stratified_sample,
                          selection_audit, selection_flags, validate_registry,
                          validate_scenarios)
 
@@ -149,6 +151,50 @@ class SelectionTests(unittest.TestCase):
                     manifest_path=manifest, flights_dir=flights_dir,
                     decomposition_dir=decomposition_dir, min_group_n=10,
                     verify=False)
+
+    def test_poststratification_reports_support_and_closes_target(self):
+        frame = pd.DataFrame({
+            "typecode": ["A320", "A320", "B738", "B738"],
+            "gc_km": [400.0, 400.0, 900.0, 900.0],
+            "co2_kg_v0": [120.0, 120.0, 260.0, 260.0],
+            "ideal_gc_co2_kg": [100.0, 100.0, 200.0, 200.0],
+            "hybrid_co2_kg": [110.0, 110.0, 230.0, 230.0],
+            "co2_real_kg": [120.0, 120.0, 260.0, 260.0],
+            "co2_ideal_kg": [100.0, 100.0, 200.0, 200.0],
+            "co2_hybrid_kg": [110.0, 110.0, 230.0, 230.0],
+        })
+        result = poststratified_selection(
+            frame, pd.Series([True, False, True, False]))
+        diagnostics = result["diagnostics"]
+        self.assertEqual(diagnostics["strata"], 2)
+        self.assertEqual(diagnostics["supported_strata"], 2)
+        self.assertEqual(diagnostics["support_share_of_nominal_ideal_co2"], 1.0)
+        self.assertEqual(diagnostics["maximum_weight"], 2.0)
+        self.assertAlmostEqual(
+            diagnostics["target_ideal_co2_closure_relative"], 0.0)
+
+        partial = poststratified_selection(
+            frame, pd.Series([True, False, False, False]))
+        self.assertAlmostEqual(
+            partial["diagnostics"]["support_share_of_nominal_ideal_co2"],
+            1.0 / 3.0)
+
+    def test_selection_stress_guards_fail_loudly(self):
+        frame = pd.DataFrame({
+            "typecode": ["A320"], "gc_km": [400.0],
+            "co2_kg_v0": [120.0], "ideal_gc_co2_kg": [100.0],
+            "hybrid_co2_kg": [110.0], "co2_real_kg": [120.0],
+            "co2_ideal_kg": [100.0], "co2_hybrid_kg": [110.0],
+        })
+        with self.assertRaisesRegex(UncertaintyError, "retains no flights"):
+            poststratified_selection(frame, pd.Series([False]))
+        broken = frame.copy()
+        broken.loc[0, "ideal_gc_co2_kg"] = -1.0
+        with self.assertRaisesRegex(UncertaintyError, "non-positive"):
+            poststratified_selection(broken, pd.Series([True]))
+        with self.assertRaisesRegex(UncertaintyError, "not nested"):
+            _require_nested_counts(
+                {"loose": 10, "strict": 11}, [("loose", "strict")])
 
 
 class MetricTests(unittest.TestCase):

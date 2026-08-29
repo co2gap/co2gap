@@ -258,6 +258,25 @@ an aggregate, internally closed funnel in the parquet source contract. The
 September inputs predate that funnel, so their upstream attrition cannot be
 recovered retrospectively.
 
+The observable side can then be stressed without assigning an outcome to any
+rejected flight:
+
+```bash
+python lab/uncertainty.py selection-stress \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --ground-dir /path/to/data/ground_share_ecac \
+  --calibration "$PWD/data/calibration_ecac.json" \
+  --out /tmp/co2gap-selection-stress.json
+```
+
+It applies nested stricter coverage and maximum-gap filters to the frozen
+population, removes the lowest-retention days, and reports both raw subsets and
+a poststratification to the nominal aircraft-type/distance ideal-CO2 mix. The
+result measures a within-gate quality gradient. It is explicitly not an
+imputation, correction or bound for flights outside the gate.
+
 ## Reproducing
 
 The two machines have separate direct-dependency locks:

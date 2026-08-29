@@ -255,3 +255,14 @@ of the four quality predicates. No rejected trace, aircraft or flight identifier
 is retained. Historical contracts without the optional block remain valid; the
 missing September denominator can only be closed by rerunning the raw dumps or
 by measuring a future representative period.
+
+The observable side has also been stress-tested without decomposing rejected
+flights. Tightening coverage to 95% raises the total gap by **+0.344 percentage
+points after standardising the ideal-CO2 mix by aircraft type and distance**;
+requiring no gap above 300 seconds raises it by **+0.375 points**. Almost the
+whole movement is vertical. Removing the two lowest-retention days changes the
+standardised result by only **-0.001 points**, so those days are conspicuous but
+do not drive the headline. This is evidence of a within-gate quality gradient,
+not a correction or a bound for excluded flights. The strict 99%/120-second
+cases require maximum weights above 41 and are retained only as instability
+diagnostics.

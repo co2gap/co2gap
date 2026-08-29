@@ -65,6 +65,10 @@ METRIC_COLUMNS = (
     "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct",
     "gap_total_pct_calibrated",
 )
+RATIO_METRICS = (
+    "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct",
+    "gap_total_pct_calibrated",
+)
 
 
 class UncertaintyError(RuntimeError):
@@ -582,6 +586,246 @@ def _metrics(frame: pd.DataFrame) -> dict[str, float]:
     }
 
 
+def _ratio_delta(point: dict, nominal: dict) -> dict[str, float]:
+    return {name: float(point[name] - nominal[name]) for name in RATIO_METRICS}
+
+
+def _selection_strata(frame: pd.DataFrame) -> pd.Series:
+    _require_columns(frame, ("typecode", "gc_km"), "selection-stress frame")
+    distance = pd.cut(
+        pd.to_numeric(frame.gc_km, errors="coerce"), DISTANCE_EDGES,
+        labels=DISTANCE_LABELS).astype("string").fillna("UNKNOWN")
+    return frame.typecode.astype("string").fillna("UNKNOWN") + "|" + distance
+
+
+def poststratified_selection(frame: pd.DataFrame,
+                             selected: pd.Series) -> dict:
+    """Restore the nominal type/distance ideal-CO2 mix inside a strict subset."""
+    selected = pd.Series(selected, index=frame.index).fillna(False).astype(bool)
+    if not selected.any():
+        raise UncertaintyError("selection-stress scenario retains no flights")
+    input_columns = [
+        "co2_kg_v0", "ideal_gc_co2_kg", "hybrid_co2_kg",
+        "co2_real_kg", "co2_ideal_kg", "co2_hybrid_kg",
+    ]
+    _require_columns(frame, input_columns, "selection-stress frame")
+    ideal = pd.to_numeric(frame.ideal_gc_co2_kg, errors="coerce").to_numpy(float)
+    if not np.isfinite(ideal).all() or (ideal <= 0).any():
+        raise UncertaintyError(
+            "selection-stress frame contains non-positive or invalid ideal CO2")
+    strata = _selection_strata(frame)
+    target = frame.assign(_stratum=strata).groupby(
+        "_stratum", sort=True)["ideal_gc_co2_kg"].sum()
+    subset = frame.loc[selected, input_columns].copy()
+    subset["_stratum"] = strata.loc[selected]
+    observed = subset.groupby("_stratum", sort=True)["ideal_gc_co2_kg"].sum()
+    supported = target.index.intersection(observed[observed > 0].index)
+    if supported.empty:
+        raise UncertaintyError("selection-stress scenario has no supported strata")
+    factors = target.loc[supported] / observed.loc[supported]
+    subset = subset.loc[subset._stratum.isin(supported)].copy()
+    weights = subset._stratum.map(factors).astype(float)
+    weighted = subset[input_columns].mul(weights.to_numpy(), axis=0)
+    expected_ideal = float(target.loc[supported].sum())
+    actual_ideal = float(weighted.ideal_gc_co2_kg.sum())
+    if not math.isclose(actual_ideal, expected_ideal, rel_tol=1e-12, abs_tol=1e-3):
+        raise UncertaintyError("poststratification does not close on target ideal CO2")
+    support = expected_ideal / float(target.sum())
+    return {
+        "point_estimates": _metrics(weighted),
+        "diagnostics": {
+            "strata": int(len(target)),
+            "supported_strata": int(len(supported)),
+            "support_share_of_nominal_ideal_co2": float(support),
+            "minimum_weight": float(weights.min()),
+            "maximum_weight": float(weights.max()),
+            "kish_effective_sample_size": float(
+                weights.sum() ** 2 / np.square(weights).sum()),
+            "target_ideal_co2_closure_relative": float(
+                (actual_ideal - expected_ideal) / expected_ideal),
+        },
+    }
+
+
+def _stress_scenario(frame: pd.DataFrame, selected: pd.Series, *,
+                     scenario_id: str, family: str, description: str,
+                     nominal: dict) -> dict:
+    selected = pd.Series(selected, index=frame.index).fillna(False).astype(bool)
+    subset = frame.loc[selected]
+    if subset.empty:
+        raise UncertaintyError(f"selection-stress scenario {scenario_id} is empty")
+    raw = _metrics(subset)
+    standardised = poststratified_selection(frame, selected)
+    standardised_point = standardised["point_estimates"]
+    return {
+        "id": scenario_id,
+        "family": family,
+        "description": description,
+        "retained": {
+            "flights": int(len(subset)),
+            "flight_share": float(len(subset) / len(frame)),
+            "nominal_ideal_co2_share": float(
+                subset.ideal_gc_co2_kg.sum() / frame.ideal_gc_co2_kg.sum()),
+        },
+        "raw_subset": {
+            "point_estimates": raw,
+            "ratio_delta_percentage_points": _ratio_delta(raw, nominal),
+        },
+        "poststratified": {
+            **standardised,
+            "ratio_delta_percentage_points": _ratio_delta(
+                standardised_point, nominal),
+        },
+    }
+
+
+def _require_nested_counts(counts: dict[str, int],
+                           families: Iterable[tuple[str, ...]]) -> None:
+    for family in families:
+        values = [counts[name] for name in family]
+        if values != sorted(values, reverse=True):
+            raise UncertaintyError(f"selection-stress family is not nested: {family}")
+
+
+def selection_stress(*, manifest_path: Path, flights_dir: Path,
+                     decomposition_dir: Path, ground_dir: Path,
+                     calibration: Path, ground_definition: str,
+                     verify: bool) -> dict:
+    """Stress the headline with stricter observed-quality subsets only."""
+    from release_data import load_release_data
+    import track_quality
+
+    manifest = ReleaseManifest.load(manifest_path)
+    manifest.verify_track_quality(track_quality)
+    if verify:
+        manifest.verify_set("flights", flights_dir)
+    dataset = load_release_data(
+        decomposition_dir, ground_dir, calibration,
+        ground_def=ground_definition, manifest=manifest,
+        verify_manifest=verify,
+    )
+    accepted = dataset.frame.copy()
+    accepted_keys = {
+        day: set(group.flight_id.astype(int))
+        for day, group in accepted.groupby("day", sort=False)
+    }
+    quality_frames = []
+    day_retention = []
+    for day in manifest.days:
+        path = flights_dir / day / "flights.parquet"
+        try:
+            source = pq.read_table(path, columns=list(SELECTION_COLUMNS)).to_pandas()
+        except Exception as exc:
+            raise UncertaintyError(f"cannot read selection-stress input for {day}: {exc}") from exc
+        if source.flight_id.duplicated().any():
+            raise UncertaintyError(f"duplicate source flight_id in selection stress for {day}")
+        flags = selection_flags(
+            source, coverage_min=track_quality.COV_MIN,
+            gc_min_km=track_quality.GC_MIN_KM)
+        passed = flags.all(axis=1)
+        expected = set(source.loc[passed, "flight_id"].astype(int))
+        actual = accepted_keys.get(day, set())
+        if expected != actual:
+            raise UncertaintyError(
+                f"{day}: selection-stress keyset differs from release population: "
+                f"{len(expected - actual)} missing, {len(actual - expected)} extra")
+        day_retention.append({
+            "day": day, "source_flights": int(len(source)),
+            "retained_flights": int(passed.sum()),
+            "retained_share": float(passed.mean()),
+        })
+        quality_frames.append(
+            source.loc[passed, ["flight_id", "coverage_frac", "max_gap_s"]]
+            .assign(day=day))
+
+    quality = pd.concat(quality_frames, ignore_index=True)
+    if quality.duplicated(["day", "flight_id"]).any():
+        raise UncertaintyError("duplicate quality key in selection stress")
+    frame = accepted.merge(
+        quality, on=["day", "flight_id"], how="left", validate="one_to_one")
+    if frame[["coverage_frac", "max_gap_s"]].isna().any().any():
+        raise UncertaintyError("release flight lacks quality metadata in selection stress")
+    nominal = _metrics(frame)
+
+    specs = [
+        ("coverage_ge_090", "coverage_floor", frame.coverage_frac >= 0.90,
+         "Require at least 90% temporal coverage."),
+        ("coverage_ge_095", "coverage_floor", frame.coverage_frac >= 0.95,
+         "Require at least 95% temporal coverage."),
+        ("coverage_ge_099", "coverage_floor", frame.coverage_frac >= 0.99,
+         "Require at least 99% temporal coverage."),
+        ("max_gap_le_900", "maximum_gap", frame.max_gap_s <= 900,
+         "Reject every accepted track with a gap longer than 900 seconds."),
+        ("max_gap_le_600", "maximum_gap", frame.max_gap_s <= 600,
+         "Reject every accepted track with a gap longer than 600 seconds."),
+        ("max_gap_le_300", "maximum_gap", frame.max_gap_s <= 300,
+         "Reject every accepted track with a gap longer than 300 seconds."),
+        ("max_gap_le_120", "maximum_gap", frame.max_gap_s <= 120,
+         "Reject every accepted track with a gap longer than 120 seconds."),
+        ("coverage_ge_095_and_max_gap_le_300", "combined_quality",
+         (frame.coverage_frac >= 0.95) & (frame.max_gap_s <= 300),
+         "Require 95% coverage and no gap longer than 300 seconds."),
+    ]
+    worst_days = sorted(day_retention, key=lambda row: (row["retained_share"], row["day"]))
+    for count in (1, 2, 4, 10):
+        omitted = [row["day"] for row in worst_days[:count]]
+        specs.append((
+            f"drop_worst_{count}_retention_days", "day_omission",
+            ~frame.day.isin(omitted),
+            f"Remove the {count} day(s) with the lowest pre-gate retention: "
+            + ", ".join(omitted) + "."))
+
+    scenarios = [
+        _stress_scenario(
+            frame, mask, scenario_id=scenario_id, family=family,
+            description=description, nominal=nominal)
+        for scenario_id, family, mask, description in specs
+    ]
+    counts = {row["id"]: row["retained"]["flights"] for row in scenarios}
+    _require_nested_counts(counts, (
+        ("coverage_ge_090", "coverage_ge_095", "coverage_ge_099"),
+        ("max_gap_le_900", "max_gap_le_600", "max_gap_le_300", "max_gap_le_120"),
+    ))
+
+    return {
+        "schema_version": 1,
+        "kind": "co2gap-selection-stress",
+        "publication_status": "diagnostic_only",
+        "release_id": manifest.release_id,
+        "release_manifest_sha256": sha256_file(manifest.path),
+        "source_manifest_verified": bool(verify),
+        "population": {
+            "flights": int(len(frame)), "days": int(frame.day.nunique()),
+            "ground_join_coverage": float(dataset.ground_coverage),
+        },
+        "nominal_point_estimates": nominal,
+        "poststratification": {
+            "target": "nominal ideal-CO2 distribution",
+            "strata": "aircraft typecode x great-circle distance band",
+            "purpose": (
+                "Separate part of the quality gradient from changes in aircraft and "
+                "distance composition; it does not make selection random within strata."
+            ),
+        },
+        "lowest_retention_days": worst_days[:10],
+        "scenarios": scenarios,
+        "interpretation": (
+            "Nested stricter-quality and day-omission diagnostics on flights already "
+            "inside the release. Percentage-point changes are neither a correction nor "
+            "a bound for excluded flights."
+        ),
+        "limitations": [
+            "No outcome is imputed for a rejected flight.",
+            "Raw-subset tonnes shrink with the perimeter and are not missing or avoided emissions.",
+            "Poststratified tonnes are synthetic weighted totals used only to compare ratios.",
+            "Poststratification controls only aircraft type and distance band.",
+            "Quality may remain associated with route, phase, weather or reception within a stratum.",
+            "Very strict subsets can be dominated by large poststratification weights; inspect diagnostics.",
+            "An external or independently validated missing-outcome proxy is still required to bound bias.",
+        ],
+    }
+
+
 def _daily_metrics_input(frame: pd.DataFrame) -> pd.DataFrame:
     columns = [
         "co2_kg_v0", "ideal_gc_co2_kg", "hybrid_co2_kg",
@@ -1086,6 +1330,15 @@ def main(argv: list[str] | None = None) -> int:
     selection_parser.add_argument("--out", type=Path, required=True)
     selection_parser.add_argument("--skip-manifest-verification", action="store_true")
 
+    stress_parser = sub.add_parser(
+        "selection-stress",
+        help="measure stricter-quality and anomalous-day gradients inside the release")
+    _common_release_arguments(stress_parser)
+    stress_parser.add_argument("--flights-dir", type=Path, required=True)
+    stress_parser.add_argument("--ground-definition", choices=sorted(GROUND_DEFINITIONS),
+                               default="a3000t70")
+    stress_parser.add_argument("--out", type=Path, required=True)
+
     sensitivity_parser = sub.add_parser(
         "sensitivity", help="run paired finite-difference scenarios")
     _common_release_arguments(sensitivity_parser)
@@ -1137,6 +1390,28 @@ def main(argv: list[str] | None = None) -> int:
             f"{share['great_circle_km'] * 100:.2f}% of great-circle km and "
             f"{share['first_pass_gate_to_gate_co2_tonnes'] * 100:.2f}% of "
             f"first-pass CO2 -> {args.out}")
+        return 0
+
+    if args.command == "selection-stress":
+        result = selection_stress(
+            manifest_path=args.release_manifest, flights_dir=args.flights_dir,
+            decomposition_dir=args.decomposition_dir, ground_dir=args.ground_dir,
+            calibration=args.calibration,
+            ground_definition=args.ground_definition,
+            verify=not args.skip_manifest_verification)
+        _atomic_json(args.out, result)
+        deltas = {
+            row["id"]: (
+                row["poststratified"]["ratio_delta_percentage_points"]
+                ["gap_total_pct"])
+            for row in result["scenarios"]
+        }
+        print(
+            "selection stress: poststratified total-gap deltas "
+            f"coverage>=0.95 {deltas['coverage_ge_095']:+.3f} pp, "
+            f"max-gap<=300s {deltas['max_gap_le_300']:+.3f} pp, "
+            f"drop two worst days {deltas['drop_worst_2_retention_days']:+.3f} pp "
+            f"-> {args.out}")
         return 0
 
     verify = not args.skip_manifest_verification

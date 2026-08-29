@@ -174,9 +174,9 @@
       "correlation_scope": "coverage area, route and flight length",
       "nominal": "thresholds in pipeline/track_quality.py",
       "range": "exact conditional retention by flights, great-circle kilometres, flown kilometres and first-pass CO2",
-      "evidence": "release manifest, pipeline/track_quality.py and lab/uncertainty.py selection",
-      "propagation": "exact aggregate attrition and failure combinations; future threshold scenarios remain separate",
-      "notes": "The denominator begins after complete-flight reconstruction and successful modelling. Retention is measured, but the resulting bias in the headline is not bounded because rejected flights lack a trustworthy decomposition. Changing a gate changes the target population and must be reported separately from model uncertainty."
+      "evidence": "release manifest; pipeline/track_quality.py; lab/uncertainty.py selection and selection-stress",
+      "propagation": "exact aggregate attrition plus nested stricter-quality and day-omission diagnostics with type/distance poststratification",
+      "notes": "The denominator begins after complete-flight reconstruction and successful modelling. Retention and the within-gate quality gradient are measured, but the resulting bias in the headline is not bounded because rejected flights lack a trustworthy decomposition. Changing a gate changes the target population and must be reported separately from model uncertainty."
     },
     {
       "id": "upstream_ingestion_selection",

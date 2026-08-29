@@ -157,6 +157,42 @@ to a flight rejected precisely because its track is unreliable would turn the
 quality failure into a model input. Any correction requires an independent or
 validated proxy for the missing outcome.
 
+## 6. Within-gate selection stress
+
+```bash
+python lab/uncertainty.py selection-stress \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --ground-dir /path/to/data/ground_share_ecac \
+  --calibration "$PWD/data/calibration_ecac.json" \
+  --out /tmp/co2gap-selection-stress.json
+```
+
+This stress test only removes observations from the trustworthy side of the
+gate. It never decomposes or imputes a rejected flight. Its nested scenarios
+raise temporal coverage to 90%, 95% and 99%; cap the longest gap at 900, 600,
+300 and 120 seconds; combine the moderate criteria; and remove the one, two,
+four and ten lowest-retention days.
+
+Every subset is reported twice. The raw result answers what the stricter
+population says. The poststratified result restores the nominal distribution of
+ideal CO2 across aircraft type and great-circle distance band, reducing the
+part of the change caused merely by a different fleet or distance mix. Support,
+maximum weight and Kish effective sample size are emitted with every result.
+
+On the frozen release, requiring at least 95% coverage moves the total gap by
+**+0.344 percentage points after poststratification**, of which +0.325 is
+vertical. Limiting the longest gap to 300 seconds moves it by **+0.375 points**,
+again almost entirely vertical. Removing the two worst-retention days moves it
+by only **-0.001 points** after standardisation. The gradient therefore lives
+inside track quality rather than in the aggregate weight of 24–25 March.
+
+The 99%/120-second tails require maximum weights above 41 and are deliberately
+reported as unstable stress cases. Even the moderate gradient is not a bound:
+poststratification does not make quality random within a type/distance cell, and
+it cannot establish the missing outcome on the rejected side.
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:
