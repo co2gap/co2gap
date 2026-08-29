@@ -28,7 +28,7 @@ import track_quality                               # noqa: E402
 from excess import build_nominal_flight            # noqa: E402
 from excess_wind import ideal_co2_windaware        # noqa: E402
 from emissions import estimate_fuel                 # noqa: E402
-from wind.era5 import WindField                     # noqa: E402
+from wind.era5 import WindField, required_wind_days # noqa: E402
 
 # Every directory is overridable so a second geographic box (ECAC) can be
 # analysed without touching the first box's data or output. Hardcoding these
@@ -77,8 +77,17 @@ def load_calibration() -> dict:
 
 
 def build_windfield(days) -> WindField | None:
-    ncs = [ERA5_DIR / f"{d}.nc" for d in days if (ERA5_DIR / f"{d}.nc").exists()]
-    return WindField(ncs) if ncs else None
+    required = required_wind_days(days)
+    if not required:
+        return None
+    ncs = [ERA5_DIR / f"{day}.nc" for day in required]
+    missing = [path.name for path in ncs if not path.exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"ERA5 missing for {len(missing)} required flight/adjacent day(s); "
+            f"first {missing[0]}"
+        )
+    return WindField(ncs)
 
 
 def quality_gate(df) -> pd.DataFrame:

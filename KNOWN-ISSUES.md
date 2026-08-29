@@ -1,7 +1,7 @@
 # Known issues
 
-Three defects found before the first release, measured rather than estimated,
-and deliberately left in the frozen data. Two of them are also stated on the
+Defects found around the first release, measured rather than estimated, and
+deliberately left in the frozen data. Some are also stated on the
 site — in methodology §11 and in the FAQ — because a reader who trusts a figure
 should not have to read the source to learn its limits. This file is the
 engineer's copy: what is wrong, how much it moves, and what fixing it requires.
@@ -88,3 +88,36 @@ decomposition at all.
 The remaining cleanup is to rename `flown_ge_09gc`, whose name goes false the
 day `FLOWN_MIN_FRAC` stops being 0.9. The stored contract already records the
 numeric threshold independently of that legacy column name.
+
+## 4. Late baselines extrapolated the 23:00 ERA5 field past midnight
+
+**Closed for newly generated decomposition artefacts on
+`hardening-2027-01`; historical for the September release.** The decomposer
+used only the NetCDF named for the flight's departure day. Its interpolator was
+allowed to extrapolate in time, so a baseline sampled after 23:00
+kept extending that day's last wind field instead of reading the following UTC
+day. New runs require both days, fingerprint both as inputs, and reject every
+time outside actual hourly coverage or inside a temporal hole.
+
+The two affected populations are different. Only **6 flights** have real track
+points after midnight. The larger count, **17,082 flights (0.932%)**, refers to
+time samples along the synthetic ideal or hybrid baseline after 23:00; it does
+not mean that 17,082 observed trajectories crossed midnight. The latest
+synthetic sample is 00:12:31.7 on the following day.
+
+Recomputing only those affected baselines with the adjacent ERA5 file changes
+the aggregate excess by **-0.532 tonnes CO2** and the total excess rate by
+**-0.0000029 percentage points**. `real_mt` is unchanged. The largest absolute
+per-flight shifts are **112.16 kg CO2** for the ideal baseline and **131.52 kg
+CO2** for the hybrid baseline. Published rounding remains 23.37 Mt, 2.50 Mt,
+12.1%, 7.51% lateral and 4.59% vertical.
+
+**Consequence for reproduction:** the September parquet remains byte-for-byte
+frozen rather than being silently regenerated with later wind inputs. A fresh
+run of the corrected code will differ below the published precision.
+
+**Fix, at the next release:** regenerate decomposition, phase, ground-adjusted
+headlines and rankings in the single January rerun, together with the airport
+resolver, speed-coverage gate and threshold-contract cleanup already listed
+above; then replace this historical note with the new release identifiers and
+checksums.

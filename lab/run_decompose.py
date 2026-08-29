@@ -37,7 +37,7 @@ sys.path.insert(0, str(ROOT))
 
 from analysis import quality_gate, LOAD_FACTOR, RESERVE_KG   # noqa: E402
 from decompose import decompose_flight                        # noqa: E402
-from wind.era5 import WindField                               # noqa: E402
+from wind.era5 import WindField, required_wind_days           # noqa: E402
 from release_manifest import optional_manifest               # noqa: E402
 from artifact_contract import (file_fingerprint, read_contract,  # noqa: E402
                                validate_parquet, write_parquet)
@@ -63,7 +63,7 @@ OUT_COLS = ["day", "flight_id", "typecode", "origin_icao", "dest_icao",
             "excess_vert_alt_pct", "excess_vert_speed_pct",
             "excess_vert_residual_pct",
             "real_cruise_alt_ft", "real_cruise_tas_kt"]
-STAGE_VERSION = 1
+STAGE_VERSION = 2
 
 
 def contract_configuration() -> dict:
@@ -76,14 +76,22 @@ def contract_configuration() -> dict:
             "great_circle_min_km": track_quality.GC_MIN_KM,
             "gap_threshold_s": track_quality.GAP_THRESHOLD_S,
         },
+        "era5_time_boundary": "flight-day-plus-next-day; no time extrapolation",
     }
 
 
+def era5_paths(day: str) -> list[Path]:
+    return [ERA5_DIR / f"{wind_day}.nc"
+            for wind_day in required_wind_days([day])]
+
+
 def contract_inputs(day: str) -> dict:
+    current, adjacent = era5_paths(day)
     return {
         "flights": file_fingerprint(FLIGHTS_DIR / day / "flights.parquet"),
         "points": file_fingerprint(FLIGHTS_DIR / day / "points.parquet"),
-        "era5": file_fingerprint(ERA5_DIR / f"{day}.nc"),
+        "era5_current": file_fingerprint(current),
+        "era5_adjacent": file_fingerprint(adjacent),
     }
 
 
@@ -117,16 +125,17 @@ def era5_is_complete(path: Path) -> bool:
 def ready_days() -> list[str]:
     days, partial = [], []
     for d in sorted(FLIGHTS_DIR.glob("*")):
-        nc = ERA5_DIR / f"{d.name}.nc"
         if not ((d / "flights.parquet").exists()
-                and (d / "points.parquet").exists() and nc.exists()):
+                and (d / "points.parquet").exists()):
             continue
-        if era5_is_complete(nc):
+        wind_paths = era5_paths(d.name)
+        if all(path.exists() and era5_is_complete(path) for path in wind_paths):
             days.append(d.name)
         else:
             partial.append(d.name)
     if partial:
-        print(f"skipping {len(partial)} day(s) with INCOMPLETE ERA5 "
+        print(f"skipping {len(partial)} day(s) with MISSING/INCOMPLETE ERA5 "
+              f"on the flight day or its adjacent UTC day "
               f"(re-run the ERA5 backfill once the data is published): "
               f"{', '.join(partial)}")
     return days
@@ -137,7 +146,7 @@ def process_day(day: str) -> int:
     q = quality_gate(fl)
     if q.empty:
         return 0
-    wf = WindField([ERA5_DIR / f"{day}.nc"])
+    wf = WindField(era5_paths(day))
 
     keep = set(q.flight_id.tolist())
     # alt/ias/vs are read too: they carry the flight's real vertical and speed

@@ -16,6 +16,7 @@ we do not need actual station pressure. alt_ft -> hPa via the standard atmospher
 from __future__ import annotations
 
 import os
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -40,6 +41,22 @@ ERA5_DIR = Path(os.environ.get("ERA5_DIR") or
                 (Path(os.environ.get("ADSB_ROOT",
                                      str(Path(__file__).resolve().parents[1])))
                  / "data/era5"))
+
+
+def required_wind_days(days) -> list[str]:
+    """Return each flight day plus the following UTC day.
+
+    A baseline departing late in a flight day can be sampled after midnight.
+    Loading only ``day.nc`` made the interpolator extrapolate the 23:00 field
+    into the following day. The adjacent day is therefore an input, not an
+    optional look-ahead cache.
+    """
+    out = set()
+    for day_iso in days:
+        day = date.fromisoformat(str(day_iso))
+        out.add(day.isoformat())
+        out.add((day + timedelta(days=1)).isoformat())
+    return sorted(out)
 
 
 def alt_ft_to_hpa(alt_ft):
@@ -81,8 +98,9 @@ class WindField:
     Vectorised u,v interpolation over (time, pressure, lat, lon).
 
     Built from one or more daily netcdfs. Uses a 4-D linear interpolation on the
-    regular grid (scipy RegularGridInterpolator), extrapolating at the edges
-    rather than erroring (aircraft occasionally sit just above the top level).
+    regular grid (scipy RegularGridInterpolator). Pressure and geographic edge
+    points are clamped because aircraft can sit just outside the requested box;
+    time is never extrapolated and temporal holes are rejected.
     """
 
     def __init__(self, nc_paths):
@@ -109,12 +127,42 @@ class WindField:
                                            bounds_error=False, fill_value=None)
         ds.close()
 
+    def _require_time_coverage(self, t: np.ndarray) -> None:
+        """Reject samples outside the hourly field or inside a temporal hole."""
+        if t.size == 0:
+            return
+        if not np.all(np.isfinite(t)):
+            raise ValueError("ERA5 sample time is not finite")
+
+        times = self.times
+        pos = np.searchsorted(times, t, side="left")
+        inside = pos < len(times)
+        exact = np.zeros(t.shape, dtype=bool)
+        exact[inside] = times[pos[inside]] == t[inside]
+        between = (~exact) & (pos > 0) & (pos < len(times))
+        covered = exact.copy()
+        covered[between] = (
+            times[pos[between]] - times[pos[between] - 1] <= 3600
+        )
+        if np.all(covered):
+            return
+
+        bad = float(t[np.flatnonzero(~covered)[0]])
+        stamp = np.datetime64(int(bad), "s")
+        lo = np.datetime64(int(times.min()), "s")
+        hi = np.datetime64(int(times.max()), "s")
+        raise ValueError(
+            f"ERA5 sample time {stamp} is outside available hourly coverage "
+            f"({lo} to {hi})"
+        )
+
     def uv(self, t, lat, lon, alt_ft):
         """Return (u, v) in m/s at the given points (all array-like, same length)."""
         t = np.asarray(t, dtype=float)
         lat = np.asarray(lat, dtype=float)
         lon = np.asarray(lon, dtype=float)
         p = alt_ft_to_hpa(alt_ft)
+        self._require_time_coverage(t)
         # clamp to grid range so edge points extrapolate gently in pressure only
         p = np.clip(p, self.levels.min(), self.levels.max())
         lat = np.clip(lat, self.lats.min(), self.lats.max())
