@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "release_id": "2026-09-01",
+  "description": "Unrounded values and exact counts approved for the frozen release. Floats are compared by their exact IEEE-754 value, not by displayed rounding.",
+  "values": {
+    "flights": 1833127,
+    "days": 197,
+    "co2_real_tonnes": 23367308.900684338,
+    "co2_ideal_tonnes": 20871810.357600886,
+    "co2_gap_tonnes": 2495498.5430834517,
+    "gap_total_pct": 12.091846635657904,
+    "gap_lateral_pct": 7.505740825238055,
+    "gap_vertical_pct": 4.586105810419848,
+    "kea_pct": 2.257670672560629,
+    "publishable_routes": 5483,
+    "ranked_routes": 2787,
+    "airports": 152,
+    "flagged_ranked_routes": 208
+  }
+}

@@ -338,6 +338,7 @@ ADSB_CALIB=$PWD/data/calibration_ecac.json \
 ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
 ADSB_COVERAGE_JSON=$PWD/data/coverage_ecac.json \
 ADSB_RELEASE_MANIFEST=$PWD/release-manifest.json \
+ADSB_RELEASE_HEADLINES=$PWD/release-headlines.json \
 ADSB_SITE_OUT=$PWD/site/index.html \
 python lab/site_build.py
 ```
@@ -354,8 +355,11 @@ a runbook followed at midnight should not depend on a directory being where the
 code guesses. The run must print
 **1,833,127 flights · 197 days · 23.37 Mt · lat 7.51 · vert 4.59 · KEA +2.26 ·
 152 airports · 208 flagged routes**; anything else means a different dataset was
-read. `lab/freeze_check.py check` compares the rebuilt pages against a snapshot
-of what the site claims and is what caught that fallback in the first place.
+read. Before rendering, `lab/headline_check.py` compares thirteen unrounded
+values and exact counts against `release-headlines.json`; it is a numeric gate,
+separate from the editorial one. `lab/freeze_check.py check` compares the
+rebuilt pages against a snapshot of what the site claims and is what caught
+that fallback in the first place.
 
 The generator builds a complete site in a sibling staging directory, validates
 the exact generated/static file set, and only then promotes the whole directory.

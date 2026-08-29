@@ -41,6 +41,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import track_quality
 from release_manifest import optional_manifest
 from artifact_contract import manifest_allowed_missing
+from headline_check import verify_release_headlines
 from release_data import GROUND_DEFS, correct_phase_basis, load_release_data
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +51,8 @@ AIRPORTS = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airports.cs
 OUT = Path(os.environ.get("ADSB_SITE_OUT") or (ROOT / "site/index.html"))
 OUT_METH = OUT.parent / "methodology.html"
 COVERAGE = Path(os.environ.get("ADSB_COVERAGE_JSON") or (ROOT / "data/coverage.json"))
+HEADLINES = Path(os.environ.get("ADSB_RELEASE_HEADLINES")
+                 or (ROOT / "release-headlines.json"))
 # Optional. When the phase split has been produced, the airport note can say
 # WHERE in the flight the gap happened instead of admitting it cannot. Absent,
 # the page falls back to the earlier wording, so building the site never depends
@@ -2164,6 +2167,21 @@ def _build_site_tree():
         f"<tr><td>{esc(i)} km</td><td class=num>{int(r.n):,}</td>"
         f"<td class=num>{pct0(r.med)}</td></tr>" for i, r in band.iterrows())
     n_closed = int((g.closed != "").sum())
+    verify_release_headlines({
+        "flights": len(df),
+        "days": len(days),
+        "co2_real_tonnes": float(co2_t),
+        "co2_ideal_tonnes": float(ideal_t),
+        "co2_gap_tonnes": float(excess_t),
+        "gap_total_pct": float(lat_w + vert_w),
+        "gap_lateral_pct": float(lat_w),
+        "gap_vertical_pct": float(vert_w),
+        "kea_pct": float(kea),
+        "publishable_routes": len(g_all),
+        "ranked_routes": len(g),
+        "airports": len(ga),
+        "flagged_ranked_routes": n_closed,
+    }, HEADLINES, release_id=manifest.release_id if manifest else RELEASE)
 
     # ---- i quattro risultati, scritti UNA volta e usati in DUE posti --------
     # In home va il titolo con l'attacco; il seguito, che e' dove stanno i
