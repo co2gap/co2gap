@@ -69,11 +69,20 @@ NEED = ["day", "flight_id", "typecode", "co2_kg_v0", "ideal_gc_co2_kg",
         "hybrid_co2_kg", "flown_km", "cruise_alt_ft", "mean_wpar_track_ms"]
 
 PTS_COLS = ["flight_id", "t", "lat", "lon", "alt_ft", "gs_kt", "ias_kt", "vs_fpm"]
-STAGE_VERSION = 1
+STAGE_VERSION = 2
+HYBRID_MAX_REL_ERR = 0.0
+ADD_MAX_ABS_RESID_PP = 1e-9
 
 
 def contract_configuration() -> dict:
-    return {"load_factor": LOAD_FACTOR, "reserve_kg": RESERVE_KG}
+    return {
+        "load_factor": LOAD_FACTOR,
+        "reserve_kg": RESERVE_KG,
+        "numeric_gates": {
+            "hybrid_max_rel_err": HYBRID_MAX_REL_ERR,
+            "add_max_abs_resid_pp": ADD_MAX_ABS_RESID_PP,
+        },
+    }
 
 
 def contract_inputs(day: str) -> dict:
@@ -100,6 +109,28 @@ def ready_days() -> list[str]:
         except Exception:
             print(f"  {day}: frozen parquet unreadable, skipped", flush=True)
     return out
+
+
+def apply_numeric_gates(day: str, rel: pd.Series,
+                        add_resid: pd.Series) -> tuple[float, float]:
+    """Fail before promotion if reconstruction or additivity does not close."""
+    if rel.empty or not np.isfinite(rel.to_numpy()).all():
+        raise ValueError(f"{day}: hybrid reproduction error is empty/non-finite")
+    if add_resid.empty or not np.isfinite(add_resid.to_numpy()).all():
+        raise ValueError(f"{day}: additivity residual is empty/non-finite")
+    hybrid_max = float(rel.max())
+    add_max = float(add_resid.abs().max())
+    if hybrid_max > HYBRID_MAX_REL_ERR:
+        raise ValueError(
+            f"{day}: hybrid reproduction gate failed: {hybrid_max:.3e} > "
+            f"{HYBRID_MAX_REL_ERR:.3e}"
+        )
+    if add_max > ADD_MAX_ABS_RESID_PP:
+        raise ValueError(
+            f"{day}: phase additivity gate failed: {add_max:.3e} pp > "
+            f"{ADD_MAX_ABS_RESID_PP:.3e} pp"
+        )
+    return hybrid_max, add_max
 
 
 def process_day(day: str, manifest=None) -> tuple[int, dict]:
@@ -143,11 +174,12 @@ def process_day(day: str, manifest=None) -> tuple[int, dict]:
     # ---- the two gates, checked on every day, never assumed ---------------
     j = df.merge(dec[["flight_id", "hybrid_co2_kg"]], on="flight_id", how="left")
     rel = (j.hybrid_co2_rebuilt_kg - j.hybrid_co2_kg).abs() / j.hybrid_co2_kg
+    hybrid_max, add_max = apply_numeric_gates(day, rel, df.resid_add_pct)
     checks = {
         "n": len(df),
-        "hybrid_max_rel_err": float(rel.max()),
+        "hybrid_max_rel_err": hybrid_max,
         "hybrid_exact_frac": float((rel == 0).mean()),
-        "add_max_abs_resid": float(df.resid_add_pct.abs().max()),
+        "add_max_abs_resid": add_max,
         "thin_bias_pct": float(
             (df.real_co2_thin_kg.sum()
              / dec.set_index("flight_id").loc[df.flight_id].co2_kg_v0.sum() - 1)
@@ -241,9 +273,9 @@ def main():
     print(f"\ndone: {total:,} flights across {len(todo)} day(s) in "
           f"{(time.time()-t0)/60:.1f} min -> {OUT_DIR}")
     print(f"worst hybrid reproduction error : {worst_hybrid:.3e}  "
-          f"(gate: must be 0)")
+          f"(gate: <= {HYBRID_MAX_REL_ERR:.0e})")
     print(f"worst additivity residual (pp)  : {worst_add:.3e}  "
-          f"(gate: must be ~0)")
+          f"(gate: <= {ADD_MAX_ABS_RESID_PP:.0e})")
     if manifest:
         manifest.require_exact_output_days(OUT_DIR, "phase")
         manifest.verify_set("phase", OUT_DIR, artifact=True)

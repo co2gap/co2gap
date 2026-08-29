@@ -284,6 +284,11 @@ instead of treating any readable non-empty file as complete. The September
 artefacts predate the footer contract and are accepted only through the full
 checksums in their manifest.
 
+Before a phase parquet is promoted, the rebuilt hybrid must reproduce its
+decomposition input exactly and the six phase/position buckets must close to
+within `1e-9` percentage points. Both gates run on every day and a failure
+leaves no final output file.
+
 Release headlines have one loading path: `lab/release_data.py` joins the exact
 decomposition and ground keysets, removes ground movement, recomputes the three
 excess columns and only then applies calibration to absolute masses. The site,
