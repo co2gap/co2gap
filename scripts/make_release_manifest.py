@@ -71,8 +71,9 @@ def main() -> None:
     era5_days = sorted(set(days) | {
         (date.fromisoformat(d) + timedelta(days=1)).isoformat() for d in days
     })
-    calibration_days = sorted(
-        p.name for p in (root / "data/flights_ecac").iterdir() if p.is_dir())
+    # Calibration is fitted on the release population, never on every day that
+    # happens to have accumulated in the mutable flight cache.
+    calibration_days = list(days)
     commit = args.code_commit or subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
 

@@ -105,12 +105,20 @@ def main():
     manifest = optional_manifest(args.release_manifest)
     if manifest:
         available = [p.name for p in FLIGHTS_DIR.iterdir() if p.is_dir()]
-        missing = sorted(set(manifest.calibration_days) - set(available))
+        missing = sorted(set(manifest.days) - set(available))
         if missing:
             raise SystemExit(f"calibration inputs: missing {missing[0]}")
-        days = manifest.calibration_days
+        # The calibration is part of the release analysis, so its population is
+        # the release population. The September manifest records 201 historical
+        # calibration days because that is what produced its frozen factors;
+        # corrected reruns must not reproduce that contamination.
+        manifest.verify_set("flights", FLIGHTS_DIR)
+        days = manifest.days
+        print(f"release {manifest.release_id}: calibration fixed to "
+              f"{len(days)} manifest day(s)")
     else:
         days = None
+        print("exploratory update: calibration uses every available flight day")
     rows = load_clean(days)
     factors = {}
     print(f"{'type':5} {'n':>4} {'obs_median':>10} {'published':>9} {'dev%':>6} {'factor':>7}")
@@ -137,12 +145,12 @@ def main():
         print(f"{t:5} {len(ffs):>4} {obs:>10.0f} {pub:>9} {dev:>+6.0f} {factor:>7.3f}{mark}"
               f"   [{PUB_SOURCE.get(t, '?')}]")
 
-    OUT.write_text(json.dumps(factors, indent=2, sort_keys=True))
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    tmp = OUT.with_suffix(OUT.suffix + ".tmp")
+    tmp.write_text(json.dumps(factors, indent=2, sort_keys=True))
+    tmp.replace(OUT)
     print(f"\nwrote {OUT} with {len(factors)} correction factor(s):")
     print(json.dumps(factors, indent=2, sort_keys=True))
-    if manifest:
-        manifest.verify_file("calibration", OUT)
-        print(f"release {manifest.release_id}: calibration checksum verified")
 
     if provisional:
         print("\nPROVISIONAL (bias seen but sample too small to correct): "

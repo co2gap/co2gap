@@ -261,6 +261,11 @@ artefact. Verify it independently with
 Extra days may coexist in an accumulating *input cache*, but no release output
 directory may contain a missing or extra day.
 
+The 201-day calibration population is historical provenance, not the rule for a
+new release: it records the four extra days that entered the frozen September
+factors. Corrected calibration reads `manifest.days`, verifies that exact input
+set, and future manifests make calibration and analysis populations identical.
+
 An ERA5 file counts as ready only when it contains the exact 24 UTC timestamps
 of its named date, all configured pressure levels, only the requested wind
 variables, and the complete configured area at the configured resolution. A

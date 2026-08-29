@@ -121,3 +121,31 @@ headlines and rankings in the single January rerun, together with the airport
 resolver, speed-coverage gate and threshold-contract cleanup already listed
 above; then replace this historical note with the new release identifiers and
 checksums.
+
+## 5. Calibration used four days outside the published population
+
+**Closed for new release calibrations on `hardening-2027-01`; historical for
+the September release.** `lab/calibrate.py` fitted its per-type factors on every
+directory in the accumulating flight cache: **201 days through 24 July**, while
+the published analysis contains **197 days through 20 July**. The immutable
+manifest records that wider historical population because it is what actually
+produced the frozen factors. Corrected runs instead select and verify the exact
+`manifest.days`; newly generated manifests make the calibration and analysis
+populations identical.
+
+Refitting on the 197 published days changes 12 of the 15 stored type factors.
+Applied to the same frozen flight-only population, it raises calibrated real
+CO2 by **270.373 tonnes** (23.367308901 to 23.367579274 Mt), calibrated ideal CO2
+by **243.275 tonnes**, calibrated hybrid CO2 by **259.086 tonnes**, and the
+calibrated absolute excess by **27.098 tonnes** (2.495498543 to 2.495525641 Mt).
+The uncalibrated 12.1%, 7.51% and 4.59% ratios do not change, and the published
+23.37 Mt and 2.50 Mt roundings remain unchanged.
+
+**Consequence for reproduction:** the September calibration JSON and its
+201-day input checksum remain frozen in `release-manifest.json`. Recomputing the
+factors with corrected code intentionally differs from that historical file.
+
+**Fix, at the next release:** refit the factors on the exact January release
+manifest and regenerate all calibrated totals, phase/ground-adjusted outputs,
+headlines and rankings in the same single rerun as the other historical fixes;
+then publish the new calibration and input checksums together.
