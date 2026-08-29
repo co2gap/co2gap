@@ -1796,6 +1796,18 @@ performance model is open source, and the code that turns one into the other is
 published: any figure on this site can be recomputed and any choice made along
 the way can be inspected. What you find here is a <i>tool</i> with its
 limitations stated, not an authored study.</p>
+<p><b>One caveat on that word, because it would be found anyway.</b> The routine
+that matches a trajectory's endpoints to an airport used a fixed longitude scale
+taken at the centre of the original, smaller study area. It was corrected once
+the area widened to the whole of Europe — but <i>after</i> these figures were
+computed, and they are frozen until the next release rather than recomputed
+under a rule that changed mid-window. Re-running today's code therefore
+reproduces the rankings on this page exactly, and the <i>movements</i> column
+for a minority of airports approximately: the correction moves 0.3% of
+departures and 0.5% of arrivals, which leaves the ranking identical (same
+airports, same order at the top, median change of 0.000 points) while changing
+some movement counts by up to a sixth. The next release re-resolves every
+endpoint so that the whole window is matched one way.</p>
 <p>I am not an aviation professional or a climate scientist; I run an ADS-B
 receiver and I care about this. <b>The method, the modelling and the code were
 built with AI assistance</b> (Claude); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical

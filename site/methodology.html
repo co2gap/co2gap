@@ -181,7 +181,7 @@ flights there is a spread of this size" — and only the second is something the
 data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-29 10:37 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-29 10:40 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -604,6 +604,18 @@ performance model is open source, and the code that turns one into the other is
 published: any figure on this site can be recomputed and any choice made along
 the way can be inspected. What you find here is a <i>tool</i> with its
 limitations stated, not an authored study.</p>
+<p><b>One caveat on that word, because it would be found anyway.</b> The routine
+that matches a trajectory's endpoints to an airport used a fixed longitude scale
+taken at the centre of the original, smaller study area. It was corrected once
+the area widened to the whole of Europe — but <i>after</i> these figures were
+computed, and they are frozen until the next release rather than recomputed
+under a rule that changed mid-window. Re-running today's code therefore
+reproduces the rankings on this page exactly, and the <i>movements</i> column
+for a minority of airports approximately: the correction moves 0.3% of
+departures and 0.5% of arrivals, which leaves the ranking identical (same
+airports, same order at the top, median change of 0.000 points) while changing
+some movement counts by up to a sixth. The next release re-resolves every
+endpoint so that the whole window is matched one way.</p>
 <p>I am not an aviation professional or a climate scientist; I run an ADS-B
 receiver and I care about this. <b>The method, the modelling and the code were
 built with AI assistance</b> (Claude); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical
@@ -723,7 +735,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026 — <a href="releases.html">what changes</a>.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-29 10:37 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-29 10:40 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>
