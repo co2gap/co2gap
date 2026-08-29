@@ -10,7 +10,7 @@ the distinction matters enough to write down — the ODbL obligations attach to
 |---|---|---|
 | **The website** (`site/`) — charts, rankings, prose | **Produced Work** | Attribute adsb.lol and name the ODbL licence of the source database. Share-alike does **not** apply to a Produced Work. **Text and charts** are additionally offered under **CC BY 4.0** — this project's own expression, not the underlying data. **Not the tables**: offering data derived from an ODbL database under CC BY would purport to grant what is not ours to grant. |
 | **The source code** (`pipeline/`, `lab/`, `ingest/`, …) | Not a database | **Apache-2.0**. No ODbL obligation — it contains no adsb.lol data. |
-| **Per-flight parquet** (`data/flights*/`, `data/decomposition*/`) | Derivative Database | **Never published.** Excluded by `.gitignore`. Per-flight rows do not leave the lab, for GDPR reasons independent of licensing. |
+| **Per-flight parquet** (`data/flights*/`, `data/decomposition*/`) | Derivative Database | **Never published.** Excluded by `.gitignore`, and nothing per flight appears on the site or in any downloadable release. The one route out is the right of reply: an organisation named here may ask for the rows behind its own figure, and one did in August 2026. That extract goes out **under ODbL, attribution and share-alike included** — its README says so — and it carries no aircraft identity, because none is stored. Anything wider stays in the lab. |
 | **Aggregated per-route / per-airport tables**, if ever released as a downloadable file | Derivative Database | Would have to be released **under ODbL**, share-alike included. This is the one that trips people up. |
 
 The practical consequence: **publishing the site is unproblematic; publishing a
