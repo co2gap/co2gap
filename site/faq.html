@@ -221,9 +221,16 @@ traffic, and nothing here distinguishes the two.</p></section>
 11% — the gap as a share of what was <i>burnt</i>. The
 headline 12.1% is the gap as a share of what the <i>ideal
 flight</i> would have burnt, which is the smaller number, so the percentage is
-larger. Both are ratios of sums, not averages of per-flight percentages; the
-remaining fraction of a point between them is the type calibration, which applies
-to the tonnages and cancels inside the percentages.
+larger. Both are ratios of sums, not averages of per-flight percentages. The remaining
+fraction of a point between them is the type calibration, and the honest way to
+say it is that <b>the two figures do not share a basis</b>: the tonnages above
+are calibrated against the ICAO reference, the percentages are computed on the
+uncalibrated fuel. It is not that the factor cancels — inside a ratio of sums it
+does not, because it varies by aircraft type and the types have different gaps.
+On the calibrated basis the headline would be 12.0% instead of
+12.1%, a difference of 0.14 points.
+Which basis is the right one for the headline is an open question, and it is
+recorded as one rather than settled quietly.
 Neither figure is wrong; they answer different questions, and this site
 uses the second because every comparison here — route against route, airport
 against airport — is made against the ideal, not against the actual.
@@ -380,9 +387,13 @@ that caution appears wherever a ranking does.</p>
 <p>The quality gate is <b>geometric</b>: it checks that a flight covered the distance
 it should have, and never looks at the fuel. A handful of flights in the published
 period therefore carry burn figures that are physically impossible, the residue of
-degenerate trajectories. They are far too few to move any published statistic
-(correcting them shifts the headline by two ten-thousandths of a point), but they are
-there, and a gate on fuel plausibility is due in the next release.</p>
+degenerate trajectories: the worst of them is an A320 whose track carries no
+airspeed at all, and which therefore integrates to a burn 96% below the ideal.
+They are far too few to move any published statistic — removing the
+37 worst shifts the headline by 0.002 of a point, and leaves
+the airport and route rankings identical — but they are there, and the defect
+pushes the gap <i>down</i>, never up. A gate on fuel plausibility is due in the
+next release.</p>
 </div>
 </section>
 
@@ -418,7 +429,7 @@ them is a Derivative Database and stays under ODbL —
 <a href="methodology.html#licence">what that means</a>.
 Wind: ERA5, Copernicus. Airports: OurAirports (CC0). Fuel references: ICAO CEC
 v13.1. Performance model: OpenAP, TU Delft.<br>
-1,833,127 flights · 197 days · release 2026-09-01 · generated 2026-08-29 09:21 UTC.<br>
+1,833,127 flights · 197 days · release 2026-09-01 · generated 2026-08-29 10:37 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </span></p>

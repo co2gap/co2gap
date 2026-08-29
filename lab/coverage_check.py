@@ -34,10 +34,13 @@ zona coperta male da tutti gli aggregatori insieme.
 
 SOLA LETTURA: legge i dati congelati e un'API pubblica, non scrive nulla.
 """
-import glob, json, os, sys, urllib.request
+import glob, json, os, pathlib, sys, urllib.request
 import numpy as np, pandas as pd, pyarrow.parquet as pq
 from scipy.stats import spearmanr
-R = "/Users/fmavellia/adsb-co2-lab/adsb-co2"
+# La radice si deduce dalla posizione del file: era scritta a mano come
+# /Users/<nome>/... in un file tracciato dal repository pubblico, cioe' un
+# percorso che non esiste per nessun altro e che nomina l'account locale.
+R = str(pathlib.Path(__file__).resolve().parents[1])
 sys.path.insert(0, f"{R}/lab"); sys.path.insert(0, R)
 os.environ.update(ADSB_ROOT=R, ADSB_DECOMP_DIR=f"{R}/data/decomposition_ecac",
   ADSB_PHASE_DIR=f"{R}/data/decomposition_ecac_phase",

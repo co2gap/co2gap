@@ -1559,7 +1559,12 @@ with no correction at all.</p>
 
 <h2>6. Which flights are included</h2>
 <p>A flight enters the analysis only if its track is sufficiently complete:
-adequate coverage and no large time gaps.</p>
+enough of the expected samples present, a minimum sector length, and a flown
+distance that is not shorter than the direct route. <b>What the gate does not
+do is bound the single longest gap</b> — it measures how much of the track is
+present, not how it is distributed, so a track can pass with one long silence
+in it. That is the same blind spot as the fuel gate described in the FAQ, and
+it is on the same list for the next release.</p>
 <p>There is then a criterion that is often misread, so it is worth being
 explicit. We discard flights whose flown distance comes out <b>smaller</b> than
 90% of the great circle. Flying less than the direct route is geometrically
@@ -1930,6 +1935,19 @@ def main():
                               df.hybrid_co2_kg.sum())
     lat_w = (hyb_u - ideal_u) / ideal_u * 100
     vert_w = (real_u - hyb_u) / ideal_u * 100
+    # La stessa grandezza sulla base CALIBRATA, per poterla dichiarare invece di
+    # lasciarla dedurre: la FAQ sul denominatore la nomina, e una cifra citata in
+    # una risposta sulla base di calcolo non puo' essere battuta a mano.
+    cal_head = ((df.co2_real_kg.sum() - df.co2_ideal_kg.sum())
+                / df.co2_ideal_kg.sum() * 100)
+    # Impatto dei voli degeneri, DERIVATO. Era scritto "two ten-thousandths of a
+    # point" ed erano venti: il testo che confessa un difetto e' l'ultimo posto
+    # dove si puo' sbagliare l'ordine di grandezza per difetto.
+    _deg = df.excess_total_pct < -50
+    n_degen = int(_deg.sum())
+    _dk = df.loc[~_deg]
+    degen_shift = abs(((_dk.co2_kg_v0.sum() - _dk.ideal_gc_co2_kg.sum())
+                       / _dk.ideal_gc_co2_kg.sum() * 100) - (lat_w + vert_w))
     # Quale delle due componenti sia la maggiore e' un FATTO che cambia con i
     # dati: affermarlo nel testo significa vederlo invertirsi in silenzio.
     _hi, _lo = ('vertical', 'lateral') if vert_w > lat_w else ('lateral', 'vertical')
@@ -2936,9 +2954,16 @@ traffic, and nothing here distinguishes the two."""),
 {excess_t/co2_t*100:.0f}% — the gap as a share of what was <i>burnt</i>. The
 headline {(lat_w+vert_w):.1f}% is the gap as a share of what the <i>ideal
 flight</i> would have burnt, which is the smaller number, so the percentage is
-larger. Both are ratios of sums, not averages of per-flight percentages; the
-remaining fraction of a point between them is the type calibration, which applies
-to the tonnages and cancels inside the percentages.
+larger. Both are ratios of sums, not averages of per-flight percentages. The remaining
+fraction of a point between them is the type calibration, and the honest way to
+say it is that <b>the two figures do not share a basis</b>: the tonnages above
+are calibrated against the ICAO reference, the percentages are computed on the
+uncalibrated fuel. It is not that the factor cancels — inside a ratio of sums it
+does not, because it varies by aircraft type and the types have different gaps.
+On the calibrated basis the headline would be {cal_head:.1f}% instead of
+{(lat_w+vert_w):.1f}%, a difference of {abs((lat_w+vert_w)-cal_head):.2f} points.
+Which basis is the right one for the headline is an open question, and it is
+recorded as one rather than settled quietly.
 Neither figure is wrong; they answer different questions, and this site
 uses the second because every comparison here — route against route, airport
 against airport — is made against the ideal, not against the actual.
@@ -3138,9 +3163,13 @@ that caution appears wherever a ranking does.</p>
 <p>The quality gate is <b>geometric</b>: it checks that a flight covered the distance
 it should have, and never looks at the fuel. A handful of flights in the published
 period therefore carry burn figures that are physically impossible, the residue of
-degenerate trajectories. They are far too few to move any published statistic
-(correcting them shifts the headline by two ten-thousandths of a point), but they are
-there, and a gate on fuel plausibility is due in the next release.</p>
+degenerate trajectories: the worst of them is an A320 whose track carries no
+airspeed at all, and which therefore integrates to a burn 96% below the ideal.
+They are far too few to move any published statistic — removing the
+{n_degen} worst shifts the headline by {degen_shift:.3f} of a point, and leaves
+the airport and route rankings identical — but they are there, and the defect
+pushes the gap <i>down</i>, never up. A gate on fuel plausibility is due in the
+next release.</p>
 </div>
 </section>
 

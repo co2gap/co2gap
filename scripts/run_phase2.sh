@@ -12,7 +12,12 @@
 #
 # Deliberately NOT included: any deploy or publication step. Publishing is
 # the user's explicit decision, never a side effect of a rerun.
-set -uo pipefail
+# set -e per davvero: senza, un errore di ERA5, calibrazione o decomposizione
+# non fermava la catena, l'ultimo echo restituiva zero e stampava "done". Un
+# comando offerto come "catena completa" che riesce dopo aver fallito e' peggio
+# di nessun comando. L'unico passo che puo' fallire senza fermare tutto e' il
+# sync dal Pi, ed e' guardato dal suo || esplicito.
+set -euo pipefail
 
 ROOT="${ADSB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 PY="${ADSB_PY:-$ROOT/../lab-venv/bin/python}"

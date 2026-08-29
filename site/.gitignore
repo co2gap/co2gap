@@ -9,7 +9,14 @@
 # silently reads the small box and nobody notices):
 #
 #   ADSB_ROOT=$PWD ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
+#   ADSB_PHASE_DIR=$PWD/data/decomposition_ecac_phase \
+#   ADSB_GROUND_DIR=$PWD/data/ground_share_ecac \
 #   ADSB_CALIB=$PWD/data/calibration_ecac.json \
 #   ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
 #   ADSB_SITE_OUT=$PWD/site/index.html \
 #   lab-venv/bin/python lab/site_build.py
+#
+# Questa copia ne ometteva due, PHASE e GROUND, mentre il commento sopra le
+# dichiarava tutte obbligatorie: senza GROUND lo script esce, senza PHASE
+# ammutolisce l'attribuzione per fase. Il comando canonico e' in README.md
+# "Reproducing"; questa e' una copia e va tenuta uguale a quello.

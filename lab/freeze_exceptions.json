@@ -382,5 +382,9 @@
   {
     "match": "the table follows the map of ads-b receivers",
     "reason": "AGGIUNTA il 2026-08-29, e nasce da un'osservazione dell'utente: «la classifica segue le aree piu' densamente popolate». E' vera. La densita' di feeder correla +0,43 con la deviazione per aeroporto, e +0,36 tenendo fermo il traffico dello scalo — cioe' PIU' del traffico stesso (+0,27). Il quartile piu' coperto sta a +0,54, il piu' rado a -1,90: 2,4 punti su una tabella che ne copre 13,5. ⭐ Testata l'ipotesi dell'artefatto con lab/coverage_check.py e RESPINTA: coverage_frac ha mediana 1,0000 e minimo 0,893 sui 152 aeroporti, e togliendo la qualita' la correlazione non scende (0,385). La catena feeder -> qualita' -> deviazione e' rotta in due anelli su tre. Resta una correlazione vera che non passa dalla nostra strumentazione, e la lettura piu' probabile e' che feeder e congestione abbiano una causa comune. 🔑 Conseguenza sul primo reperto: f1 dice «busier airports», e il dato dice piuttosto «busy AIRSPACE». f1 non e' falsa — e' correlazionale e resta vera — ma pubblicava il correlato piu' debole avendo in mano il piu' forte. Il limite lo dichiara invece di lasciarlo trovare: la mappa dei feeder e' pubblica e chiunque rifa' questo conto in un pomeriggio. Limiti della misura dichiarati nella riga stessa: mappa di oggi, non del periodo pubblicato."
+  },
+  {
+    "match": "adequate coverage and no large time gaps",
+    "reason": "29/08: la frase era FALSA e stava nella sezione su quali voli entrano. Il gate (lab/analysis.py:84-86) impone origine e destinazione risolte, flown_ge_09gc, coverage_frac >= 0.85 e gc_km >= 150 -- max_gap_s viene salvato ma non entra. Fra i voli ammessi il 13,46% ha una lacuna sopra i 300 s, il 2,90% sopra i 600 e l'1,18% sopra i 900. Riscritta per dire cosa il gate fa e, esplicitamente, che non limita la lacuna piu' lunga."
   }
 ]
