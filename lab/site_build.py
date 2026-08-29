@@ -40,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import track_quality
 from release_manifest import optional_manifest
+from artifact_contract import manifest_allowed_missing
 
 ROOT = Path(__file__).resolve().parents[1]
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
@@ -109,7 +110,7 @@ def pts(v, dp=0):
     return f"{v:+.{dp}f}", "pos" if v > 0 else "neg"
 
 
-def phase_attribution(df):
+def phase_attribution(df, manifest=None):
     """Where the vertical gap of an airport was produced, or None.
 
     Numbers derived in code, never typed: this project's rule, and the reason
@@ -132,6 +133,17 @@ def phase_attribution(df):
         print(f"phase split covers {ph.day.nunique()} days against "
               f"{df.day.nunique()} published: attribution note omitted")
         return None
+    dec_keys = set(zip(df.day.astype(str), df.flight_id.astype(int)))
+    phase_keys = set(zip(ph.day.astype(str), ph.flight_id.astype(int)))
+    if len(phase_keys) != len(ph):
+        raise SystemExit("phase split contains duplicate (day, flight_id) keys")
+    allowed = manifest_allowed_missing(manifest, "phase") & dec_keys
+    expected = dec_keys - allowed
+    missing, extra = sorted(expected - phase_keys), sorted(phase_keys - expected)
+    if missing or extra:
+        raise SystemExit(
+            f"phase keyset differs from the published population: "
+            f"{len(missing)} missing, {len(extra)} extra")
     m = df.merge(ph, on=["day", "flight_id"], how="inner", validate="one_to_one")
 
     # ---- il rullaggio esce anche dalle FASI -------------------------------
@@ -439,6 +451,7 @@ def total_kg_per_flight(df) -> float:
 
 
 def load() -> pd.DataFrame:
+    manifest = optional_manifest()
     files = sorted(glob.glob(str(DEC_DIR / "*.parquet")))
     if not files:
         raise SystemExit(f"nessun parquet in {DEC_DIR}")
@@ -532,13 +545,32 @@ def load() -> pd.DataFrame:
             f"quota di terra assente per {len(manca)} giorni pubblicati "
             f"({manca[:3]}...): quei voli entrerebbero gate-to-gate. "
             f"Genera con lab/ground_share.py --days.")
+    dec_keys = set(zip(df.day.astype(str), df.flight_id.astype(int)))
+    ground_keys = set(zip(g.day.astype(str), g.flight_id.astype(int)))
+    if len(ground_keys) != len(g):
+        raise SystemExit("quota di terra con chiavi (day, flight_id) duplicate")
+    allowed = manifest_allowed_missing(manifest, "ground") & dec_keys
+    missing_keys = dec_keys - ground_keys
+    if missing_keys != allowed:
+        unknown = sorted(missing_keys - allowed)
+        stale = sorted(allowed - missing_keys)
+        raise SystemExit(
+            f"keyset quota di terra non conforme: {len(unknown)} assenti non "
+            f"autorizzati, {len(stale)} eccezioni dichiarate ma presenti")
     n_before = len(df)
     df = df.merge(g[["day", "flight_id", "share_ground",
                      "share_ground_dep", "share_ground_arr"]],
-                  on=["day", "flight_id"], how="left")
-    assert len(df) == n_before, "il merge ha duplicato: flight_id e' un surrogato PER GIORNO"
+                  on=["day", "flight_id"], how="left", validate="one_to_one")
+    if len(df) != n_before:
+        raise SystemExit("il merge terra ha cambiato il numero di voli")
     cov = df.share_ground.notna().mean()
+    unresolved = set(zip(df.loc[df.share_ground.isna(), "day"].astype(str),
+                         df.loc[df.share_ground.isna(), "flight_id"].astype(int)))
+    if unresolved != allowed:
+        raise SystemExit("il merge terra ha prodotto valori mancanti inattesi")
     for c in ("share_ground", "share_ground_dep", "share_ground_arr"):
+        # Zero is a release-specific fallback only for keys named in the
+        # immutable manifest; an unknown missing row has already failed above.
         df[c] = df[c].fillna(0.0)
     print(f"  correzione terra [{GROUND_DEF}]: {cov*100:.1f}% dei voli, "
           f"{df.share_ground.mean()*100:.2f}% del carburante escluso dal gap")
@@ -2115,7 +2147,7 @@ def main():
     # Where inside the flight the gap sits, when the phase split has been run.
     # The fallback text is the older admission that we could not tell, so the
     # page never claims more than the data behind it supports.
-    pa = phase_attribution(df)
+    pa = phase_attribution(df, manifest)
     if pa is None:
         phase_note = (
             "<b>What no column here can do is locate the gap inside the "

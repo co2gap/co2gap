@@ -748,5 +748,21 @@
       "files": 197,
       "bytes": 456143955
     }
+  },
+  "exceptions": {
+    "phase_missing_keys": [
+      {
+        "day": "2026-06-09",
+        "flight_id": 11038,
+        "reason": "no usable speed samples; documented in KNOWN-ISSUES.md \u00a72"
+      }
+    ],
+    "ground_missing_keys": [
+      {
+        "day": "2026-06-09",
+        "flight_id": 11038,
+        "reason": "no usable speed samples; documented in KNOWN-ISSUES.md \u00a72"
+      }
+    ]
   }
 }

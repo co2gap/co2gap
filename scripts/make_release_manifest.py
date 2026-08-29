@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 import track_quality  # noqa: E402
 from release_manifest import role_paths, set_checksum, sha256_file  # noqa: E402
 from wind.era5 import LEVELS  # noqa: E402
+import pyarrow.parquet as pq  # noqa: E402
 
 
 def file_entry(path: Path) -> dict:
@@ -32,6 +33,25 @@ def file_entry(path: Path) -> dict:
 def set_entry(root: Path, kind: str, days: list[str]) -> dict:
     print(f"hashing {root} ({len(days)} day(s))", file=sys.stderr, flush=True)
     return {"kind": kind, **set_checksum(root, role_paths(kind, days))}
+
+
+def artifact_keys(root: Path, days: list[str]) -> set[tuple[str, int]]:
+    out = set()
+    for day in days:
+        table = pq.read_table(root / f"{day}.parquet", columns=["day", "flight_id"])
+        frame = table.to_pandas()
+        out.update((str(d), int(fid)) for d, fid in zip(frame.day, frame.flight_id))
+    return out
+
+
+def missing_entries(keys: set[tuple[str, int]]) -> list[dict]:
+    entries = []
+    for day, fid in sorted(keys):
+        reason = ("no usable speed samples; documented in KNOWN-ISSUES.md §2"
+                  if (day, fid) == ("2026-06-09", 11038)
+                  else "missing when the release manifest was signed; requires review")
+        entries.append({"day": day, "flight_id": fid, "reason": reason})
+    return entries
 
 
 def main() -> None:
@@ -72,6 +92,11 @@ def main() -> None:
         "phase": set_entry(root / "data/decomposition_ecac_phase", "daily-parquet", days),
         "ground": set_entry(root / "data/ground_share_ecac", "daily-parquet", days),
     }
+    dec_keys = artifact_keys(root / "data/decomposition_ecac", days)
+    phase_keys = artifact_keys(root / "data/decomposition_ecac_phase", days)
+    ground_keys = artifact_keys(root / "data/ground_share_ecac", days)
+    if phase_keys - dec_keys:
+        raise SystemExit("phase artefact contains keys absent from decomposition")
     manifest = {
         "schema_version": 1,
         "release": {
@@ -103,6 +128,10 @@ def main() -> None:
         ),
         "inputs": inputs,
         "artifacts": artifacts,
+        "exceptions": {
+            "phase_missing_keys": missing_entries(dec_keys - phase_keys),
+            "ground_missing_keys": missing_entries(dec_keys - ground_keys),
+        },
     }
     args.out.write_text(json.dumps(manifest, indent=2, sort_keys=False) + "\n")
     print(f"wrote {args.out}", file=sys.stderr)

@@ -60,6 +60,13 @@ re-reading the points.
 
 ## 3. The thresholds are shared with the code but not stamped on the data
 
+**Closed for newly generated artefacts on `hardening-2027-01`; historical for
+the September release.** New daily source, decomposition, phase and ground
+parquet carry a versioned contract with schema, row count, keyset hash, input
+fingerprints and configuration. The immutable September files predate that
+format and are accepted only after their full-file checksums match
+`release-manifest.json`.
+
 The track-quality thresholds now live in one place, `pipeline/track_quality.py`,
 read by the gate, by the pipeline and by the sentence published in methodology
 §6. The parquet files, however, store the gate **already applied**:
@@ -78,7 +85,6 @@ could not fail at all — in the published window the minimum `flown/gc` ratio i
 worse than none. `coverage_frac` and the gap threshold are not carried by the
 decomposition at all.
 
-**Fix, at the next release:** write the threshold values and a version into the
-parquet files (or a manifest beside them) and have the site compare what it read
-with what it is about to publish. And rename `flown_ge_09gc`, whose name goes
-false the day `FLOWN_MIN_FRAC` stops being 0.9.
+The remaining cleanup is to rename `flown_ge_09gc`, whose name goes false the
+day `FLOWN_MIN_FRAC` stops being 0.9. The stored contract already records the
+numeric threshold independently of that legacy column name.

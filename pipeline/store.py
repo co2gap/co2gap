@@ -17,12 +17,28 @@ with the wind baseline and written to its own table.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-PIPELINE_VER = "phase1-v1"
+PIPELINE_VER = "phase1-v2-contracts"
+SOURCE_CONTRACT_KEY = b"co2gap.source-contract"
+SOURCE_CONTRACT_VERSION = 1
+
+
+def _schema_checksum(schema: pa.Schema) -> str:
+    fields = [(f.name, str(f.type), f.nullable) for f in schema]
+    return hashlib.sha256(json.dumps(fields, separators=(",", ":")).encode()).hexdigest()
+
+
+def _flight_keyset_checksum(day: str, ids) -> str:
+    h = hashlib.sha256()
+    for fid in sorted(int(x) for x in ids):
+        h.update(f"{day}\0{fid}\n".encode())
+    return h.hexdigest()
 
 _POINTS_SCHEMA = pa.schema([
     ("flight_id", pa.int32()),
@@ -93,7 +109,7 @@ class DayWriter:
 
     FLUSH_EVERY = 1500
 
-    def __init__(self, out_dir: Path, day_iso: str):
+    def __init__(self, out_dir: Path, day_iso: str, *, source=None, configuration=None):
         self.out_dir = Path(out_dir)
         self.day_iso = day_iso
         self._d = self.out_dir / day_iso
@@ -105,6 +121,8 @@ class DayWriter:
         self._since = 0
         self._pw = None
         self._fw = None
+        self.source = source or {}
+        self.configuration = configuration or {}
 
     def add(self, meta: dict, points: list) -> None:
         fid = self._n
@@ -154,6 +172,31 @@ class DayWriter:
     def flush(self) -> dict:
         self._write_rowgroup()
         if self._pw is not None:
+            key_hash = _flight_keyset_checksum(self.day_iso, range(self._n))
+            common = {
+                "contract_version": SOURCE_CONTRACT_VERSION,
+                "day": self.day_iso,
+                "pipeline_version": PIPELINE_VER,
+                "flights_rows": self._n,
+                "points_rows": self._pt_rows,
+                "flight_keyset_sha256": key_hash,
+                "source": self.source,
+                "configuration": self.configuration,
+            }
+            flights_contract = {
+                **common, "table": "flights", "rows": self._n,
+                "schema_sha256": _schema_checksum(_FLIGHTS_SCHEMA),
+            }
+            points_contract = {
+                **common, "table": "points", "rows": self._pt_rows,
+                "schema_sha256": _schema_checksum(_POINTS_SCHEMA),
+            }
+            self._fw.add_key_value_metadata({
+                SOURCE_CONTRACT_KEY.decode(): json.dumps(
+                    flights_contract, sort_keys=True, separators=(",", ":"))})
+            self._pw.add_key_value_metadata({
+                SOURCE_CONTRACT_KEY.decode(): json.dumps(
+                    points_contract, sort_keys=True, separators=(",", ":"))})
             self._pw.close()
             self._fw.close()
         return {
@@ -162,3 +205,45 @@ class DayWriter:
             "points_file": str(self._d / "points.parquet"),
             "flights_file": str(self._d / "flights.parquet"),
         }
+
+
+def validate_day_pair(day_dir: Path) -> dict:
+    """Validate the two durable source tables as one indivisible day."""
+    day_dir = Path(day_dir)
+    contracts = {}
+    metadata = {}
+    for table in ("flights", "points"):
+        path = day_dir / f"{table}.parquet"
+        md = pq.read_metadata(path)
+        raw = (md.metadata or {}).get(SOURCE_CONTRACT_KEY)
+        if raw is None:
+            raise ValueError(f"{path} has no source contract")
+        contract = json.loads(raw)
+        if contract.get("contract_version") != SOURCE_CONTRACT_VERSION:
+            raise ValueError(f"{path} has unsupported source contract")
+        if contract.get("table") != table or contract.get("day") != day_dir.name:
+            raise ValueError(f"{path} contract identifies another table or day")
+        if contract.get("rows") != md.num_rows:
+            raise ValueError(f"{path} row count differs from contract")
+        schema = pq.read_schema(path).remove_metadata()
+        expected_schema = _FLIGHTS_SCHEMA if table == "flights" else _POINTS_SCHEMA
+        if _schema_checksum(schema) != _schema_checksum(expected_schema):
+            raise ValueError(f"{path} schema differs from current pipeline")
+        contracts[table] = contract
+        metadata[table] = md
+    common = ("pipeline_version", "flights_rows", "points_rows",
+              "flight_keyset_sha256", "source", "configuration")
+    for key in common:
+        if contracts["flights"].get(key) != contracts["points"].get(key):
+            raise ValueError(f"source pair disagrees on {key}")
+    flight_ids = pq.read_table(day_dir / "flights.parquet",
+                               columns=["flight_id"])["flight_id"].to_pylist()
+    if len(flight_ids) != len(set(flight_ids)):
+        raise ValueError("duplicate flight_id in flights.parquet")
+    if _flight_keyset_checksum(day_dir.name, flight_ids) != contracts["flights"]["flight_keyset_sha256"]:
+        raise ValueError("flight keyset differs from source contract")
+    point_ids = set(pq.read_table(day_dir / "points.parquet",
+                                  columns=["flight_id"])["flight_id"].to_pylist())
+    if point_ids != set(flight_ids):
+        raise ValueError("flights.parquet and points.parquet keysets differ")
+    return contracts["flights"]

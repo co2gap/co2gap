@@ -46,6 +46,8 @@ sys.path.insert(0, str(ROOT))
 from analysis import LOAD_FACTOR, RESERVE_KG          # noqa: E402
 from phase_split import phase_split_flight            # noqa: E402
 from release_manifest import optional_manifest        # noqa: E402
+from artifact_contract import (file_fingerprint, manifest_allowed_missing,  # noqa: E402
+                               read_contract, validate_parquet, write_parquet)
 
 FLIGHTS_DIR = Path(os.environ.get("ADSB_FLIGHTS_DIR") or (ROOT / "data/flights"))
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
@@ -67,6 +69,18 @@ NEED = ["day", "flight_id", "typecode", "co2_kg_v0", "ideal_gc_co2_kg",
         "hybrid_co2_kg", "flown_km", "cruise_alt_ft", "mean_wpar_track_ms"]
 
 PTS_COLS = ["flight_id", "t", "lat", "lon", "alt_ft", "gs_kt", "ias_kt", "vs_fpm"]
+STAGE_VERSION = 1
+
+
+def contract_configuration() -> dict:
+    return {"load_factor": LOAD_FACTOR, "reserve_kg": RESERVE_KG}
+
+
+def contract_inputs(day: str) -> dict:
+    return {
+        "decomposition": file_fingerprint(DEC_DIR / f"{day}.parquet"),
+        "points": file_fingerprint(FLIGHTS_DIR / day / "points.parquet"),
+    }
 
 
 def ready_days() -> list[str]:
@@ -88,7 +102,7 @@ def ready_days() -> list[str]:
     return out
 
 
-def process_day(day: str) -> tuple[int, dict]:
+def process_day(day: str, manifest=None) -> tuple[int, dict]:
     dec = pq.read_table(DEC_DIR / f"{day}.parquet", columns=NEED).to_pandas()
     if dec.empty:
         return 0, {}
@@ -123,6 +137,8 @@ def process_day(day: str) -> tuple[int, dict]:
     if not rows:
         return 0, {}
     df = pd.DataFrame(rows)[OUT_COLS]
+    allowed = manifest_allowed_missing(manifest, "phase")
+    expected = {(day, int(fid)) for fid in dec.flight_id} - allowed
 
     # ---- the two gates, checked on every day, never assumed ---------------
     j = df.merge(dec[["flight_id", "hybrid_co2_kg"]], on="flight_id", how="left")
@@ -141,16 +157,30 @@ def process_day(day: str) -> tuple[int, dict]:
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     tmp = OUT_DIR / f".{day}.parquet.tmp"
-    pq.write_table(pa.Table.from_pandas(df, preserve_index=False), tmp)
+    table = pa.Table.from_pandas(df, preserve_index=False)
+    write_parquet(table=table, path=tmp, stage="phase", stage_version=STAGE_VERSION,
+                  day=day, expected_keys=expected, inputs=contract_inputs(day),
+                  configuration=contract_configuration())
     tmp.replace(OUT_DIR / f"{day}.parquet")
     return len(df), checks
 
 
-def output_is_valid(path: Path) -> bool:
+def output_is_valid(path: Path, day: str, *, allow_legacy: bool = False) -> bool:
     if not path.exists():
         return False
+    if allow_legacy:
+        try:
+            read_contract(path)
+        except Exception:
+            try:
+                return pq.read_metadata(path).num_rows > 0
+            except Exception:
+                return False
     try:
-        return pq.read_metadata(path).num_rows > 0
+        validate_parquet(path, stage="phase", stage_version=STAGE_VERSION, day=day,
+                         inputs=contract_inputs(day),
+                         configuration=contract_configuration())
+        return True
     except Exception:
         return False
 
@@ -180,8 +210,8 @@ def main():
         manifest.require_no_extra_output_days(OUT_DIR, "phase")
     else:
         days = args.days if args.days else ready_days()
-    todo = [d for d in days
-            if args.force or not output_is_valid(OUT_DIR / f"{d}.parquet")]
+    todo = [d for d in days if args.force or not output_is_valid(
+        OUT_DIR / f"{d}.parquet", d, allow_legacy=manifest is not None)]
     print(f"{len(days)} day(s) ready, {len(todo)} to process")
 
     t0 = time.time()
@@ -191,7 +221,7 @@ def main():
     for i, day in enumerate(todo, 1):
         t = time.time()
         try:
-            n, c = process_day(day)
+            n, c = process_day(day, manifest)
         except Exception as e:
             print(f"  {day}  FAILED: {e.__class__.__name__}: {e}", flush=True)
             failed.append(day)
@@ -218,7 +248,8 @@ def main():
         manifest.require_exact_output_days(OUT_DIR, "phase")
         manifest.verify_set("phase", OUT_DIR, artifact=True)
         print(f"release {manifest.release_id}: phase checksum verified")
-    missing_outputs = [d for d in days if not output_is_valid(OUT_DIR / f"{d}.parquet")]
+    missing_outputs = [d for d in days if not output_is_valid(
+        OUT_DIR / f"{d}.parquet", d, allow_legacy=manifest is not None)]
     failed = sorted(set(failed) | set(missing_outputs))
     if failed and not args.allow_partial:
         raise SystemExit(

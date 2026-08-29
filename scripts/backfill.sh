@@ -90,13 +90,14 @@ echo $$ > "$GLOBAL_LOCK"   # safe to truncate now: we hold the lock
 
 # A day is done only if the parquet is actually readable.
 is_valid_day() {
-    local iso="$1" f="$ROOT/data/flights/$1/flights.parquet"
-    [ -f "$f" ] || return 1
-    "$VENV" - "$f" <<'PY' 2>/dev/null
+    local iso="$1" d="$ROOT/data/flights/$1"
+    [ -f "$d/flights.parquet" ] && [ -f "$d/points.parquet" ] || return 1
+    "$VENV" - "$ROOT" "$d" <<'PY' 2>/dev/null
 import sys
-import pyarrow.parquet as pq
+sys.path.insert(0, sys.argv[1] + "/pipeline")
+from store import validate_day_pair
 try:
-    sys.exit(0 if pq.read_metadata(sys.argv[1]).num_rows > 0 else 1)
+    validate_day_pair(sys.argv[2])
 except Exception:
     sys.exit(1)
 PY

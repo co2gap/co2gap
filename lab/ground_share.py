@@ -31,6 +31,7 @@ scrive un parquet per giorno.
 import os, sys, argparse, time
 from pathlib import Path
 import numpy as np, pandas as pd
+import pyarrow as pa
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--root", default=os.environ.get("ADSB_ROOT", "/mnt/wd_elements/adsb-co2"))
@@ -54,17 +55,43 @@ sys.path[:0] = [f"{a.root}/pipeline", f"{a.root}/ingest", a.root]
 from trajectories import Point, Flight                      # noqa
 from emissions import openap_model, estimate_fuel, _steps_from_flight  # noqa
 from release_manifest import optional_manifest              # noqa
+from artifact_contract import (file_fingerprint, manifest_allowed_missing,  # noqa
+                               read_contract, validate_parquet, write_parquet)
 
 SRC = Path(a.src or f"{a.root}/data/flights_ecac")
 OUT = Path(a.out); OUT.mkdir(parents=True, exist_ok=True)
+STAGE_VERSION = 1
 
-def _completo(path: Path) -> bool:
-    """Esiste E si apre E ha righe. `exists()` da solo accetta un troncato."""
+
+def _contract_configuration() -> dict:
+    return {"definitions": ["suolo", "a1000t40", "a1000t70",
+                            "a1000t100", "a3000t70"]}
+
+
+def _contract_inputs(day: str) -> dict:
+    return {
+        "flights": file_fingerprint(SRC / day / "flights.parquet"),
+        "points": file_fingerprint(SRC / day / "points.parquet"),
+    }
+
+def _completo(path: Path, day: str, *, allow_legacy: bool = False) -> bool:
+    """Un nuovo output vale solo se contratto, input e keyset coincidono."""
     if not path.exists():
         return False
+    if allow_legacy:
+        try:
+            read_contract(path)
+        except Exception:
+            try:
+                import pyarrow.parquet as _pq
+                return _pq.read_metadata(path).num_rows > 0
+            except Exception:
+                return False
     try:
-        import pyarrow.parquet as _pq
-        return _pq.read_metadata(path).num_rows > 0
+        validate_parquet(path, stage="ground", stage_version=STAGE_VERSION, day=day,
+                         inputs=_contract_inputs(day),
+                         configuration=_contract_configuration())
+        return True
     except Exception:
         return False
 
@@ -139,7 +166,7 @@ FCOLS = ["flight_id","typecode","co2_kg_v0","fuel_kg_v0","load_factor",
 failed = []
 for day in days:
     dst = OUT / f"{day}.parquet"
-    if _completo(dst):
+    if _completo(dst, day, allow_legacy=manifest is not None):
         print(f"  {day}  gia' fatto, salto", flush=True); continue
     t0 = time.time()
     try:
@@ -152,6 +179,10 @@ for day in days:
 
     pt_df = pt_df.sort_values(["flight_id","t"])
     groups = dict(tuple(pt_df.groupby("flight_id", sort=False)))
+    allowed = manifest_allowed_missing(manifest, "ground")
+    expected = {(day, int(r.flight_id)) for r in fl_df.itertuples(index=False)
+                if openap_model(r.typecode) is not None
+                and r.flight_id in groups and len(groups[r.flight_id]) >= 11} - allowed
     rows = []
     for r in fl_df.itertuples(index=False):
         if openap_model(r.typecode) is None:      # stesso filtro della produzione
@@ -214,7 +245,10 @@ for day in days:
     # definitivo significa che un'interruzione lascia un parquet troncato che al
     # rilancio passa per fatto. E' il modello gia' usato da run_phase_split.py.
     tmp = OUT / f".{day}.parquet.tmp"
-    out.to_parquet(tmp, index=False)
+    table = pa.Table.from_pandas(out, preserve_index=False)
+    write_parquet(table=table, path=tmp, stage="ground", stage_version=STAGE_VERSION,
+                  day=day, expected_keys=expected, inputs=_contract_inputs(day),
+                  configuration=_contract_configuration())
     tmp.replace(dst)
     # 🔑 CONTROLLO DI EQUIVALENZA: il burn ricalcolato dal diradato deve stare
     # vicino al congelato (atteso ~-0,3% per il diradamento, gia' misurato).
@@ -227,7 +261,8 @@ if manifest:
     manifest.require_exact_output_days(OUT, "ground")
     manifest.verify_set("ground", OUT, artifact=True)
     print(f"  release {manifest.release_id}: ground checksum verified", flush=True)
-missing_outputs = [d for d in days if not _completo(OUT / f"{d}.parquet")]
+missing_outputs = [d for d in days if not _completo(
+    OUT / f"{d}.parquet", d, allow_legacy=manifest is not None)]
 failed = sorted(set(failed) | set(missing_outputs))
 if failed and not a.allow_partial:
     raise SystemExit(f"ground share incompleto: {len(failed)} giorno/i falliti o "

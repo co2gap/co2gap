@@ -52,8 +52,8 @@ for off in $(seq 1 "$CATCHUP_DAYS"); do
   # A day counts as done only if its parquet READS. Testing existence alone
   # marks a run killed mid-write (footer-less parquet) as complete and the day
   # is never retried again — exactly how 2026-03-27 was lost.
-  if "$VENV" -c "import sys,pyarrow.parquet as pq; sys.exit(0 if pq.read_metadata(sys.argv[1]).num_rows>0 else 1)" \
-       "$FLIGHTS_DIR/$ISO/flights.parquet" 2>/dev/null; then
+  if "$VENV" -c "import sys; sys.path.insert(0,sys.argv[1]+'/pipeline'); from store import validate_day_pair; validate_day_pair(sys.argv[2])" \
+       "$ROOT" "$FLIGHTS_DIR/$ISO" 2>/dev/null; then
     continue  # already done
   fi
   echo "$(date -Is) target $DAY (missing parquet)"

@@ -39,6 +39,10 @@ from analysis import quality_gate, LOAD_FACTOR, RESERVE_KG   # noqa: E402
 from decompose import decompose_flight                        # noqa: E402
 from wind.era5 import WindField                               # noqa: E402
 from release_manifest import optional_manifest               # noqa: E402
+from artifact_contract import (file_fingerprint, read_contract,  # noqa: E402
+                               validate_parquet, write_parquet)
+from emissions import openap_model                            # noqa: E402
+import track_quality                                          # noqa: E402
 
 # All three follow the environment, because the box is not a property of the
 # code: running the ECAC box against the default paths would read the SMALLER
@@ -59,6 +63,28 @@ OUT_COLS = ["day", "flight_id", "typecode", "origin_icao", "dest_icao",
             "excess_vert_alt_pct", "excess_vert_speed_pct",
             "excess_vert_residual_pct",
             "real_cruise_alt_ft", "real_cruise_tas_kt"]
+STAGE_VERSION = 1
+
+
+def contract_configuration() -> dict:
+    return {
+        "load_factor": LOAD_FACTOR,
+        "reserve_kg": RESERVE_KG,
+        "track_quality": {
+            "coverage_min_fraction": track_quality.COV_MIN,
+            "flown_min_fraction": track_quality.FLOWN_MIN_FRAC,
+            "great_circle_min_km": track_quality.GC_MIN_KM,
+            "gap_threshold_s": track_quality.GAP_THRESHOLD_S,
+        },
+    }
+
+
+def contract_inputs(day: str) -> dict:
+    return {
+        "flights": file_fingerprint(FLIGHTS_DIR / day / "flights.parquet"),
+        "points": file_fingerprint(FLIGHTS_DIR / day / "points.parquet"),
+        "era5": file_fingerprint(ERA5_DIR / f"{day}.nc"),
+    }
 
 
 def era5_is_complete(path: Path) -> bool:
@@ -127,6 +153,9 @@ def process_day(day: str) -> int:
                for fid, g in pts.groupby("flight_id", sort=False)}
     del pts
 
+    expected = {(day, int(r.flight_id)) for r in q.itertuples(index=False)
+                if openap_model(r.typecode) is not None
+                and (r.flight_id in grouped) and len(grouped[r.flight_id][0]) >= 3}
     rows = []
     for r in q.itertuples(index=False):
         track = grouped.get(r.flight_id)
@@ -164,17 +193,31 @@ def process_day(day: str) -> int:
     # rename() is atomic within a filesystem, so the final name only ever
     # exists complete.
     tmp = OUT_DIR / f".{day}.parquet.tmp"
-    pq.write_table(pa.Table.from_pandas(df, preserve_index=False), tmp)
+    table = pa.Table.from_pandas(df, preserve_index=False)
+    write_parquet(table=table, path=tmp, stage="decomposition",
+                  stage_version=STAGE_VERSION, day=day, expected_keys=expected,
+                  inputs=contract_inputs(day), configuration=contract_configuration())
     tmp.replace(OUT_DIR / f"{day}.parquet")
     return len(df)
 
 
-def output_is_valid(path: Path) -> bool:
-    """A day counts as done only if its parquet READS, not if it exists."""
+def output_is_valid(path: Path, day: str, *, allow_legacy: bool = False) -> bool:
+    """A new day is done only if content, inputs and configuration validate."""
     if not path.exists():
         return False
+    if allow_legacy:
+        try:
+            read_contract(path)
+        except Exception:
+            try:
+                return pq.read_metadata(path).num_rows > 0
+            except Exception:
+                return False
     try:
-        return pq.read_metadata(path).num_rows > 0
+        validate_parquet(path, stage="decomposition", stage_version=STAGE_VERSION,
+                         day=day, inputs=contract_inputs(day),
+                         configuration=contract_configuration())
+        return True
     except Exception:
         return False
 
@@ -200,8 +243,8 @@ def main():
         manifest.require_no_extra_output_days(OUT_DIR, "decomposition")
     else:
         days = args.days if args.days else ready_days()
-    todo = [d for d in days
-            if args.force or not output_is_valid(OUT_DIR / f"{d}.parquet")]
+    todo = [d for d in days if args.force or not output_is_valid(
+        OUT_DIR / f"{d}.parquet", d, allow_legacy=manifest is not None)]
     print(f"{len(days)} day(s) ready, {len(todo)} to process")
 
     t0 = time.time()
@@ -227,7 +270,8 @@ def main():
         manifest.require_exact_output_days(OUT_DIR, "decomposition")
         manifest.verify_set("decomposition", OUT_DIR, artifact=True)
         print(f"release {manifest.release_id}: decomposition checksum verified")
-    missing_outputs = [d for d in days if not output_is_valid(OUT_DIR / f"{d}.parquet")]
+    missing_outputs = [d for d in days if not output_is_valid(
+        OUT_DIR / f"{d}.parquet", d, allow_legacy=manifest is not None)]
     failed = sorted(set(failed) | set(missing_outputs))
     if failed and not args.allow_partial:
         raise SystemExit(

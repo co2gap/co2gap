@@ -257,6 +257,14 @@ is missing. Exploratory accumulation may opt into `--allow-partial`; release
 mode rejects that flag. A failed Pi sync is fatal unless an update run explicitly
 uses `--allow-stale-inputs`, which is also forbidden for a release.
 
+New daily parquet outputs are self-validating. Durable flight/point pairs record
+their shared counts and keyset, source-part identity, schemas and configuration;
+derived decomposition, phase and ground files additionally record full SHA-256
+fingerprints of their upstream inputs. Resume checks validate those contracts
+instead of treating any readable non-empty file as complete. The September
+artefacts predate the footer contract and are accepted only through the full
+checksums in their manifest.
+
 Two more stages have to run before the site can be built. Without the first,
 `site_build.py` exits; without the second it stays silent and drops the phase
 attribution altogether, which is the worse failure of the two. They are two

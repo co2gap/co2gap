@@ -217,7 +217,21 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
     if not parts:
         raise SystemExit(f"no dump parts for {base} in data/raw")
 
-    writer = DayWriter(OUT_DIR, day_iso)
+    writer = DayWriter(
+        OUT_DIR, day_iso,
+        source={"dump_tag": base,
+                "parts": [{"name": p.name, "bytes": p.stat().st_size} for p in parts]},
+        configuration={
+            "box": [BOX.lat_min, BOX.lat_max, BOX.lon_min, BOX.lon_max],
+            "load_factor": LOAD_FACTOR,
+            "reserve_kg": RESERVE_KG,
+            "track_quality": {
+                "gap_threshold_s": track_quality.GAP_THRESHOLD_S,
+                "coverage_min_fraction": track_quality.COV_MIN,
+                "flown_min_fraction": track_quality.FLOWN_MIN_FRAC,
+                "great_circle_min_km": track_quality.GC_MIN_KM,
+            },
+        })
     t0 = time.time()
     n_batches = n_traces_est = 0
     n_undecodable = 0
