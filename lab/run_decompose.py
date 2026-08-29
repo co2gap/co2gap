@@ -185,9 +185,13 @@ def main():
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--release-manifest", default=None,
                     help="immutable release manifest; selects its exact days")
+    ap.add_argument("--allow-partial", action="store_true",
+                    help="return success despite failed days (never valid for a release)")
     args = ap.parse_args()
 
     manifest = optional_manifest(args.release_manifest)
+    if manifest and args.allow_partial:
+        raise SystemExit("--allow-partial is forbidden with --release-manifest")
     if manifest and args.days:
         raise SystemExit("--days and --release-manifest are mutually exclusive")
     if manifest:
@@ -202,12 +206,14 @@ def main():
 
     t0 = time.time()
     total = 0
+    failed = []
     for i, day in enumerate(todo, 1):
         t = time.time()
         try:
             n = process_day(day)
         except Exception as e:
             print(f"  {day}  FAILED: {e.__class__.__name__}: {e}", flush=True)
+            failed.append(day)
             continue
         total += n
         el = time.time() - t0
@@ -221,6 +227,12 @@ def main():
         manifest.require_exact_output_days(OUT_DIR, "decomposition")
         manifest.verify_set("decomposition", OUT_DIR, artifact=True)
         print(f"release {manifest.release_id}: decomposition checksum verified")
+    missing_outputs = [d for d in days if not output_is_valid(OUT_DIR / f"{d}.parquet")]
+    failed = sorted(set(failed) | set(missing_outputs))
+    if failed and not args.allow_partial:
+        raise SystemExit(
+            f"decomposition incomplete: {len(failed)} day(s) failed or missing; "
+            f"first {failed[0]}")
 
 
 if __name__ == "__main__":

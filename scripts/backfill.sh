@@ -3,7 +3,7 @@
 # the most recent day backwards to a start date. Parquet only — excess CO2 is
 # recomputed later on the Mac in one batch (see README, two-machine split).
 #
-# Usage:  backfill.sh [FROM_DAY] [TO_DAY]        (ISO dates, walked backwards)
+# Usage:  backfill.sh [--allow-partial] [FROM_DAY] [TO_DAY]
 #         backfill.sh 2026-07-21 2026-01-01      (default)
 #
 # Design notes that matter:
@@ -33,8 +33,22 @@ set -uo pipefail
 ROOT="${ADSB_ROOT:-/mnt/wd_elements/adsb-co2}"
 VENV="$ROOT/venv/bin/python"
 WORKERS="${WORKERS:-4}"
+ALLOW_PARTIAL=0
+POSITIONAL=()
+for arg in "$@"; do
+    case "$arg" in
+      --allow-partial) ALLOW_PARTIAL=1 ;;
+      --*) echo "opzione sconosciuta: $arg"; exit 2 ;;
+      *) POSITIONAL+=("$arg") ;;
+    esac
+done
+set -- "${POSITIONAL[@]}"
 FROM_DAY="${1:-2026-07-21}"
 TO_DAY="${2:-2026-01-01}"
+[ "$#" -le 2 ] || { echo "uso: backfill.sh [--allow-partial] [FROM_DAY] [TO_DAY]"; exit 2; }
+[ "$ALLOW_PARTIAL" = 0 ] || [ -z "${ADSB_RELEASE_MANIFEST:-}" ] || {
+    echo "--allow-partial e' vietato durante una release"; exit 2;
+}
 
 LOCKFILE="$ROOT/.cron.lock"
 LOG="$ROOT/logs/backfill.log"
@@ -124,7 +138,7 @@ while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
     if grep -qx "$ISO" "$MISSING"; then
         # already known absent from the release page; do not probe again in a
         # loop (delete the line in data/backfill_missing.txt to retry)
-        n_skip=$((n_skip+1))
+        n_missing=$((n_missing+1))
         ISO=$(date -u -d "$ISO -1 day" +%Y-%m-%d); continue
     fi
 
@@ -197,4 +211,8 @@ el=$(( ($(date +%s) - t_start) / 60 ))
 log "==== BACKFILL FINE: $n_ok ok · $n_fail falliti · $n_missing mancanti · \
 $n_skip saltati · ${el} min totali ===="
 [ "$n_missing" -gt 0 ] && log "giorni senza release: vedi $MISSING"
+if [ $((n_fail+n_missing)) -gt 0 ] && [ "$ALLOW_PARTIAL" = 0 ]; then
+    log "BACKFILL INCOMPLETO: rilancia o usa --allow-partial fuori da una release"
+    exit 1
+fi
 exit 0

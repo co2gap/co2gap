@@ -52,7 +52,7 @@ export ERA5_AREA="${ERA5_AREA:-72,-32,27,45}"
 FROM_DAY="${FROM_DAY:-2026-01-01}"
 TO_DAY="${TO_DAY:-2026-07-23}"
 
-do_sync=1; do_era5=1; mode=""; manifest=""
+do_sync=1; do_era5=1; mode=""; manifest=""; allow_partial=0; allow_stale=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --update)
@@ -64,6 +64,8 @@ while [ "$#" -gt 0 ]; do
       mode="release"; manifest="$2"; do_sync=0; shift 2 ;;
     --no-sync) do_sync=0; shift ;;
     --no-era5) do_era5=0; shift ;;
+    --allow-partial) allow_partial=1; shift ;;
+    --allow-stale-inputs) allow_stale=1; shift ;;
     *) echo "unknown option: $1"; exit 2 ;;
   esac
 done
@@ -71,6 +73,8 @@ done
   echo "choose explicitly: --update OR --release-manifest PATH"; exit 2;
 }
 if [ "$mode" = "release" ]; then
+  [ "$allow_partial" = 0 ] || { echo "--allow-partial is forbidden for a release"; exit 2; }
+  [ "$allow_stale" = 0 ] || { echo "--allow-stale-inputs is forbidden for a release"; exit 2; }
   manifest="$(cd "$(dirname "$manifest")" && pwd)/$(basename "$manifest")"
   [ -f "$manifest" ] || { echo "release manifest not found: $manifest"; exit 2; }
   export ADSB_RELEASE_MANIFEST="$manifest"
@@ -81,7 +85,13 @@ step() { echo; echo "=== $* ==="; }
 
 if [ "$do_sync" = 1 ]; then
   step "1/5 sync parquet from the Pi (parquet only, never raw dumps)"
-  bash "$ROOT/../sync_parquet.sh" || echo "  sync failed — continuing with local days"
+  if ! bash "$ROOT/../sync_parquet.sh"; then
+    if [ "$allow_stale" = 1 ]; then
+      echo "  sync failed — continuing because --allow-stale-inputs was explicit"
+    else
+      echo "  sync failed — refusing stale inputs"; exit 1
+    fi
+  fi
 fi
 
 if [ "$do_era5" = 1 ]; then
@@ -90,7 +100,11 @@ if [ "$do_era5" = 1 ]; then
     "$PY" scripts/era5_backfill.py --release-manifest "$manifest"
   else
     step "2/5 ERA5 update ${FROM_DAY} → ${TO_DAY}"
-    "$PY" scripts/era5_backfill.py "$FROM_DAY" "$TO_DAY"
+    if [ "$allow_partial" = 1 ]; then
+      "$PY" scripts/era5_backfill.py "$FROM_DAY" "$TO_DAY" --allow-partial
+    else
+      "$PY" scripts/era5_backfill.py "$FROM_DAY" "$TO_DAY"
+    fi
   fi
 fi
 
@@ -108,7 +122,11 @@ if [ "$mode" = "release" ]; then
   "$PY" lab/run_decompose.py --release-manifest "$manifest"
 else
   step "4/5 lateral/vertical decomposition (all ready days)"
-  "$PY" lab/run_decompose.py
+  if [ "$allow_partial" = 1 ]; then
+    "$PY" lab/run_decompose.py --allow-partial
+  else
+    "$PY" lab/run_decompose.py
+  fi
 fi
 
 step "5/5 decomposition report"

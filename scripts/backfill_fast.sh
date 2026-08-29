@@ -25,14 +25,28 @@
 #     racing the first;
 #   * one line per day in the log, verbose pipeline output kept separate.
 #
-# Usage:  ADSB_ROOT=/opt/adsb-co2 WORKERS=8 backfill_fast.sh 2026-03-26 2026-01-01
+# Usage: ADSB_ROOT=/opt/adsb-co2 backfill_fast.sh [--allow-partial] FROM_DAY TO_DAY
 set -uo pipefail
 
 ROOT="${ADSB_ROOT:-/opt/adsb-co2}"
 VENV="$ROOT/venv/bin/python"
 WORKERS="${WORKERS:-8}"
-FROM_DAY="${1:?uso: backfill_fast.sh FROM_DAY TO_DAY (ISO, si percorre a ritroso)}"
-TO_DAY="${2:?uso: backfill_fast.sh FROM_DAY TO_DAY (ISO, si percorre a ritroso)}"
+ALLOW_PARTIAL=0
+POSITIONAL=()
+for arg in "$@"; do
+    case "$arg" in
+      --allow-partial) ALLOW_PARTIAL=1 ;;
+      --*) echo "opzione sconosciuta: $arg"; exit 2 ;;
+      *) POSITIONAL+=("$arg") ;;
+    esac
+done
+set -- "${POSITIONAL[@]}"
+FROM_DAY="${1:?uso: backfill_fast.sh [--allow-partial] FROM_DAY TO_DAY}"
+TO_DAY="${2:?uso: backfill_fast.sh [--allow-partial] FROM_DAY TO_DAY}"
+[ "$#" -eq 2 ] || { echo "uso: backfill_fast.sh [--allow-partial] FROM_DAY TO_DAY"; exit 2; }
+[ "$ALLOW_PARTIAL" = 0 ] || [ -z "${ADSB_RELEASE_MANIFEST:-}" ] || {
+    echo "--allow-partial e' vietato durante una release"; exit 2;
+}
 
 FLIGHTS_DIR="${ADSB_FLIGHTS_DIR:-$ROOT/data/flights}"
 LOG="$ROOT/logs/backfill.log"
@@ -100,12 +114,12 @@ start_download() {
 # comes next without re-deriving it mid-loop.
 DAYS=()
 ISO="$FROM_DAY"
-n_already=0
+n_already=0; n_known_missing=0
 while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
     if is_valid_day "$ISO"; then
         n_already=$((n_already+1))
     elif grep -qx "$ISO" "$MISSING"; then
-        n_already=$((n_already+1))
+        n_known_missing=$((n_known_missing+1))
     else
         DAYS+=("$ISO")
     fi
@@ -113,11 +127,18 @@ while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
 done
 
 t_start=$(date +%s)
-n_ok=0; n_fail=0; n_missing=0
+n_ok=0; n_fail=0; n_missing=$n_known_missing
 log "==== BACKFILL FAST $FROM_DAY -> $TO_DAY : ${#DAYS[@]} giorni da fare, \
 $n_already gia' presenti · box=${ADSB_BBOX:-default} · out=$FLIGHTS_DIR \
 (workers=$WORKERS, prefetch attivo) ===="
-[ ${#DAYS[@]} -eq 0 ] && { log "niente da fare"; exit 0; }
+if [ ${#DAYS[@]} -eq 0 ]; then
+    log "niente da elaborare"
+    if [ "$n_missing" -gt 0 ] && [ "$ALLOW_PARTIAL" = 0 ]; then
+        log "BACKFILL INCOMPLETO: $n_missing giorno/i richiesti senza release"
+        exit 1
+    fi
+    exit 0
+fi
 
 for idx in "${!DAYS[@]}"; do
     iso="${DAYS[$idx]}"
@@ -182,4 +203,8 @@ done
 el=$(( ($(date +%s) - t_start) / 60 ))
 log "==== FINE: $n_ok ok · $n_fail falliti · $n_missing mancanti · ${el} min ===="
 [ "$n_missing" -gt 0 ] && log "giorni senza release: vedi $MISSING"
+if [ $((n_fail+n_missing)) -gt 0 ] && [ "$ALLOW_PARTIAL" = 0 ]; then
+    log "BACKFILL INCOMPLETO: rilancia o usa --allow-partial fuori da una release"
+    exit 1
+fi
 exit 0

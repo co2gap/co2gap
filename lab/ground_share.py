@@ -43,6 +43,8 @@ ap.add_argument("--days-from", default=None,
                      "release invece della cartella che accumula")
 ap.add_argument("--release-manifest", default=None,
                 help="manifesto immutabile: sostituisce --days-from e fissa il perimetro")
+ap.add_argument("--allow-partial", action="store_true",
+                help="esce zero anche con giorni falliti; vietato per una release")
 ap.add_argument("--limit-days", type=int, default=None)
 ap.add_argument("--alt-ft", type=float, default=1000.0)
 ap.add_argument("--tas-kt", type=float, default=70.0)
@@ -79,6 +81,8 @@ days = sorted(p.name for p in SRC.iterdir() if p.is_dir())
 #              e --days la restringe, senza ridefinire il perimetro.
 perimetro = None
 manifest = optional_manifest(a.release_manifest)
+if manifest and a.allow_partial:
+    raise SystemExit("--allow-partial e' vietato con --release-manifest")
 if manifest and a.days_from:
     raise SystemExit("--days-from and --release-manifest are mutually exclusive")
 if manifest:
@@ -132,6 +136,7 @@ PCOLS = ["flight_id","t","lat","lon","alt_ft","gs_kt","ias_kt","vs_fpm"]
 FCOLS = ["flight_id","typecode","co2_kg_v0","fuel_kg_v0","load_factor",
          "reserve_kg","tas_mode","origin_icao","dest_icao","gc_km"]
 
+failed = []
 for day in days:
     dst = OUT / f"{day}.parquet"
     if _completo(dst):
@@ -141,7 +146,9 @@ for day in days:
         fl_df = pd.read_parquet(SRC/day/"flights.parquet", columns=FCOLS)
         pt_df = pd.read_parquet(SRC/day/"points.parquet", columns=PCOLS)
     except Exception as e:
-        print(f"  {day}  ⚠️ illeggibile: {e}", flush=True); continue
+        print(f"  {day}  ⚠️ illeggibile: {e}", flush=True)
+        failed.append(day)
+        continue
 
     pt_df = pt_df.sort_values(["flight_id","t"])
     groups = dict(tuple(pt_df.groupby("flight_id", sort=False)))
@@ -220,3 +227,8 @@ if manifest:
     manifest.require_exact_output_days(OUT, "ground")
     manifest.verify_set("ground", OUT, artifact=True)
     print(f"  release {manifest.release_id}: ground checksum verified", flush=True)
+missing_outputs = [d for d in days if not _completo(OUT / f"{d}.parquet")]
+failed = sorted(set(failed) | set(missing_outputs))
+if failed and not a.allow_partial:
+    raise SystemExit(f"ground share incompleto: {len(failed)} giorno/i falliti o "
+                     f"mancanti; il primo e' {failed[0]}")

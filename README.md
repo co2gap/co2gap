@@ -252,6 +252,11 @@ artefact. Verify it independently with
 Extra days may coexist in an accumulating *input cache*, but no release output
 directory may contain a missing or extra day.
 
+Every multi-day stage returns a non-zero status if any requested day fails or
+is missing. Exploratory accumulation may opt into `--allow-partial`; release
+mode rejects that flag. A failed Pi sync is fatal unless an update run explicitly
+uses `--allow-stale-inputs`, which is also forbidden for a release.
+
 Two more stages have to run before the site can be built. Without the first,
 `site_build.py` exits; without the second it stays silent and drops the phase
 attribution altogether, which is the worse failure of the two. They are two

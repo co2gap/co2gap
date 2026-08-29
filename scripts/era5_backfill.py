@@ -130,8 +130,12 @@ def main():
     ap.add_argument("from_day", nargs="?", default=DEFAULT_FROM)
     ap.add_argument("to_day", nargs="?", default=DEFAULT_TO)
     ap.add_argument("--release-manifest", default=None)
+    ap.add_argument("--allow-partial", action="store_true",
+                    help="return success despite failed days (never valid for a release)")
     args = ap.parse_args()
     manifest = optional_manifest(args.release_manifest)
+    if manifest and args.allow_partial:
+        raise SystemExit("--allow-partial is forbidden with --release-manifest")
     if manifest:
         days = prioritise(manifest.era5_days)
         range_label = f"release {manifest.release_id}"
@@ -179,6 +183,8 @@ def main():
     if manifest:
         manifest.verify_set("era5", ERA5_DIR)
         log(f"release {manifest.release_id}: ERA5 checksum verified")
+    if n_fail and not args.allow_partial:
+        raise SystemExit(f"ERA5 backfill incomplete: {n_fail} day(s) failed")
 
 
 if __name__ == "__main__":
