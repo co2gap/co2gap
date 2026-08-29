@@ -77,7 +77,10 @@ def main():
     df, loaded = load_flights(days)
     print(f"loaded {len(df)} flights from {len(loaded)} day(s): {', '.join(loaded)}")
     q = quality_gate(df)
-    print(f"{len(q)} pass quality gate (O/D known, flown>=0.9GC, cov>=0.85, GC>=150km)")
+    import track_quality as _tq   # le soglie, non una loro descrizione
+    print(f"{len(q)} pass quality gate (O/D known, "
+          f"flown>={_tq.FLOWN_MIN_FRAC}GC, cov>={_tq.COV_MIN}, "
+          f"GC>={_tq.GC_MIN_KM}km)")
     wf = build_windfield(loaded)
     print(f"wind field: {'built' if wf else 'MISSING (no ERA5)'}")
     q = enrich(q, wf, load_calibration())

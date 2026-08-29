@@ -239,7 +239,8 @@ fall back to are the old, smaller study area:
 ```bash
 ADSB_ROOT=$PWD python lab/ground_share.py \
   --src $PWD/data/flights_ecac \
-  --out $PWD/data/ground_share_ecac
+  --out $PWD/data/ground_share_ecac \
+  --days-from $PWD/data/decomposition_ecac
 ```
 
 ```bash
@@ -251,8 +252,11 @@ python lab/run_phase_split.py
 ```
 
 `--out` is required on the first: it has no default, deliberately, because it
-writes a directory that the site then treats as authoritative. Both are
-resumable and skip days already written.
+writes a directory that the site then treats as authoritative. `--days-from`
+makes that directory follow the frozen decomposition rather than
+`data/flights_ecac`, which keeps accumulating every night and is already four
+days ahead of this release — without it the run would add days the release does
+not contain. Both commands are resumable and skip days already written.
 
 Site generation:
 

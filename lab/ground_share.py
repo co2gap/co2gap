@@ -5,8 +5,20 @@ Senza, il gap conterrebbe il rullaggio prezzato da FuelFlow.enroute a
 ~7.750 kg/h contro i ~800 reali: e' il difetto corretto il 2026-08-28.
 
   PYTHONPATH=pipeline:ingest lab-venv/bin/python lab/ground_share.py \\
-      --root $PWD --src data/flights_ecac --out data/ground_share_ecac
-SOLA LETTURA sui dati congelati.
+      --root $PWD --src data/flights_ecac --out data/ground_share_ecac \\
+      --days-from data/decomposition_ecac
+
+⚠️ --days-from, o --days, NON sono facoltativi in pratica. Senza, il perimetro
+lo detta data/flights_ecac, che accumula OGNI notte e oggi ha quattro giorni in
+piu' della release (fino al 24/07 contro il 20/07 congelato). Il sito non se ne
+accorgerebbe -- parte dai giorni della decomposizione e ignora le righe di terra
+in eccesso nel merge -- ma questa cartella e' descritta come autorevole, e una
+cartella autorevole che contiene giorni non pubblicati e' un invito a sbagliare
+al prossimo che la legge. Derivare i giorni dalla decomposizione congelata e'
+meglio di scrivere le date a mano: non invecchia alla prossima release.
+
+Non e' SOLA LETTURA: non tocca gli input, ma crea la cartella di uscita e ci
+scrive un parquet per giorno.
 """
 import os, sys, argparse, time
 from pathlib import Path
@@ -17,6 +29,10 @@ ap.add_argument("--root", default=os.environ.get("ADSB_ROOT", "/mnt/wd_elements/
 ap.add_argument("--src", default=None, help="cartella flights_ecac")
 ap.add_argument("--out", required=True)
 ap.add_argument("--days", default=None, help="es. 2026-01-01:2026-07-20")
+ap.add_argument("--days-from", default=None,
+                help="cartella da cui prendere l'ELENCO esatto dei giorni "
+                     "(es. data/decomposition_ecac): il perimetro segue la "
+                     "release invece della cartella che accumula")
 ap.add_argument("--limit-days", type=int, default=None)
 ap.add_argument("--alt-ft", type=float, default=1000.0)
 ap.add_argument("--tas-kt", type=float, default=70.0)
@@ -30,6 +46,16 @@ SRC = Path(a.src or f"{a.root}/data/flights_ecac")
 OUT = Path(a.out); OUT.mkdir(parents=True, exist_ok=True)
 
 days = sorted(p.name for p in SRC.iterdir() if p.is_dir())
+if a.days_from:
+    src = Path(a.days_from)
+    voluti = {p.stem for p in src.glob("*.parquet")} or {p.name for p in src.iterdir() if p.is_dir()}
+    if not voluti:
+        raise SystemExit(f"--days-from: nessun giorno in {src}")
+    mancanti = sorted(voluti - set(days))
+    if mancanti:
+        raise SystemExit(f"--days-from: {len(mancanti)} giorni chiesti e assenti "
+                         f"in {SRC}, il primo e' {mancanti[0]}")
+    days = [d for d in days if d in voluti]
 if a.days:
     lo, hi = a.days.split(":"); days = [d for d in days if lo <= d <= hi]
 if a.limit_days: days = days[:a.limit_days]

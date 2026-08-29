@@ -490,6 +490,26 @@ def load() -> pd.DataFrame:
         _real = _mm.co2_kg_v0.to_numpy() * (1 - _sh)
         GROUND_BAND[_d] = _lat + (_real.sum() - _mm.hybrid_co2_kg.sum()) / _idl * 100.0
 
+    # I parquet conservano il gate GIA' APPLICATO: coverage_frac e
+    # flown_ge_09gc sono stati calcolati con le soglie di allora. Se qualcuno
+    # cambia track_quality.py e rigenera SOLO il sito, la pagina dichiarerebbe
+    # soglie che i dati non rispettano. Due delle quattro si possono
+    # ricontrollare qui, perche' la decomposizione porta gc_km e flown_km; per
+    # coverage_frac e la soglia delle lacune serve una marcatura nei parquet,
+    # ed e' in DEPLOY.md per la release di gennaio.
+    if float(df.gc_km.min()) < track_quality.GC_MIN_KM:
+        raise SystemExit(
+            f"i dati contengono tratte da {df.gc_km.min():.0f} km mentre "
+            f"track_quality.GC_MIN_KM dice {track_quality.GC_MIN_KM}: la soglia "
+            "e' cambiata dopo il calcolo, e la pagina la dichiarerebbe a vuoto. "
+            "Rigenerare la decomposizione, non solo il sito.")
+    # ⚠️ Su FLOWN_MIN_FRAC un controllo analogo NON funzionerebbe, ed e' stato
+    # tolto invece che lasciato a fare scena: nella finestra pubblicata il
+    # rapporto flown/gc ha minimo 1,0001, cioe' la decomposizione non contiene
+    # NIENTE sotto l'ortodromia e la soglia del 90% non e' vincolante qui. Un
+    # test che non puo' fallire e' peggio di nessun test: dice di proteggere e
+    # non protegge. Serve la marcatura delle soglie nei parquet, in DEPLOY.md.
+
     manca = sorted(set(df.day.unique()) - set(g.day.unique()))
     if manca:
         raise SystemExit(
