@@ -3,8 +3,10 @@
 Fase 2a: aggregate the lateral/vertical decomposition and print the tables
 that go into reports/fase2a.md.
 
-Reads whatever data/decomposition/*.parquet exist (produced by
-lab/run_decompose.py) and prints, all as MEDIANS unless stated:
+Reads the decomposition and ground-fuel artefacts through the same authoritative
+loader as the site. It therefore removes ground movement before printing any
+headline; the gate-to-gate diagnostic that used to appear here is not a
+publishable result.
 
   1. headline split of the excess into lateral + vertical/speed
   2. the same by distance band (the split is strongly distance-dependent)
@@ -12,11 +14,11 @@ lab/run_decompose.py) and prints, all as MEDIANS unless stated:
      reconcile against EUROCONTROL's published ~3%
   4. month-by-month, as an early look at stability (fase 2b's criterion 2)
 
-Every number printed is PROVISIONAL while the sample is not a full year:
-the available days are late-spring/summer only, so nothing here says
-anything about winter, and no ranking printed here is a verdict.
+The report derives its coverage warning from the days actually loaded. Until
+the sample is a full year, rankings remain provisional rather than verdicts.
 
-Usage: lab-venv/bin/python lab/decompose_report.py
+Usage: ADSB_DECOMP_DIR=... ADSB_GROUND_DIR=... ADSB_CALIB=... \
+       lab-venv/bin/python lab/decompose_report.py
 """
 
 from __future__ import annotations
@@ -28,14 +30,18 @@ import numpy as np
 import os
 
 import pandas as pd
-import pyarrow.parquet as pq
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "pipeline"))
+sys.path.insert(0, str(ROOT / "lab"))
 from release_manifest import optional_manifest  # noqa: E402
+from release_data import load_release_data  # noqa: E402
 # Follows the environment for the same reason as run_decompose: a report built
 # from the wrong box's decomposition would look perfectly valid.
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
+GROUND_DIR = Path(os.environ.get("ADSB_GROUND_DIR")
+                  or (ROOT / "data/ground_share_ecac"))
+CALIB = Path(os.environ.get("ADSB_CALIB") or (ROOT / "data/calibration.json"))
+GROUND_DEF = os.environ.get("ADSB_GROUND_DEF", "a3000t70")
 
 BANDS = [150, 300, 500, 800, 1200, 2000, 20000]
 BAND_LABELS = ["150–300", "300–500", "500–800", "800–1200",
@@ -48,17 +54,9 @@ MIN_N_ROUTE = 30
 
 def load() -> pd.DataFrame:
     manifest = optional_manifest()
-    if manifest:
-        manifest.require_exact_output_days(DEC_DIR, "decomposition")
-        manifest.verify_set("decomposition", DEC_DIR, artifact=True)
-        files = [DEC_DIR / f"{day}.parquet" for day in manifest.days]
-    else:
-        files = sorted(DEC_DIR.glob("*.parquet"))
-    if not files:
-        raise SystemExit(f"no decomposition parquet under {DEC_DIR} "
-                         "— run lab/run_decompose.py first")
-    df = pd.concat([pq.read_table(f).to_pandas() for f in files],
-                   ignore_index=True)
+    df = load_release_data(
+        DEC_DIR, GROUND_DIR, CALIB, ground_def=GROUND_DEF, manifest=manifest,
+    ).frame
     df["band"] = pd.cut(df.gc_km, BANDS, labels=BAND_LABELS)
     df["month"] = df.day.str.slice(0, 7)
     return df
@@ -105,6 +103,10 @@ def main():
 
     # ---- 1. headline ------------------------------------------------------
     banner("1. Scomposizione dell'excess (punti percentuali)")
+    print("  BASE AUTOREVOLE: solo carburante in volo; movimento a terra "
+          "rimosso prima di ogni aggregazione.")
+    print("  Il precedente totale gate-to-gate del 22,06% era diagnostico e "
+          "NON e' pubblicabile.\n")
     tot = df.excess_total_pct.median()
     lat = df.excess_lateral_pct.median()
     ver = df.excess_vertical_pct.median()

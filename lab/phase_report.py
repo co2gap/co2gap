@@ -9,6 +9,8 @@ report is written from. It publishes nothing and writes nothing.
     ADSB_ROOT=$PWD \
     ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
     ADSB_PHASE_DIR=$PWD/data/decomposition_ecac_phase \
+    ADSB_GROUND_DIR=$PWD/data/ground_share_ecac \
+    ADSB_CALIB=$PWD/data/calibration_ecac.json \
     ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
     ../lab-venv/bin/python lab/phase_report.py
 """
@@ -16,7 +18,6 @@ report is written from. It publishes nothing and writes nothing.
 from __future__ import annotations
 
 import csv
-import glob
 import os
 import sys
 from pathlib import Path
@@ -27,10 +28,20 @@ import pyarrow.parquet as pq
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "pipeline"))
+sys.path.insert(0, str(ROOT / "lab"))
+
+from artifact_contract import manifest_allowed_missing  # noqa: E402
+from release_data import correct_phase_basis, load_release_data  # noqa: E402
+from release_manifest import optional_manifest  # noqa: E402
 
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
 PHASE_DIR = Path(os.environ.get("ADSB_PHASE_DIR")
                  or (ROOT / "data/decomposition_phase"))
+GROUND_DIR = Path(os.environ.get("ADSB_GROUND_DIR")
+                  or (ROOT / "data/ground_share_ecac"))
+CALIB = Path(os.environ.get("ADSB_CALIB") or (ROOT / "data/calibration.json"))
+GROUND_DEF = os.environ.get("ADSB_GROUND_DEF", "a3000t70")
 AIRPORTS = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airports.csv"))
 
 # The site's grid, copied deliberately rather than chosen afresh: a flight is
@@ -45,7 +56,6 @@ MIN_N_AIRPORT = 2000
 # bins would be unreadable.
 BANDS = [0, 300, 500, 800, 1200, 2000, 99999]
 
-sys.path.insert(0, str(ROOT / "lab"))
 from phase_attrib import (PHASE_A, PHASE_B, MIN_DEV_PP,       # noqa: E402
                           add_mean_norm, by_airport, headline)
 
@@ -55,18 +65,38 @@ SHORT = {"excess_vert_climb_pct": "salita", "excess_vert_cruise_pct": "crociera"
 
 
 def load() -> pd.DataFrame:
-    fd = sorted(glob.glob(str(DEC_DIR / "*.parquet")))
-    fp = sorted(glob.glob(str(PHASE_DIR / "*.parquet")))
-    if not fd or not fp:
-        raise SystemExit(f"mancano parquet: {DEC_DIR} ({len(fd)}) / "
-                         f"{PHASE_DIR} ({len(fp)})")
-    dec = pd.concat([pq.read_table(f).to_pandas() for f in fd], ignore_index=True)
-    ph = pd.concat([pq.read_table(f).to_pandas() for f in fp], ignore_index=True)
+    manifest = optional_manifest()
+    dec = load_release_data(
+        DEC_DIR, GROUND_DIR, CALIB, ground_def=GROUND_DEF, manifest=manifest,
+    ).frame
+    if manifest:
+        manifest.require_exact_output_days(PHASE_DIR, "phase")
+        manifest.verify_set("phase", PHASE_DIR, artifact=True)
+        phase_files = [PHASE_DIR / f"{day}.parquet" for day in manifest.days]
+    else:
+        phase_files = sorted(PHASE_DIR.glob("*.parquet"))
+    if not phase_files:
+        raise SystemExit(f"mancano parquet di fase in {PHASE_DIR}")
+    ph = pd.concat([pq.read_table(path).to_pandas() for path in phase_files],
+                   ignore_index=True)
     print(f"congelato: {len(dec):,} voli su {dec.day.nunique()} giorni")
     print(f"fasi     : {len(ph):,} voli su {ph.day.nunique()} giorni")
+    dec_keys = set(zip(dec.day.astype(str), dec.flight_id.astype(int)))
+    phase_keys = set(zip(ph.day.astype(str), ph.flight_id.astype(int)))
+    if len(phase_keys) != len(ph):
+        raise SystemExit("fase con chiavi (day, flight_id) duplicate")
+    allowed = (manifest_allowed_missing(manifest, "phase") & dec_keys
+               if manifest else set())
+    expected = dec_keys - allowed
+    missing, extra = expected - phase_keys, phase_keys - expected
+    if missing or extra:
+        raise SystemExit(
+            f"keyset fase non conforme: {len(missing)} mancanti, "
+            f"{len(extra)} extra")
     df = dec.merge(ph, on=["day", "flight_id"], how="inner",
                    validate="one_to_one")
     print(f"uniti    : {len(df):,} ({len(df)/len(dec)*100:.2f}% del congelato)\n")
+    df = correct_phase_basis(df)
 
     df["bin"] = pd.cut(df.gc_km, BINS).astype(str)
     cell = df["bin"] + "|" + df.typecode
@@ -111,7 +141,7 @@ def shares(df, cols, label):
 def main():
     df = load()
 
-    # ---- gate: nothing published moved, additivity holds -----------------
+    # ---- gate: additivity and frozen hybrid reconstruction ----------------
     print("=" * 72)
     print("CANCELLI")
     print("=" * 72)
@@ -128,8 +158,8 @@ def main():
     print(f"  taglio B non definito (volo troppo corto): "
           f"{df.excess_vert_dep_pct.isna().mean()*100:.2f}%")
     # MEDIANS, not the site's headline figures: the page quotes the
-    # fuel-weighted shares (7.51 / 14.55), a different statistic on the same
-    # untouched column. Labelling these "the published figures" would invite
+    # fuel-weighted shares, a different statistic on the same corrected
+    # flight-only column. Labelling medians "the published figures" would invite
     # the reader to conclude something moved when nothing did — the proof of
     # that is that data/decomposition_ecac is never written to, and rebuilding
     # the site reproduces its headline exactly.
@@ -297,8 +327,9 @@ def main():
     hour = pd.to_datetime(df.dep_ts, unit="s", utc=True).dt.hour
     m = (df.dist_ratio < 1.02) & hour.isin([1, 2, 3, 4]) & (df.gc_km > 1000)
     f = df[m]
-    print(f"  {len(f):,} voli · verticale mediano {f.excess_vertical_pct.median():.1f} "
-          f"(atteso 5,5) · flotta {df.excess_vertical_pct.median():.1f}")
+    print(f"  {len(f):,} voli · verticale mediano "
+          f"{f.excess_vertical_pct.median():.1f} · "
+          f"flotta {df.excess_vertical_pct.median():.1f}")
     shares(f, PHASE_A, "  composizione del pavimento")
 
     # ---- external comparisons --------------------------------------------

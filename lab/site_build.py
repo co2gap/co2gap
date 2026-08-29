@@ -21,7 +21,6 @@ Nothing here deploys. Publication is an explicit decision.
 from __future__ import annotations
 
 import csv
-import glob
 import html
 import json
 import os
@@ -34,13 +33,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipeline"))
 import track_quality
 from release_manifest import optional_manifest
 from artifact_contract import manifest_allowed_missing
+from release_data import GROUND_DEFS, correct_phase_basis, load_release_data
 
 ROOT = Path(__file__).resolve().parents[1]
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
@@ -71,7 +70,6 @@ GROUND_DEF = os.environ.get("ADSB_GROUND_DEF", "a3000t70")
 # Le cinque definizioni che lab/ground_share.py calcola e salva tutte. La cifra
 # di testa dipende da quale si sceglie, e la scelta e' dichiarata in §8 con la
 # banda misurata: non e' un dettaglio implementativo, e' un grado di liberta'.
-GROUND_DEFS = ["suolo", "a1000t40", "a1000t70", "a1000t100", "a3000t70"]
 GROUND_BAND: dict[str, float] = {}
 
 
@@ -156,28 +154,9 @@ def phase_attribution(df, manifest=None):
     # discesa della partizione per fase, perche' il rullaggio cade a frazione
     # d'arco ~0 e ~1 e i confini di CUT A vengono dal nominale, che parte in
     # salita e finisce in discesa. Crociera ed en-route non lo vedono mai.
-    m["excess_vert_dep_pct"] = m.excess_vert_dep_pct - m.ground_pct_dep
-    m["excess_vert_arr_pct"] = m.excess_vert_arr_pct - m.ground_pct_arr
-    m["excess_vert_climb_pct"] = m.excess_vert_climb_pct - m.ground_pct_dep
-    m["excess_vert_desc_pct"] = m.excess_vert_desc_pct - m.ground_pct_arr
-
-    # La prova che le due partizioni e il totale stanno sulla stessa base. E' il
-    # controllo che avrebbe fatto fallire il build invece di lasciarlo stampare
-    # 245%: additive per costruzione, quindi il residuo e' epsilon o e' un bug.
-    for cols, nome in ((["excess_vert_dep_pct", "excess_vert_enr_pct",
-                         "excess_vert_arr_pct"], "posizione"),
-                       (["excess_vert_climb_pct", "excess_vert_cruise_pct",
-                         "excess_vert_desc_pct"], "fase")):
-        ok = m[cols + ["excess_vertical_pct"]].notna().all(axis=1)
-        res = float((m.loc[ok, cols].sum(axis=1)
-                     - m.loc[ok, "excess_vertical_pct"]).abs().max())
-        if res > 1e-6:
-            raise SystemExit(
-                f"lo split per {nome} non somma al verticale pubblicato "
-                f"(residuo massimo {res:.4f} punti). Numeratore e denominatore "
-                f"stanno su basi diverse: le colonne di fase sono gate-to-gate "
-                f"e il verticale e' corretto per il rullaggio, oppure "
-                f"{PHASE_DIR} e' stato rigenerato con altre convenzioni.")
+    # Correzione e cancello sono condivisi col rapporto di fase: nessuno dei due
+    # puo' tornare inavvertitamente alla vecchia base gate-to-gate.
+    m = correct_phase_basis(m)
 
     return headline(by_airport(add_mean_norm(m, BINS, MIN_N_CELL),
                                MIN_N_AIRPORT))
@@ -450,176 +429,15 @@ def total_kg_per_flight(df) -> float:
     return (df.co2_real_kg.sum() - df.co2_ideal_kg.sum()) / 3.16 / len(df)
 
 
-def load() -> pd.DataFrame:
+def load(*, verify_manifest: bool = True) -> pd.DataFrame:
     manifest = optional_manifest()
-    files = sorted(glob.glob(str(DEC_DIR / "*.parquet")))
-    if not files:
-        raise SystemExit(f"nessun parquet in {DEC_DIR}")
-    df = pd.concat([pq.read_table(f).to_pandas() for f in files], ignore_index=True)
-    calib = {}
-    if CALIB.exists():
-        c = json.loads(CALIB.read_text())
-        calib = c.get("factors", c) if isinstance(c, dict) else {}
-    k = df.typecode.map(lambda t: calib.get(t, 1.0)).astype(float).to_numpy()
-
-    # ---- correzione del carburante bruciato a terra -----------------------
-    # Il gap confronta volo con volo: la baseline ideale non rulla, quindi il
-    # consumo reale non deve rullare. FALLISCE RUMOROSAMENTE se le quote non
-    # ci sono: due variabili di questa pipeline gia' falliscono in silenzio e
-    # il runbook le documenta, non se ne aggiunge una terza.
-    gfiles = sorted(glob.glob(str(GROUND_DIR / "*.parquet")))
-    if not gfiles:
-        raise SystemExit(
-            f"nessuna quota di terra in {GROUND_DIR}. Senza, il gap conterrebbe "
-            f"il rullaggio prezzato a ~7.750 kg/h: e' il difetto corretto il "
-            f"2026-08-28. Genera con lab/ground_share.py oppure passa "
-            f"ADSB_GROUND_DIR.")
-    g = pd.concat([pq.read_table(f).to_pandas() for f in gfiles], ignore_index=True)
-    col = f"fuel_{GROUND_DEF}_kg"
-    if col not in g.columns:
-        raise SystemExit(f"{GROUND_DIR} non contiene {col}: definizione "
-                         f"ADSB_GROUND_DEF={GROUND_DEF!r} non disponibile")
-    # La quota si tiene anche SPEZZATA fra i due capi: serve allo split per
-    # fase, dove il burn di terra va sottratto al secchiello che lo contiene e
-    # non al totale. Senza, il numeratore resterebbe gate-to-gate sopra un
-    # denominatore corretto e le quote uscirebbero dal 100%.
-    for suf in ("", "_dep", "_arr"):
-        c = f"fuel_{GROUND_DEF}{suf}_kg"
-        if c not in g.columns:
-            raise SystemExit(f"{GROUND_DIR} non contiene {c}")
-        g["share_ground" + suf] = np.where(g.fuel_recomputed_kg > 0,
-                                           g[c] / g.fuel_recomputed_kg, 0.0)
-    # Un GIORNO senza quota entrerebbe nelle cifre con share 0, cioe' col
-    # rullaggio dentro, e il fillna lo renderebbe invisibile: e' successo con il
-    # 2026-02-14. Il buco di un giorno intero e' un errore, non una lacuna.
-    # La soglia e' una SCELTA, e il titolo dipende da dove cade. Si misura qui,
-    # dove il parquet di terra e' gia' aperto e contiene tutte e cinque le
-    # definizioni: dichiarare una sensibilita' senza quantificarla vale poco, e
-    # digitarla la farebbe invecchiare al primo ricalcolo.
-    _idl = df.ideal_gc_co2_kg.sum()
-    _lat = (df.hybrid_co2_kg.sum() - _idl) / _idl * 100.0
-    _gm = g[["day", "flight_id"]].copy()
-    for _d in GROUND_DEFS:
-        _c = f"fuel_{_d}_kg"
-        if _c in g.columns:
-            _gm[_d] = np.where(g.fuel_recomputed_kg > 0,
-                               g[_c] / g.fuel_recomputed_kg, 0.0)
-    _mm = df[["day", "flight_id", "co2_kg_v0", "hybrid_co2_kg"]].merge(
-        _gm, on=["day", "flight_id"], how="left")
-    for _d in GROUND_DEFS:
-        if _d not in _mm.columns:
-            continue
-        _sh = _mm[_d].fillna(0.0).to_numpy()
-        _real = _mm.co2_kg_v0.to_numpy() * (1 - _sh)
-        GROUND_BAND[_d] = _lat + (_real.sum() - _mm.hybrid_co2_kg.sum()) / _idl * 100.0
-
-    # I parquet conservano il gate GIA' APPLICATO: coverage_frac e
-    # flown_ge_09gc sono stati calcolati con le soglie di allora. Se qualcuno
-    # cambia track_quality.py e rigenera SOLO il sito, la pagina dichiarerebbe
-    # soglie che i dati non rispettano. Due delle quattro si possono
-    # ricontrollare qui, perche' la decomposizione porta gc_km e flown_km; per
-    # coverage_frac e la soglia delle lacune serve una marcatura nei parquet,
-    # ed e' in DEPLOY.md per la release di gennaio.
-    # ⚠️ Il controllo e' UNIDIREZIONALE, e va saputo: dimostra che ogni riga
-    # soddisfa la soglia corrente, non con quale soglia l'artefatto e' stato
-    # prodotto. Alzandola scatta (collaudato a 200 e a 400 km contro una tratta
-    # minima di 150,041); abbassandola a 100 passerebbe in silenzio, benche' i
-    # dati siano stati selezionati a 150. La protezione vera e' registrare
-    # valori e versione delle soglie nei parquet: KNOWN-ISSUES.md, punto 3.
-    if float(df.gc_km.min()) < track_quality.GC_MIN_KM:
-        raise SystemExit(
-            f"i dati contengono tratte da {df.gc_km.min():.0f} km mentre "
-            f"track_quality.GC_MIN_KM dice {track_quality.GC_MIN_KM}: la soglia "
-            "e' cambiata dopo il calcolo, e la pagina la dichiarerebbe a vuoto. "
-            "Rigenerare la decomposizione, non solo il sito.")
-    # ⚠️ Su FLOWN_MIN_FRAC un controllo analogo NON funzionerebbe, ed e' stato
-    # tolto invece che lasciato a fare scena: nella finestra pubblicata il
-    # rapporto flown/gc ha minimo 1,0001, cioe' la decomposizione non contiene
-    # NIENTE sotto l'ortodromia e la soglia del 90% non e' vincolante qui. Un
-    # test che non puo' fallire e' peggio di nessun test: dice di proteggere e
-    # non protegge. Serve la marcatura delle soglie nei parquet, in DEPLOY.md.
-
-    manca = sorted(set(df.day.unique()) - set(g.day.unique()))
-    if manca:
-        raise SystemExit(
-            f"quota di terra assente per {len(manca)} giorni pubblicati "
-            f"({manca[:3]}...): quei voli entrerebbero gate-to-gate. "
-            f"Genera con lab/ground_share.py --days.")
-    dec_keys = set(zip(df.day.astype(str), df.flight_id.astype(int)))
-    ground_keys = set(zip(g.day.astype(str), g.flight_id.astype(int)))
-    if len(ground_keys) != len(g):
-        raise SystemExit("quota di terra con chiavi (day, flight_id) duplicate")
-    allowed = manifest_allowed_missing(manifest, "ground") & dec_keys
-    missing_keys = dec_keys - ground_keys
-    if missing_keys != allowed:
-        unknown = sorted(missing_keys - allowed)
-        stale = sorted(allowed - missing_keys)
-        raise SystemExit(
-            f"keyset quota di terra non conforme: {len(unknown)} assenti non "
-            f"autorizzati, {len(stale)} eccezioni dichiarate ma presenti")
-    n_before = len(df)
-    df = df.merge(g[["day", "flight_id", "share_ground",
-                     "share_ground_dep", "share_ground_arr"]],
-                  on=["day", "flight_id"], how="left", validate="one_to_one")
-    if len(df) != n_before:
-        raise SystemExit("il merge terra ha cambiato il numero di voli")
-    cov = df.share_ground.notna().mean()
-    unresolved = set(zip(df.loc[df.share_ground.isna(), "day"].astype(str),
-                         df.loc[df.share_ground.isna(), "flight_id"].astype(int)))
-    if unresolved != allowed:
-        raise SystemExit("il merge terra ha prodotto valori mancanti inattesi")
-    for c in ("share_ground", "share_ground_dep", "share_ground_arr"):
-        # Zero is a release-specific fallback only for keys named in the
-        # immutable manifest; an unknown missing row has already failed above.
-        df[c] = df[c].fillna(0.0)
-    print(f"  correzione terra [{GROUND_DEF}]: {cov*100:.1f}% dei voli, "
-          f"{df.share_ground.mean()*100:.2f}% del carburante escluso dal gap")
-
-    # co2_kg_v0 is UNCALIBRATED. Percentages are calibration-invariant (the
-    # factor multiplies real and ideal alike and cancels), tonnages are not.
-    # La correzione va applicata alla colonna GREZZA, non solo a quella
-    # calibrata: le percentuali (lat/vert/totale), le colonne excess_*_pct e la
-    # deviazione per aeroporto derivano tutte da co2_kg_v0. Correggerne una sola
-    # lascia il sito in uno stato incoerente che non fallisce, stampa e mente.
-    df["co2_gate_to_gate_kg"] = df.co2_kg_v0.to_numpy()      # conservata: inventario
-    df["co2_kg_v0"] = df.co2_kg_v0.to_numpy() * (1 - df.share_ground.to_numpy())
-    # le percentuali precalcolate nel parquet sono ora obsolete: si rifanno qui,
-    # con le stesse formule di pipeline/decompose.py:376-378
-    _id = df.ideal_gc_co2_kg.to_numpy()
-    df["excess_total_pct"] = (df.co2_kg_v0.to_numpy() - _id) / _id * 100.0
-    df["excess_lateral_pct"] = (df.hybrid_co2_kg.to_numpy() - _id) / _id * 100.0
-    df["excess_vertical_pct"] = (df.co2_kg_v0.to_numpy() - df.hybrid_co2_kg.to_numpy()) / _id * 100.0
-
-    # Il burn di terra in PUNTI dell'ideale, per capo: e' l'unita' delle colonne
-    # di fase, che sono anch'esse percentuali di ideal_gc_co2_kg. Si sottrae
-    # cosi' dai secchielli in phase_attribution().
-    _gg = df.co2_gate_to_gate_kg.to_numpy()
-    df["ground_pct_dep"] = _gg * df.share_ground_dep.to_numpy() / _id * 100.0
-    df["ground_pct_arr"] = _gg * df.share_ground_arr.to_numpy() / _id * 100.0
-
-    df["co2_ground_kg"] = df.co2_gate_to_gate_kg.to_numpy() * df.share_ground.to_numpy() * k
-    df["co2_real_kg"] = df.co2_kg_v0.to_numpy() * k
-    df["co2_ideal_kg"] = df.ideal_gc_co2_kg.to_numpy() * k
-    df["co2_hybrid_kg"] = df.hybrid_co2_kg.to_numpy() * k
-    df["excess_kg"] = df.co2_real_kg - df.co2_ideal_kg
-    df["bin"] = pd.cut(df.gc_km, BINS).astype(str)
-    # The norm is per distance AND aircraft type. Distance alone leaves a real
-    # confounder: an A320 and a B767 on the same sector are not comparable, so
-    # part of what a distance-only norm charges to the route is really the type
-    # flying it. Since the question here is routing and profile efficiency and
-    # not fleet choice, the type has to be normalised out.
-    # Cells thinner than this fall back to the distance-only norm, so a rare
-    # type is never ranked against a handful of its own flights.
-    cell = df["bin"] + "|" + df.typecode
-    enough = cell.map(cell.value_counts()) >= MIN_N_CELL
-    for src, dst in (("excess_total_pct", "d_tot"),
-                     ("excess_lateral_pct", "d_lat"),
-                     ("excess_vertical_pct", "d_vert")):
-        med_bin = df["bin"].map(df.groupby("bin")[src].median()).to_numpy()
-        med_cell = cell.map(df[enough].groupby(cell[enough])[src].median()).to_numpy()
-        ref = np.where(enough.to_numpy() & np.isfinite(med_cell), med_cell, med_bin)
-        df[dst] = df[src].to_numpy() - ref
-    return df
+    loaded = load_release_data(
+        DEC_DIR, GROUND_DIR, CALIB, ground_def=GROUND_DEF, bins=BINS,
+        min_n_cell=MIN_N_CELL, manifest=manifest,
+        verify_manifest=verify_manifest)
+    GROUND_BAND.clear()
+    GROUND_BAND.update(loaded.ground_band)
+    return loaded.frame
 
 
 def airport_names() -> dict:
@@ -2017,7 +1835,9 @@ def main():
             f"audit di copertura assente: {COVERAGE}. Serve ADSB_COVERAGE_JSON "
             "(per ECAC: data/coverage_ecac.json). Senza, la pagina tacerebbe "
             "sui giorni incompleti alla fonte invece di dichiararli.")
-    df = load()
+    # The site-specific preflight immediately above already verified these
+    # three artefacts together with phase, airports and coverage.
+    df = load(verify_manifest=False)
     names = airport_names()
     coords = {}
     if AIRPORTS.exists():

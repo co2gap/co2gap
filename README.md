@@ -105,6 +105,7 @@ wind/       era5.py          ERA5 download (CDS) + 4-D wind field
 lab/        calibrate.py     per-type correction factors
             anchor_refs.py   ICAO reference cruise fuel flows
             gate.py          wind-correction validation gate
+            release_data.py  authoritative ground-corrected release loader
             stability.py     month-over-month rank stability
             run_phase_split.py  vertical excess by phase of flight and position
             phase_attrib.py  per-airport attribution of that split
@@ -272,6 +273,12 @@ fingerprints of their upstream inputs. Resume checks validate those contracts
 instead of treating any readable non-empty file as complete. The September
 artefacts predate the footer contract and are accepted only through the full
 checksums in their manifest.
+
+Release headlines have one loading path: `lab/release_data.py` joins the exact
+decomposition and ground keysets, removes ground movement, recomputes the three
+excess columns and only then applies calibration to absolute masses. The site,
+`decompose_report.py` and `phase_report.py` all use it; the reports cannot fall
+back to the retired gate-to-gate headline when a ground artefact is absent.
 
 Two more stages have to run before the site can be built. Without the first,
 `site_build.py` exits; without the second it stays silent and drops the phase
