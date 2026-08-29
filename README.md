@@ -357,6 +357,11 @@ code guesses. The run must print
 read. `lab/freeze_check.py check` compares the rebuilt pages against a snapshot
 of what the site claims and is what caught that fallback in the first place.
 
+The generator builds a complete site in a sibling staging directory, validates
+the exact generated/static file set, and only then promotes the whole directory.
+A late failure therefore leaves the previous generation untouched, while files
+that a new generation no longer produces cannot survive as stale pages.
+
 Per-flight intermediate data stays out of this repository by design.
 
 ## About this project, plainly

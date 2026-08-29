@@ -27,6 +27,8 @@ import os
 import re
 import shutil
 import sys
+import tempfile
+import uuid
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1808,7 +1810,7 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 """
 
 
-def main():
+def _build_site_tree():
     manifest = optional_manifest()
     if manifest:
         manifest.verify_track_quality(track_quality)
@@ -1825,11 +1827,9 @@ def main():
                            ("coverage", COVERAGE)):
             manifest.verify_file(role, path)
         print(f"release {manifest.release_id}: inputs and frozen artefacts verified")
-    # Prima di scrivere QUALUNQUE pagina. Il controllo vive dentro
-    # coverage_note(), che pero' gira a meta' della metodologia: fallire li'
-    # lascia mezzo sito rigenerato e mezzo della build precedente, perche' le
-    # pagine si scrivono una dopo l'altra sulla destinazione definitiva. Finche'
-    # la build non e' atomica (KNOWN-ISSUES), i controlli si fanno all'inizio.
+    # Il controllo vive anche dentro coverage_note(), che gira a meta' della
+    # metodologia. La build a staging impedisce ormai una generazione mista;
+    # tenerlo qui resta utile per fallire prima dei calcoli e del rendering.
     if not COVERAGE.exists():
         raise SystemExit(
             f"audit di copertura assente: {COVERAGE}. Serve ADSB_COVERAGE_JSON "
@@ -3374,6 +3374,98 @@ v{r['version']}.{doi}</summary>
         "<subtitle>Two releases a year: what changed, and which version produced a "
         "figure.</subtitle>\n"
         f"{entries}</feed>\n", encoding="utf-8")
+
+
+GENERATED_SITE_FILES = {
+    "context-sources.json", "context.html", "coverage.json", "data.html",
+    "faq.html", "feed.xml", "index.html", "methodology.html", "releases.html",
+    "replies.html", "robots.txt", "sitemap.xml",
+}
+STATIC_SITE_FILES = {
+    ".gitignore", "404.html", "apple-touch-icon.png", "favicon-32.png",
+    "favicon.svg", "inter-OFL.txt", "inter.woff2", "logo-lockup.svg",
+    "logo.svg", "og.png",
+}
+
+
+def _prepare_site_stage(stage: Path) -> None:
+    """Copy only declared static assets; stale generated files never enter."""
+    source = ROOT / "site"
+    for relative in sorted(STATIC_SITE_FILES):
+        src = source / relative
+        if not src.is_file():
+            raise SystemExit(f"static site asset missing: {src}")
+        shutil.copy2(src, stage / relative)
+
+
+def _validate_site_stage(stage: Path) -> None:
+    expected = GENERATED_SITE_FILES | STATIC_SITE_FILES
+    actual = {str(path.relative_to(stage)) for path in stage.rglob("*")
+              if path.is_file()}
+    missing, extra = sorted(expected - actual), sorted(actual - expected)
+    if missing or extra:
+        raise RuntimeError(
+            f"site staging tree is not exact: {len(missing)} missing "
+            f"({missing[:3]}), {len(extra)} extra ({extra[:3]})"
+        )
+    for relative in GENERATED_SITE_FILES:
+        path = stage / relative
+        if path.stat().st_size == 0:
+            raise RuntimeError(f"generated site file is empty: {path}")
+        if (path.suffix == ".html"
+                and "<!doctype html>" not in path.read_text()[:200].lower()):
+            raise RuntimeError(f"generated page lacks an HTML doctype: {path}")
+
+
+def _promote_site_tree(stage: Path, destination: Path) -> None:
+    """Replace one complete generation, rolling back a failed second rename."""
+    backup = destination.parent / f".{destination.name}.previous-{uuid.uuid4().hex}"
+    had_destination = destination.exists()
+    if had_destination:
+        destination.rename(backup)
+    try:
+        stage.rename(destination)
+    except Exception:
+        if had_destination and backup.exists() and not destination.exists():
+            backup.rename(destination)
+        raise
+    if backup.exists():
+        shutil.rmtree(backup)
+
+
+def main():
+    """Build, validate and promote the complete site as one generation."""
+    global OUT, OUT_METH
+
+    configured_out = OUT.absolute()
+    if configured_out.name != "index.html":
+        raise SystemExit("ADSB_SITE_OUT must name index.html for whole-site promotion")
+    destination = configured_out.parent
+    if destination.is_symlink():
+        raise SystemExit(f"refusing symlink site destination: {destination}")
+    resolved_destination = destination.resolve()
+    broad = {ROOT.resolve(), ROOT.parent.resolve(), Path("/")}
+    if resolved_destination in broad:
+        raise SystemExit(f"refusing broad site destination: {destination}")
+    if destination.exists() and not destination.is_dir():
+        raise SystemExit(f"site destination is not a directory: {destination}")
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(
+        prefix=f".{destination.name}.build-", dir=destination.parent))
+    original_out, original_meth = OUT, OUT_METH
+    try:
+        _prepare_site_stage(stage)
+        OUT = stage / "index.html"
+        OUT_METH = stage / "methodology.html"
+        _build_site_tree()
+        _validate_site_stage(stage)
+        _promote_site_tree(stage, destination)
+        print(f"site generation promoted to {destination}")
+    finally:
+        OUT, OUT_METH = original_out, original_meth
+        if stage.exists():
+            shutil.rmtree(stage)
 
 if __name__ == "__main__":
     main()
