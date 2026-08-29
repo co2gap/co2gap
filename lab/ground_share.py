@@ -65,52 +65,57 @@ def _completo(path: Path) -> bool:
 
 
 days = sorted(p.name for p in SRC.iterdir() if p.is_dir())
-# Il perimetro, da qualunque delle due opzioni arrivi. Erano due rami separati e
-# il controllo sull'uscita stava solo dentro --days-from, mentre la docstring le
-# presenta come alternative: chi usava --days a mano aveva una protezione in
-# meno di quella che il file gli prometteva. Ora e' un ramo solo.
-voluti = None
+# PERIMETRO e SELEZIONE sono due cose diverse, e confonderle e' stato l'errore
+# del giro precedente: `perimetro &= fetta` riduceva il perimetro autorevole da
+# 197 giorni a 5, e i 192 giorni buoni gia' scritti diventavano "fuori
+# perimetro". Restano separati.
+#
+#   perimetro  cosa la cartella di uscita HA IL DIRITTO di contenere.
+#              Lo dichiara --days-from, e nient'altro lo tocca.
+#   selezione  cosa questo giro ELABORA adesso. Parte dal perimetro (o da tutto)
+#              e --days la restringe, senza ridefinire il perimetro.
+perimetro = None
 if a.days_from:
     src = Path(a.days_from)
-    voluti = {p.stem for p in src.glob("*.parquet")} or {p.name for p in src.iterdir() if p.is_dir()}
-    if not voluti:
+    perimetro = {q.stem for q in src.glob("*.parquet")} or {q.name for q in src.iterdir() if q.is_dir()}
+    if not perimetro:
         raise SystemExit(f"--days-from: nessun giorno in {src}")
-    mancanti = sorted(voluti - set(days))
+    mancanti = sorted(perimetro - set(days))
     if mancanti:
         raise SystemExit(f"--days-from: {len(mancanti)} giorni chiesti e assenti "
                          f"in {SRC}, il primo e' {mancanti[0]}")
+
+selezione = set(days) if perimetro is None else (set(days) & perimetro)
 if a.days:
     lo, hi = a.days.split(":")
-    entro = {d for d in days if lo <= d <= hi}
-    if voluti is None:
-        # --days da solo NON dichiara un perimetro: e' un selettore di fetta,
-        # e si usa apposta per lavorare a pezzi. Trattarlo come --days-from
-        # farebbe fallire ogni giro parziale legittimo. Quindi qui si AVVISA e
-        # si prosegue, mentre --days-from esce. Le due opzioni non sono
-        # equivalenti e la docstring lo dice.
-        fuori = sorted(q.stem for q in OUT.glob("*.parquet") if q.stem not in entro)
-        if fuori:
-            print(f"  ⓘ {len(fuori)} giorni gia' in {OUT.name} stanno fuori da "
-                  f"{lo}:{hi} (il primo e' {fuori[0]}). Con --days e' normale, "
-                  "e' una fetta; con --days-from sarebbe un errore.", flush=True)
-        days = [d for d in days if d in entro]
-    else:
-        voluti &= entro
+    selezione = {d for d in selezione if lo <= d <= hi}
 
-if voluti is not None:
-    days = [d for d in days if d in voluti]
+if perimetro is not None:
     # Limitare cio' che si ELABORA non basta: se un giro precedente aveva un
     # perimetro piu' largo, i suoi parquet restano qui e la cartella continua a
     # contenere giorni che la release non ha, mentre il comando stampa "fatto.".
+    # Il confronto e' col PERIMETRO, mai con la fetta: un giro parziale dentro
+    # un perimetro dichiarato e' legittimo e non deve fallire.
     # Non li cancello -- buttare dati non e' compito di uno script di calcolo --
     # ma non lascio nemmeno che passino inosservati.
-    fuori = sorted(q.stem for q in OUT.glob("*.parquet") if q.stem not in voluti)
+    fuori = sorted(q.stem for q in OUT.glob("*.parquet") if q.stem not in perimetro)
     if fuori:
         raise SystemExit(
             f"{OUT} contiene {len(fuori)} giorni fuori dal perimetro chiesto "
             f"({fuori[0]}{'...' if len(fuori) > 1 else ''}). Il sito li "
             "ignorerebbe nel merge, ma questa cartella e' descritta come "
             "autorevole. Spostarli o cancellarli a mano, poi rilanciare.")
+elif a.days:
+    # Nessun perimetro dichiarato: --days e' solo un selettore di fetta e non
+    # autorizza a giudicare cio' che sta in uscita. Si informa, non si esce.
+    lo, hi = a.days.split(":")
+    fuori = sorted(q.stem for q in OUT.glob("*.parquet") if not (lo <= q.stem <= hi))
+    if fuori:
+        print(f"  \u2139 {len(fuori)} giorni gia' in {OUT.name} stanno fuori da "
+              f"{lo}:{hi} (il primo e' {fuori[0]}). Con --days da solo e' "
+              "normale: e' una fetta, non un perimetro.", flush=True)
+
+days = [d for d in days if d in selezione]
 if a.limit_days: days = days[:a.limit_days]
 print(f"  {len(days)} giorni da elaborare · soglia terra: alt<{a.alt_ft:.0f} ft e tas<{a.tas_kt:.0f} kt", flush=True)
 
