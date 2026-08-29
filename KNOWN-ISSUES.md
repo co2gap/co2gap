@@ -149,3 +149,23 @@ factors with corrected code intentionally differs from that historical file.
 manifest and regenerate all calibrated totals, phase/ground-adjusted outputs,
 headlines and rankings in the same single rerun as the other historical fixes;
 then publish the new calibration and input checksums together.
+
+## 6. The frozen anchor metadata describes a calculation that was not used
+
+**Closed in the generator on `hardening-2027-01`; historical for the September
+release metadata.** `data/anchored_cruise_ff.json` says its fuel-flow anchors
+use the slope between the last two ICAO distance points. The numbers do not:
+**19 of 20 anchored types use 1,500-2,000 NM**, and the one regional fallback,
+E170, uses **1,000-1,500 NM**. Each record's `segment_nm` field is correct; only
+the shared `_meta.method` string is false. The module docstring contained both
+descriptions, contradicting itself.
+
+The exact effect on every numeric anchor, flight estimate and published figure
+is **zero**: this correction changes only the description emitted by a future
+run. The frozen JSON is not edited now because that would change a release
+input after its figures and provenance were fixed.
+
+**Fix, at the next release:** regenerate `anchored_cruise_ff.json` with the
+correct method string during the single January rerun and update its checksum
+together with the other release inputs. The 20 numeric records need not move
+unless their source table, OpenAP version or segment-selection rule changes.

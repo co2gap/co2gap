@@ -10,14 +10,14 @@ as the calibrate.py anchor (which wants whole-aircraft CRUISE kg/h).
 
 Derivation: in the published curve, the fixed LTO/climb/descent fuel is
 roughly constant while the cruise segment grows with distance, so the curve
-is close to linear once climb/descent no longer dominate. We take the slope
-between the LAST TWO available distance points (the deepest into the
-cruise-dominated regime the table gives us for that type) as a cruise
-kg/nm rate, and convert it to kg/h with the type's OpenAP cruise TAS (same
+is close to linear once climb/descent no longer dominate. We prefer the slope
+over the common 1500-2000 nm medium-haul segment. Only when a regional type's
+table does not reach 2000 nm do we fall back to its last two available points.
+That kg/nm rate is converted to kg/h with the type's OpenAP cruise TAS (same
 Mach + ISA speed-of-sound used everywhere else in this codebase, so the
 anchor is evaluated the same way the model itself would fly the type).
 
-    cruise_ff_kgph = (fuel[d_last] - fuel[d_prev]) / (d_last - d_prev) [kg/nm]
+    cruise_ff_kgph = (fuel[d_hi] - fuel[d_lo]) / (d_hi - d_lo) [kg/nm]
                      * cruise_TAS_kt [nm/h]
 
 This is an explicit, reproducible, from-first-principles conversion -- not
@@ -78,6 +78,11 @@ def cruise_tas_kt(model: str) -> float:
 
 
 TARGET_SEGMENT_NM = (1500, 2000)   # generic medium-haul, cruise-dominated
+ANCHOR_METHOD = (
+    "cruise_ff_kgph = slope over the ICAO 1500-2000 nm points (kg/nm) "
+    "* the type's OpenAP cruise TAS (kt); fallback to the last two available "
+    "points only when the table does not reach 2000 nm; see module docstring"
+)
 
 
 def _pick_segment(ds: list[int]) -> tuple[int, int]:
@@ -112,8 +117,7 @@ def main():
     out = {"_meta": {
         "source": TABLE["_meta"]["source"],
         "url": TABLE["_meta"]["url"],
-        "method": "cruise_ff_kgph = slope(last two ICAO distance points, kg/nm) "
-                  "* type's OpenAP cruise TAS (kt); see module docstring",
+        "method": ANCHOR_METHOD,
     }, "types": {}}
 
     print(f"{'type':6} {'icao':5} {'segment(nm)':14} {'slope kg/nm':>11} "

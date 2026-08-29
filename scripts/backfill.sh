@@ -33,6 +33,8 @@ set -uo pipefail
 ROOT="${ADSB_ROOT:-/mnt/wd_elements/adsb-co2}"
 VENV="$ROOT/venv/bin/python"
 WORKERS="${WORKERS:-4}"
+FLIGHTS_DIR="${ADSB_FLIGHTS_DIR:-$ROOT/data/flights}"
+export ADSB_FLIGHTS_DIR="$FLIGHTS_DIR"
 ALLOW_PARTIAL=0
 POSITIONAL=()
 for arg in "$@"; do
@@ -59,7 +61,7 @@ SLEEP_BETWEEN_S=20        # netiquette towards the GitHub release host
 QUIET_FROM="0130"         # do not start a new day inside this window …
 QUIET_TO="0330"           # … so the 02:00 cron always finds the lock free
 
-mkdir -p "$ROOT/logs" "$ROOT/data"
+mkdir -p "$ROOT/logs" "$ROOT/data" "$FLIGHTS_DIR"
 touch "$MISSING"
 
 log() { echo "$(date '+%F %T') $*" | tee -a "$LOG"; }
@@ -90,7 +92,7 @@ echo $$ > "$GLOBAL_LOCK"   # safe to truncate now: we hold the lock
 
 # A day is done only if the parquet is actually readable.
 is_valid_day() {
-    local iso="$1" d="$ROOT/data/flights/$1"
+    local iso="$1" d="$FLIGHTS_DIR/$1"
     [ -f "$d/flights.parquet" ] && [ -f "$d/points.parquet" ] || return 1
     "$VENV" - "$ROOT" "$d" <<'PY' 2>/dev/null
 import sys
@@ -125,7 +127,7 @@ wait_out_quiet_window() {
 n_ok=0; n_skip=0; n_missing=0; n_fail=0; n_done=0
 t_start=$(date +%s)
 
-log "==== BACKFILL START $FROM_DAY -> $TO_DAY (workers=$WORKERS) ===="
+log "==== BACKFILL START $FROM_DAY -> $TO_DAY (workers=$WORKERS, out=$FLIGHTS_DIR) ===="
 
 ISO="$FROM_DAY"
 while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
@@ -185,12 +187,12 @@ while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
     case $rc in
       0)
         if is_valid_day "$ISO"; then
-            nf=$("$VENV" -c "import pyarrow.parquet as pq;print(pq.read_metadata('$ROOT/data/flights/$ISO/flights.parquet').num_rows)" 2>/dev/null)
+            nf=$("$VENV" -c "import pyarrow.parquet as pq;print(pq.read_metadata('$FLIGHTS_DIR/$ISO/flights.parquet').num_rows)" 2>/dev/null)
             log "$ISO  OK    voli=${nf:-?}  ${day_dt}s"
             n_ok=$((n_ok+1)); n_done=$((n_done+1))
         else
             log "$ISO  FALLITO (parquet non valido dopo il run), ${day_dt}s"
-            rm -rf "$ROOT/data/flights/$ISO"
+            rm -rf "$FLIGHTS_DIR/$ISO"
             n_fail=$((n_fail+1)); n_done=$((n_done+1))
         fi ;;
       91) log "$ISO  RIMANDATO (lock occupato oltre ${LOCK_WAIT_S}s)"; n_fail=$((n_fail+1)) ;;
@@ -199,7 +201,7 @@ while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
           rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."*
           n_fail=$((n_fail+1)); n_done=$((n_done+1)) ;;
       94) log "$ISO  FALLITO (pipeline), ${day_dt}s"
-          rm -rf "$ROOT/data/flights/$ISO"
+          rm -rf "$FLIGHTS_DIR/$ISO"
           rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."*
           n_fail=$((n_fail+1)); n_done=$((n_done+1)) ;;
       *)  log "$ISO  FALLITO (rc=$rc), ${day_dt}s"; n_fail=$((n_fail+1)); n_done=$((n_done+1)) ;;
