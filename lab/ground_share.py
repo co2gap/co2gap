@@ -45,6 +45,17 @@ from emissions import openap_model, estimate_fuel, _steps_from_flight  # noqa
 SRC = Path(a.src or f"{a.root}/data/flights_ecac")
 OUT = Path(a.out); OUT.mkdir(parents=True, exist_ok=True)
 
+def _completo(path: Path) -> bool:
+    """Esiste E si apre E ha righe. `exists()` da solo accetta un troncato."""
+    if not path.exists():
+        return False
+    try:
+        import pyarrow.parquet as _pq
+        return _pq.read_metadata(path).num_rows > 0
+    except Exception:
+        return False
+
+
 days = sorted(p.name for p in SRC.iterdir() if p.is_dir())
 if a.days_from:
     src = Path(a.days_from)
@@ -56,6 +67,18 @@ if a.days_from:
         raise SystemExit(f"--days-from: {len(mancanti)} giorni chiesti e assenti "
                          f"in {SRC}, il primo e' {mancanti[0]}")
     days = [d for d in days if d in voluti]
+    # Limitare cio' che si ELABORA non basta: se un giro precedente aveva un
+    # perimetro piu' largo, i suoi parquet restano qui e la cartella continua a
+    # contenere giorni che la release non ha, mentre il comando stampa "fatto.".
+    # Non li cancello -- buttare dati non e' compito di uno script di calcolo --
+    # ma non lascio nemmeno che passino inosservati.
+    fuori = sorted(p.stem for p in OUT.glob("*.parquet") if p.stem not in voluti)
+    if fuori:
+        raise SystemExit(
+            f"{OUT} contiene {len(fuori)} giorni fuori dal perimetro chiesto "
+            f"({fuori[0]}{'...' if len(fuori) > 1 else ''}). Il sito li "
+            "ignorerebbe nel merge, ma questa cartella e' descritta come "
+            "autorevole. Spostarli o cancellarli a mano, poi rilanciare.")
 if a.days:
     lo, hi = a.days.split(":"); days = [d for d in days if lo <= d <= hi]
 if a.limit_days: days = days[:a.limit_days]
@@ -67,7 +90,7 @@ FCOLS = ["flight_id","typecode","co2_kg_v0","fuel_kg_v0","load_factor",
 
 for day in days:
     dst = OUT / f"{day}.parquet"
-    if dst.exists():
+    if _completo(dst):
         print(f"  {day}  gia' fatto, salto", flush=True); continue
     t0 = time.time()
     try:
@@ -136,7 +159,12 @@ for day in days:
     for k in MK:   # quota da applicare al livello congelato nello stadio 2
         out[f"share_{k}"] = np.where(out.fuel_recomputed_kg > 0,
                                      out[f"fuel_{k}_kg"] / out.fuel_recomputed_kg, 0.0)
-    out.to_parquet(dst, index=False)
+    # Scrittura ATOMICA: prima un temporaneo, poi replace(). Scrivere sul nome
+    # definitivo significa che un'interruzione lascia un parquet troncato che al
+    # rilancio passa per fatto. E' il modello gia' usato da run_phase_split.py.
+    tmp = OUT / f".{day}.parquet.tmp"
+    out.to_parquet(tmp, index=False)
+    tmp.replace(dst)
     # 🔑 CONTROLLO DI EQUIVALENZA: il burn ricalcolato dal diradato deve stare
     # vicino al congelato (atteso ~-0,3% per il diradamento, gia' misurato).
     ratio = (out.fuel_recomputed_kg.sum()*3.16) / out.co2_kg_v0_frozen.sum()

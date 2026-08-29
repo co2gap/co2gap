@@ -209,6 +209,13 @@ stay in the European totals, where they identify nobody. This is a project rule
 rather than a licence requirement: it is what keeps an aggregate observatory from
 becoming a tool for tracking individual movements.
 
+## Known issues
+
+Three defects found before the first release are written down in
+[`KNOWN-ISSUES.md`](KNOWN-ISSUES.md), with what each one moves and what fixing
+it requires. Two are also stated on the site. None of them changes the published
+rankings; one of them cannot have inflated the headline, only lowered it.
+
 ## Reproducing
 
 `requirements.txt` records the library versions that produced this release —
@@ -253,10 +260,14 @@ python lab/run_phase_split.py
 
 `--out` is required on the first: it has no default, deliberately, because it
 writes a directory that the site then treats as authoritative. `--days-from`
-makes that directory follow the frozen decomposition rather than
+takes the exact set of days from the frozen decomposition instead of from
 `data/flights_ecac`, which keeps accumulating every night and is already four
-days ahead of this release — without it the run would add days the release does
-not contain. Both commands are resumable and skip days already written.
+days ahead of this release — without it the run adds days the release does not
+contain. It processes only those days and **refuses to run** if the output
+directory already holds any day outside the set; it does not delete them, since
+deciding what to discard is not a compute script's job. Both commands are
+resumable, and a day counts as done only if its file opens and has rows — an
+interrupted write leaves a temporary, never a truncated result.
 
 Site generation:
 

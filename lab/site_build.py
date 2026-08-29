@@ -497,6 +497,12 @@ def load() -> pd.DataFrame:
     # ricontrollare qui, perche' la decomposizione porta gc_km e flown_km; per
     # coverage_frac e la soglia delle lacune serve una marcatura nei parquet,
     # ed e' in DEPLOY.md per la release di gennaio.
+    # ⚠️ Il controllo e' UNIDIREZIONALE, e va saputo: dimostra che ogni riga
+    # soddisfa la soglia corrente, non con quale soglia l'artefatto e' stato
+    # prodotto. Alzandola scatta (collaudato a 200 e a 400 km contro una tratta
+    # minima di 150,041); abbassandola a 100 passerebbe in silenzio, benche' i
+    # dati siano stati selezionati a 150. La protezione vera e' registrare
+    # valori e versione delle soglie nei parquet: KNOWN-ISSUES.md, punto 3.
     if float(df.gc_km.min()) < track_quality.GC_MIN_KM:
         raise SystemExit(
             f"i dati contengono tratte da {df.gc_km.min():.0f} km mentre "
