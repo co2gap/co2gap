@@ -19,6 +19,8 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
+import gate
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "pipeline"))
 sys.path.insert(0, str(ROOT / "ingest"))
@@ -81,9 +83,11 @@ def build_windfield(days) -> WindField | None:
 
 
 def quality_gate(df) -> pd.DataFrame:
+    # Le soglie stanno in lab/gate.py, non qui: la metodologia le pubblica e le
+    # deve leggere, non riscrivere a parole.
     return df[(df.origin_icao.notna()) & (df.dest_icao.notna())
-              & (df.flown_ge_09gc) & (df.coverage_frac >= 0.85)
-              & (df.gc_km >= 150)].copy()
+              & (df.flown_ge_09gc) & (df.coverage_frac >= gate.COV_MIN)
+              & (df.gc_km >= gate.GC_MIN_KM)].copy()
 
 
 _free_cache: dict = {}

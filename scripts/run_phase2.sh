@@ -1,14 +1,28 @@
 #!/bin/bash
-# Fase 2a/2b single-command driver.
+# Phase 2a/2b decomposition chain — NOT the whole pipeline to the site.
 #
 # The fase-2b rerun over the whole year must be ONE COMMAND, not a session:
 # everything below is idempotent and resumable, so this is also the right
 # thing to re-run today while the Pi backfill and the ERA5 queue are still
 # filling in days. It processes whatever is ready and skips what is done.
 #
-#   scripts/run_phase2.sh              # full chain
+#   scripts/run_phase2.sh              # sync, ERA5, calibration, decomposition, report
 #   scripts/run_phase2.sh --no-sync    # skip pulling parquet from the Pi
 #   scripts/run_phase2.sh --no-era5    # skip the ERA5 fetch (already running)
+#
+# ⚠️ IT STOPS AT THE DECOMPOSITION REPORT, and the site needs two more stages
+# that this script does NOT run. It used to call itself "full chain", which was
+# a promise it never kept:
+#
+#   lab/ground_share.py      -> data/ground_share_ecac/        (site_build EXITS without it)
+#   lab/run_phase_split.py   -> data/decomposition_ecac_phase/ (site_build goes SILENT without it:
+#                                                               it drops the whole phase attribution
+#                                                               and falls back to older wording)
+#
+# Run those two after this one, then the site build in README "Reproducing".
+# Widening this script to cover them is on the list for the January release,
+# together with a completeness check at the end; renaming it honestly is what
+# could be done safely three days before publication.
 #
 # Deliberately NOT included: any deploy or publication step. Publishing is
 # the user's explicit decision, never a side effect of a rerun.
@@ -71,4 +85,5 @@ step "5/5 decomposition report"
 "$PY" lab/decompose_report.py
 
 echo
-echo "=== done. Nothing was published — deploy stays an explicit decision. ==="
+echo "=== 2a/2b done. NOT the whole chain: ground_share.py and run_phase_split.py"
+echo "    still have to run before the site can be built. Nothing was published."

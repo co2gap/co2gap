@@ -30,7 +30,10 @@ MIN_SPACING_S = 10.0
 
 # a native sampling gap longer than this is a real coverage hole (aircraft out
 # of receiver range), not just sparse sampling.
-GAP_THRESHOLD_S = 120.0
+# Unica definizione: lab/gate.py, che la pubblica anche in metodologia. Qui
+# resta un valore letterale perche' pipeline/ gira sul Pi senza lab/ nel path —
+# ma se cambia va cambiato la' e riportato qui, e i due devono restare uguali.
+GAP_THRESHOLD_S = 120.0     # == lab.gate.GAP_THRESHOLD_S
 
 
 def _flown_km(points) -> float:

@@ -222,10 +222,22 @@ Production (per-day accumulation):
 WORKERS=3 python pipeline/run_daily.py --day 2026.07.19
 ```
 
-Analysis chain — idempotent and resumable, and **no step publishes anything**:
+Analysis chain — idempotent and resumable, and **no step publishes anything**.
+It covers phases 2a/2b only and stops at the decomposition report:
 
 ```bash
 scripts/run_phase2.sh
+```
+
+Two more stages have to run before the site can be built. Without the first,
+`site_build.py` exits; without the second it stays silent and drops the phase
+attribution altogether, which is the worse failure of the two:
+
+```bash
+ADSB_ROOT=$PWD ADSB_FLIGHTS_DIR=$PWD/data/flights_ecac \
+ADSB_DECOMP_DIR=$PWD/data/decomposition_ecac \
+python lab/ground_share.py        # -> data/ground_share_ecac/
+python lab/run_phase_split.py     # -> data/decomposition_ecac_phase/
 ```
 
 Site generation:

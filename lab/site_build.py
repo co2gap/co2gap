@@ -36,6 +36,9 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gate
+
 ROOT = Path(__file__).resolve().parents[1]
 DEC_DIR = Path(os.environ.get("ADSB_DECOMP_DIR") or (ROOT / "data/decomposition"))
 CALIB = Path(os.environ.get("ADSB_CALIB") or (ROOT / "data/calibration.json"))
@@ -1558,13 +1561,16 @@ which alone are the majority of flights, land within 5% of the ICAO reference
 with no correction at all.</p>
 
 <h2>6. Which flights are included</h2>
-<p>A flight enters the analysis only if its track is sufficiently complete:
-enough of the expected samples present, a minimum sector length, and a flown
-distance that is not shorter than the direct route. <b>What the gate does not
-do is bound the single longest gap</b> — it measures how much of the track is
-present, not how it is distributed, so a track can pass with one long silence
-in it. That is the same blind spot as the fuel gate described in the FAQ, and
-it is on the same list for the next release.</p>
+<p>A flight enters the analysis only if its track is sufficiently complete,
+and the test is exactly this: <b>at least {gate.COV_MIN*100:.0f}% of the flight's
+duration lies outside gaps longer than {gate.GAP_THRESHOLD_S:.0f} seconds</b>,
+the reconstructed distance is <b>at least {gate.FLOWN_MIN_FRAC*100:.0f}% of the
+great circle</b>, both endpoints resolve to an airport, and the sector is at
+least {gate.GC_MIN_KM} km. <b>What the gate does not do is bound the single
+longest gap</b> — it constrains how much of the track is missing, not how that
+absence is distributed, so a track can pass with one long silence inside it.
+That is the same blind spot as the fuel gate described in the FAQ, and it is on
+the same list for the next release.</p>
 <p>There is then a criterion that is often misread, so it is worth being
 explicit. We discard flights whose flown distance comes out <b>smaller</b> than
 90% of the great circle. Flying less than the direct route is geometrically

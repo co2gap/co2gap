@@ -181,7 +181,7 @@ flights there is a spread of this size" — and only the second is something the
 data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-29 10:40 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-29 10:47 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -364,13 +364,16 @@ which alone are the majority of flights, land within 5% of the ICAO reference
 with no correction at all.</p>
 
 <h2 id=which-flights-are-included>6. Which flights are included</h2>
-<p>A flight enters the analysis only if its track is sufficiently complete:
-enough of the expected samples present, a minimum sector length, and a flown
-distance that is not shorter than the direct route. <b>What the gate does not
-do is bound the single longest gap</b> — it measures how much of the track is
-present, not how it is distributed, so a track can pass with one long silence
-in it. That is the same blind spot as the fuel gate described in the FAQ, and
-it is on the same list for the next release.</p>
+<p>A flight enters the analysis only if its track is sufficiently complete,
+and the test is exactly this: <b>at least 85% of the flight's
+duration lies outside gaps longer than 120 seconds</b>,
+the reconstructed distance is <b>at least 90% of the
+great circle</b>, both endpoints resolve to an airport, and the sector is at
+least 150 km. <b>What the gate does not do is bound the single
+longest gap</b> — it constrains how much of the track is missing, not how that
+absence is distributed, so a track can pass with one long silence inside it.
+That is the same blind spot as the fuel gate described in the FAQ, and it is on
+the same list for the next release.</p>
 <p>There is then a criterion that is often misread, so it is worth being
 explicit. We discard flights whose flown distance comes out <b>smaller</b> than
 90% of the great circle. Flying less than the direct route is geometrically
@@ -735,7 +738,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026 — <a href="releases.html">what changes</a>.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-29 10:40 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-29 10:47 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>
