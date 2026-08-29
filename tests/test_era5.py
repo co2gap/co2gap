@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import xarray as xr
@@ -45,6 +46,16 @@ class Era5Tests(unittest.TestCase):
         field._require_time_coverage(sample)
         self.assertEqual(
             required_wind_days([self.DAY]), ["2026-01-01", "2026-01-02"])
+
+    def test_windfield_can_validate_against_manifest_grid_not_process_default(self):
+        dataset = self.dataset(24)
+        with patch("xarray.open_dataset", return_value=dataset), \
+                patch("scipy.interpolate.RegularGridInterpolator"):
+            WindField(
+                ["2026-01-01.nc"],
+                validation={"levels": [1000], "area": [1, 0, 0, 1],
+                            "grid": [1, 1], "variables": ["u", "v"]},
+            )
 
 
 if __name__ == "__main__":

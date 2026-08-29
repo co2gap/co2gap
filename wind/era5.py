@@ -200,16 +200,17 @@ class WindField:
     time is never extrapolated and temporal holes are rejected.
     """
 
-    def __init__(self, nc_paths):
+    def __init__(self, nc_paths, *, validation=None):
         import xarray as xr
         from scipy.interpolate import RegularGridInterpolator
 
+        validation = dict(validation or {})
         # open each day and concat on time (no dask / open_mfdataset needed)
         parts = []
         for raw_path in sorted(map(Path, nc_paths)):
             part = xr.open_dataset(str(raw_path))
             try:
-                validate_era5_dataset(part, raw_path.stem)
+                validate_era5_dataset(part, raw_path.stem, **validation)
             except Exception:
                 part.close()
                 for opened in parts:

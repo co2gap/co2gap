@@ -164,11 +164,14 @@ worked around silently.
   reference, not a result about aviation, and correcting it would make the
   headline figure *larger*. It is stated before the next release rather than
   explained after it.
-- **No uncertainty is quantified.** Aircraft mass is estimated rather than
-  known, and there is no ± on any figure here. The metric is a difference
-  between two model runs, so a systematic error cancels and a state-dependent
-  one does not — which is why only the tails of the rankings are presented as
-  meaning anything.
+- **No probabilistic uncertainty is quantified yet.** Aircraft mass is
+  estimated rather than known, and there is no evidence-backed ± on any figure
+  here. The experimental uncertainty programme below now measures temporal
+  composition and paired finite differences, but deliberately does not relabel
+  them as confidence intervals. The metric is a difference between two model
+  runs, so a systematic error cancels and a state-dependent one does not —
+  which is why only the tails of the rankings are presented as meaning
+  anything.
 - CO₂ only: **these figures contain no contrails or NOx**, and they are a large share
   of aviation's warming effect. A profile that avoids contrail formation can
   look worse by these figures and be better for the climate.
@@ -216,6 +219,22 @@ Three defects found before the first release are written down in
 [`KNOWN-ISSUES.md`](KNOWN-ISSUES.md), with what each one moves and what fixing
 it requires. Two are also stated on the site. None of them changes the published
 rankings; one of them cannot have inflated the headline, only lowered it.
+
+## Uncertainty programme
+
+The first uncertainty layer is documented in [`UNCERTAINTY.md`](UNCERTAINTY.md).
+It keeps exact release values, temporal-composition diagnostics and paired model
+sensitivities separate; none is labelled a confidence interval. The observed
+track and every counterfactual are perturbed with the same parameters, and
+per-flight sensitivity rows remain inside the lab. Validate the machine-readable
+register and diagnostic scenarios with:
+
+```bash
+python lab/uncertainty.py validate
+```
+
+The full commands intentionally write their sample and aggregate results to
+`/tmp`. They do not alter a frozen release or the public site.
 
 ## Reproducing
 

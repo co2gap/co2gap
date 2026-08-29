@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "publication_status": "diagnostic_only",
+  "description": "Finite-difference steps for sensitivity screening. The low/high values are not probability bounds and must not be published as an uncertainty interval.",
+  "nominal": "nominal",
+  "scenarios": [
+    {
+      "id": "nominal",
+      "load_factor": 0.82,
+      "reserve_kg": 2000.0,
+      "real_tas_mode": "ias",
+      "cruise_alt_offset_ft": 0.0,
+      "ground_definition": "a3000t70",
+      "purpose": "Reproduce the current calculation on the stored-track sensitivity harness."
+    },
+    {
+      "id": "load_minus_0.10",
+      "load_factor": 0.72,
+      "reserve_kg": 2000.0,
+      "real_tas_mode": "ias",
+      "cruise_alt_offset_ft": 0.0,
+      "ground_definition": "a3000t70",
+      "purpose": "Finite-difference step for load sensitivity; not a lower confidence bound."
+    },
+    {
+      "id": "load_plus_0.10",
+      "load_factor": 0.92,
+      "reserve_kg": 2000.0,
+      "real_tas_mode": "ias",
+      "cruise_alt_offset_ft": 0.0,
+      "ground_definition": "a3000t70",
+      "purpose": "Finite-difference step for load sensitivity; not an upper confidence bound."
+    },
+    {
+      "id": "reserve_minus_1000",
+      "load_factor": 0.82,
+      "reserve_kg": 1000.0,
+      "real_tas_mode": "ias",
+      "cruise_alt_offset_ft": 0.0,
+      "ground_definition": "a3000t70",
+      "purpose": "Finite-difference step for carried-reserve sensitivity; not a lower confidence bound."
+    },
+    {
+      "id": "reserve_plus_1000",
+      "load_factor": 0.82,
+      "reserve_kg": 3000.0,
+      "real_tas_mode": "ias",
+      "cruise_alt_offset_ft": 0.0,
+      "ground_definition": "a3000t70",
+      "purpose": "Finite-difference step for carried-reserve sensitivity; not an upper confidence bound."
+    },
+    {
+      "id": "cruise_minus_1000ft",
+      "load_factor": 0.82,
+      "reserve_kg": 2000.0,
+      "real_tas_mode": "ias",
+      "cruise_alt_offset_ft": -1000.0,
+      "ground_definition": "a3000t70",
+      "purpose": "Structural baseline-altitude sensitivity; not a probability bound."
+    },
+    {
+      "id": "cruise_plus_1000ft",
+      "load_factor": 0.82,
+      "reserve_kg": 2000.0,
+      "real_tas_mode": "ias",
+      "cruise_alt_offset_ft": 1000.0,
+      "ground_definition": "a3000t70",
+      "purpose": "Structural baseline-altitude sensitivity; not a probability bound."
+    },
+    {
+      "id": "real_ground_speed",
+      "load_factor": 0.82,
+      "reserve_kg": 2000.0,
+      "real_tas_mode": "gs",
+      "cruise_alt_offset_ft": 0.0,
+      "ground_definition": "a3000t70",
+      "purpose": "Structural airspeed-source diagnostic for the documented speed-coverage blind spot."
+    },
+    {
+      "id": "ground_a1000t70",
+      "load_factor": 0.82,
+      "reserve_kg": 2000.0,
+      "real_tas_mode": "ias",
+      "cruise_alt_offset_ft": 0.0,
+      "ground_definition": "a1000t70",
+      "purpose": "Alternative stored ground definition; not a random draw."
+    }
+  ]
+}
