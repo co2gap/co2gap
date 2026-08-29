@@ -3251,6 +3251,13 @@ lead time, and one of them asked for the methodology and the underlying figures
 before commenting. Those were sent on 16 August, on terms open to any
 organisation named here that asks for them. No comment on the figures themselves
 has been received.</p>
+<p>On 29 August 2026, all four were written to again. The figures they had been
+given in July were substantially changed by a later correction — fuel burnt on
+the ground was being priced by a model of flight — and they are not in this
+release. The organisation that had received the underlying dataset was sent the
+corrected one in the same format. The correction is documented in
+<a href="methodology.html#stated-limitations">the methodology</a>, and the figures it
+produced are the ones published here.</p>
 <p>This section lists replies and corrections as they arrive, oldest first, with
 the date and the figure each one concerns.</p>
 <p class=hint>The invitation is the same for everyone named on this site, and it
