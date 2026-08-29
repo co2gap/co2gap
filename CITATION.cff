@@ -60,6 +60,11 @@ references:
     notes: >-
       Copernicus Climate Change Service (C3S) Climate Data Store.
       Wind fields used for the wind-aware baseline.
+  - type: database
+    title: "OurAirports"
+    notes: >-
+      Airport positions and identifiers, CC0 public-domain dedication.
+      https://ourairports.com/data/
   - type: report
     title: "ICAO Carbon Emissions Calculator Methodology, version 13.1"
     notes: >-

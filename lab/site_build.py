@@ -396,7 +396,7 @@ def vertical_kg_per_flight(df) -> float:
     real - hybrid: l'ibrido e' la traccia reale col profilo ottimo, quindi la
     differenza esclude il laterale per costruzione. E' la grandezza da mettere
     accanto ai ~39 kg di CCO/CDO, che sono anch'essi salita e discesa: il totale
-    (~788 kg) includerebbe la lunghezza della rotta e il confronto sarebbe fra
+    (~430 kg) includerebbe la lunghezza della rotta e il confronto sarebbe fra
     cose diverse.
 
     Calibrata, come ogni massa assoluta di questo sito e del rapporto 2b: le
@@ -416,9 +416,9 @@ def total_kg_per_flight(df) -> float:
     """Carburante per volo del gap TOTALE, in kg: verticale + laterale.
 
     Sta qui accanto al verticale perche' la coppia si legge insieme e perche' e'
-    la divisione che un lettore fa da solo: 4,57 Mt / 1.833.127 voli / 3,16 da'
+    la divisione che un lettore fa da solo: 2,50 Mt / 1.833.127 voli / 3,16 da'
     questo numero, e chi la fa deve ritrovarlo scritto invece di scoprire uno
-    scarto contro i ~521 kg del verticale. Derivata, mai digitata: il ~520
+    scarto contro i ~163 kg del verticale. Derivata, mai digitata: il ~520
     scritto a mano nell'hero era etichettato "total" ed era il verticale.
     """
     return (df.co2_real_kg.sum() - df.co2_ideal_kg.sum()) / 3.16 / len(df)
@@ -635,12 +635,13 @@ href="{SITE_URL}/feed.xml">
 <link rel=apple-touch-icon href=apple-touch-icon.png>"""
 
 
-DESC_INDEX = (
-    "CO2 and flight inefficiency in Europe, computed from the ADS-B trajectory "
-    "of 1,833,127 flights against a wind-corrected great-circle baseline. "
-    "It measures the distance from a theoretical optimum, not recoverable fuel. "
-    "Open method, open code, aggregate data only."
-)
+DESC_INDEX = ""     # ricomposta in main() con le cifre correnti, come OG_ALT:
+                    # conteneva "1,833,127" battuto a mano e chiamava la misura
+                    # "flight inefficiency", che e' esattamente cio' che ogni
+                    # riga di prosa del sito nega. La meta description e' la
+                    # frase che finisce nei risultati di ricerca e nelle
+                    # anteprime dei link, cioe' quella che piu' gente legge, ed
+                    # e' l'unica che il cancello non guarda.
 DESC_METHOD = (
     "How co2gap computes emissions and the gap against an ideal flight: "
     "trajectory processing, OpenAP fuel model, wind-corrected baseline, "
@@ -2223,9 +2224,14 @@ def main():
     big_top = _big.d.idxmax()
     big_top_d = float(_big.d.max())
     traf_r = float(np.corrcoef(np.log(ga.n.to_numpy()), ga.d.to_numpy())[0, 1])
-    global OG_ALT
+    global OG_ALT, DESC_INDEX
     OG_ALT = (f"co2gap — {len(df):,} flights, {co2_t/1e6:,.1f} Mt CO2 emitted in "
               f"flight, {excess_t/1e6:,.2f} Mt gap from the theoretical optimum")
+    DESC_INDEX = (
+        f"The CO2 of {len(df):,} European flights, computed from their ADS-B "
+        "trajectories against a wind-corrected great-circle baseline. It "
+        "measures the distance from a theoretical optimum, not recoverable "
+        "fuel. Open method, open code, aggregate data only.")
     # L'escursione va DERIVATA: scritta a mano diceva 'no more than six points'
     # mentre la f3 della stessa pagina nominava Stavanger a -7,7. La cifra
     # battuta a mano e' sempre quella che mente.
@@ -2799,7 +2805,7 @@ establish that the airport caused anything.<br><br>
 A high value may reflect operator choices, air traffic control constraints,
 congestion, the structure of the surrounding airspace, aircraft type, weather, or
 other factors this analysis does not separate. The flight is counted at both of its
-ends. <a href="index.html#airports">The fuller note is on the home page</a>.
+ends. <a href="index.html#findings">The fuller note is on the home page</a>.
 </div>
 <div class=scroll><table><thead>{AH}</thead><tbody class=f>
 {ap_worst}
@@ -3339,7 +3345,7 @@ here is wrong, it is recomputed and the change is recorded on the
 readable: a figure that quietly changes is worse than one that was wrong.</li>
 <li><b>Disagreement about method is not a correction</b>, and is published as a
 reply rather than folded into the method. Where a criticism has changed the
-method, the <a href="methodology.html#weak">stated limitations</a> say so.</li>
+method, the <a href="methodology.html#stated-limitations">stated limitations</a> say so.</li>
 <li><b>No approval is asked before publishing a figure</b>, and none is given
 after. The right of reply is not a right of veto — it is the reason this work is
 public rather than private.</li>
@@ -3363,7 +3369,10 @@ def service_files(out_dir: Path, gen_iso: str, days) -> None:
     quando escono cifre nuove, non quando si corregge una virgola. Trenta righe e
     nessun servizio esterno, che e' il minimo onesto per due uscite l'anno.
     """
-    pages = ["index.html", "context.html", "data.html", "methodology.html",
+    # La home entra come "" e non come "index.html": il suo canonical dice
+    # https://co2gap.org/ e una sitemap che ne nomina un'altra offre a un
+    # indicizzatore due URL per la stessa pagina.
+    pages = ["", "context.html", "data.html", "methodology.html",
              "faq.html", "releases.html", "replies.html"]
     urls = "".join(
         f"<url><loc>{SITE_URL}/{p}</loc><lastmod>{gen_iso[:10]}</lastmod></url>\n"

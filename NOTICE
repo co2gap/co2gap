@@ -23,7 +23,10 @@ Data and published outputs are governed separately — see DATA-LICENCE.md:
   * Flight trajectories are © adsb.lol contributors, Open Database Licence
     (ODbL) v1.0. Any aggregated dataset derived from them is a Derivative
     Database and would carry ODbL share-alike obligations.
-  * Website text, tables and figures are CC BY 4.0.
+  * Website text and charts are CC BY 4.0. NOT the tables: those are data
+    derived from an ODbL database, and offering them under CC BY would purport
+    to grant what is not ours to grant. DATA-LICENCE.md is the canonical
+    statement of these terms.
   * Wind data: ERA5, Copernicus Climate Change Service (C3S).
   * Airport reference data: OurAirports (CC0).
   * Aircraft performance model: OpenAP (TU Delft), LGPL-3.0 — used as an

@@ -16,7 +16,7 @@ Da cio' discendono due regole, e sono il motivo per cui questo file esiste:
    in DEPLOY.md, ed e' l'unico punto del sito dove il cancello automatico non
    arriva.
 
-Le cifre di co2gap che la pagina cita (il 22,1%, la scomposizione, i voli) NON
+Le cifre di co2gap che la pagina cita (il 12,1%, la scomposizione, i voli) NON
 stanno nel json: arrivano come argomenti da site_build.py, calcolate dai dati
 come ogni altra cifra del sito.
 """
