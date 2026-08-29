@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import datetime as dt
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -199,6 +200,21 @@ def main() -> int:
     out.to_csv(d / f"{icao}_flights.csv.gz", index=False, compression="gzip")
     cell_norm.to_csv(d / "norm_by_band_and_type.csv", index=False)
     bin_norm.to_csv(d / "norm_by_band.csv", index=False)
+
+    # La metodologia viaggia col pacchetto, e va RICOPIATA ogni volta.
+    # ⚠️ 2026-08-29: il bundle di Aena conteneva ancora la metodologia del
+    # 16/08 mentre i dati erano ricalcolati. Dati corretti accanto al metodo
+    # che li descriveva prima della correzione del rullaggio: e' la stessa
+    # famiglia di difetto che ha prodotto il 242% in pagina, e sarebbe finita
+    # dentro una lettera di scuse. Copiarla a mano una volta non basta: qui
+    # non puo' piu' restare indietro.
+    meth = Path(os.environ.get("ADSB_SITE_OUT") or (ROOT / "site/index.html")).parent / "methodology.html"
+    if not meth.exists():
+        raise SystemExit(
+            f"metodologia non trovata in {meth}: il pacchetto non puo' partire "
+            f"senza, e una copia vecchia e' peggio di nessuna copia. "
+            f"Rigenera il sito, poi rilancia.")
+    shutil.copyfile(meth, d / "methodology.html")
 
     # --- the published figure, recomputed here so it can be checked --------
     hp = float(out.d_tot.median())
