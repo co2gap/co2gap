@@ -1,0 +1,11 @@
+# Direct-dependency lock for daily acquisition and fuel computation.
+# python==3.11
+#
+# The release notes captured only Python 3.11 on the Raspberry Pi, not its
+# patch version.  The environment check therefore verifies major+minor here;
+# inventing a patch number would make the record look more exact than it is.
+numpy==2.5.1
+openap==2.6.0
+pandas==3.0.5
+pyarrow==25.0.0
+scipy==1.18.0

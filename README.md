@@ -218,10 +218,16 @@ rankings; one of them cannot have inflated the headline, only lowered it.
 
 ## Reproducing
 
-`requirements.txt` records the library versions that produced this release —
-OpenAP above all, since it is the fuel model and its version moves the
-kilograms. `scripts/setup_venv.sh` installs unpinned, so that file, not the
-script, is what a rerun should follow.
+The two machines have separate direct-dependency locks:
+`requirements-pi.lock` for daily acquisition and fuel computation, and
+`requirements-lab.lock` for decomposition, ERA5 and site generation. OpenAP is
+pinned in both because its version moves the kilograms; the lab lock also names
+`xarray`, `cdsapi` and the `netCDF4` backend required by the documented weather
+chain, none of which the previous single file listed even though the chain
+imports them. `requirements.txt` remains a compatibility alias for the lab lock.
+`scripts/check_environment.py pi|lab` verifies both the recorded Python version
+and every direct pin before a rerun. The Pi record is necessarily only Python
+3.11: its patch version was not captured with the first release.
 
 Production (per-day accumulation):
 
