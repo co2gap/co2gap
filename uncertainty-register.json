@@ -169,14 +169,26 @@
     {
       "id": "quality_gate",
       "category": "selection",
-      "status": "needs_evidence",
+      "status": "coverage_measured",
       "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
       "correlation_scope": "coverage area, route and flight length",
       "nominal": "thresholds in pipeline/track_quality.py",
+      "range": "exact conditional retention by flights, great-circle kilometres, flown kilometres and first-pass CO2",
+      "evidence": "release manifest, pipeline/track_quality.py and lab/uncertainty.py selection",
+      "propagation": "exact aggregate attrition and failure combinations; future threshold scenarios remain separate",
+      "notes": "The denominator begins after complete-flight reconstruction and successful modelling. Retention is measured, but the resulting bias in the headline is not bounded because rejected flights lack a trustworthy decomposition. Changing a gate changes the target population and must be reported separately from model uncertainty."
+    },
+    {
+      "id": "upstream_ingestion_selection",
+      "category": "selection",
+      "status": "needs_evidence",
+      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "correlation_scope": "source dump, receiver geography, aircraft type and flight completeness",
+      "nominal": "regional trace, complete-flight, supported-aircraft and successful-fuel-model filters",
       "range": null,
-      "evidence": "release manifest and pipeline/track_quality.py",
-      "propagation": "near-threshold inclusion scenarios using source flight tables",
-      "notes": "Changing a gate changes the target population and must be reported separately from model uncertainty."
+      "evidence": "future parquet source contracts written by pipeline/run_daily.py",
+      "propagation": "aggregate ingestion funnel by day; historical September attrition cannot be reconstructed",
+      "notes": "New days retain internally closed aggregate counts without identifiers. The frozen release predates the funnel, so its upstream selection must remain an explicit unmeasured boundary."
     },
     {
       "id": "temporal_composition",

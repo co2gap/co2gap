@@ -28,11 +28,14 @@ They are different quantities, not uncertainty on airborne tank-to-wake CO2.
 model choices, selection effects and temporal variability. A source may be:
 
 * `quantified`: an existing range has been measured;
+* `coverage_measured`: the observed retention is exact but its effect on the
+  target estimand remains unbounded;
 * `scenario_only`: executable alternatives exist but are not probabilities;
 * `needs_evidence`: no numerical range is defensible yet;
 * `out_of_scope`: explicitly excluded from this estimand.
 
-The validator refuses to call a source quantified when it has no range.
+The validator refuses to call a source quantified or coverage-measured when it
+has no range.
 
 ## 1. Validate the design inputs
 
@@ -120,6 +123,40 @@ task, not a hidden claim of v1.
 `--limit N` exists only for a complete smoke run. Its output is marked as a
 truncated sample and its population estimate is explicitly invalid.
 
+## 5. Selection audit
+
+```bash
+python lab/uncertainty.py selection \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --out /tmp/co2gap-selection-audit.json
+```
+
+The command reads the durable flight tables before the analysis gate, rebuilds
+all four predicates and requires the passing `(day, flight_id)` keyset to equal
+the frozen decomposition. It emits only aggregate activity: flight count,
+great-circle kilometres, flown kilometres and first-pass gate-to-gate CO2. The
+last measure is an exposure proxy, not the published airborne inventory.
+
+Independent failure totals deliberately overlap. A 4-bit failure mask provides
+the exact partition, while the displayed cascade uses a declared order and is
+diagnostic rather than causal. Day, aircraft-type, distance, reception-coverage
+and maximum-gap groups retain the project's minimum of ten flights.
+
+The historical denominator starts only after regional filtering, complete-leg
+reconstruction, OpenAP type support and a successful first-pass fuel estimate.
+Those upstream exclusions were not stored for the September release and cannot
+be reconstructed honestly. Future daily runs add an aggregate selection funnel
+to both parquet source contracts, with closed partitions checked before a day
+is promoted. It contains no trace, aircraft or flight identifier.
+
+This closes the count, distance and exposure accounting inside the observable
+gate. It does **not** bound the headline bias: applying the full decomposition
+to a flight rejected precisely because its track is unreliable would turn the
+quality failure into a model input. Any correction requires an independent or
+validated proxy for the missing outcome.
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:
@@ -127,7 +164,9 @@ A public probabilistic interval remains blocked until:
 * every dominant sensitivity has an evidence-backed distribution or remains a
   separately named structural scenario;
 * global, aircraft-family and per-flight correlations are represented;
-* selection outside the quality gate is bounded;
+* the effect of quality-gate selection on the target estimands is bounded or
+  corrected using independent evidence;
+* selection before the durable pre-gate population is measured or bounded;
 * interval coverage is checked against independent or held-out evidence;
 * the cruise baseline issue is resolved or its structural range is published;
 * an independent reviewer examines the register, propagation and language.

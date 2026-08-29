@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -16,7 +17,7 @@ sys.path[:0] = [str(ROOT / "pipeline"), str(ROOT / "ingest"),
 from decompose import _bounded_cruise_alt_ft  # noqa: E402
 from uncertainty import (UncertaintyError, _metrics, block_resample_days,  # noqa: E402
                          _require_outside_repository, stratified_sample,
-                         validate_registry,
+                         selection_audit, selection_flags, validate_registry,
                          validate_scenarios)
 
 
@@ -24,7 +25,7 @@ class RegistryTests(unittest.TestCase):
     def test_tracked_register_and_scenarios_validate(self):
         registry = json.loads((ROOT / "uncertainty-register.json").read_text())
         scenarios = json.loads((ROOT / "uncertainty-scenarios.json").read_text())
-        self.assertEqual(validate_registry(registry), {"estimands": 6, "sources": 15})
+        self.assertEqual(validate_registry(registry), {"estimands": 6, "sources": 16})
         self.assertEqual(validate_scenarios(scenarios)["nominal"], "nominal")
 
     def test_quantified_source_requires_a_range(self):
@@ -84,6 +85,70 @@ class SamplingTests(unittest.TestCase):
         with self.assertRaisesRegex(UncertaintyError, "outside the repository"):
             _require_outside_repository(ROOT / "sample.json", "sample")
         _require_outside_repository(Path("/tmp/co2gap-sample.json"), "sample")
+
+
+class SelectionTests(unittest.TestCase):
+    @staticmethod
+    def population():
+        rows = []
+        for flight_id in range(10):
+            rows.append({
+                "day": "2026-01-01", "flight_id": flight_id,
+                "typecode": "A320",
+                "origin_icao": None if flight_id == 0 else "LIRF",
+                "dest_icao": "LIMC", "gc_km": 500.0,
+                "flown_km": 520.0,
+                "coverage_frac": 0.80 if flight_id == 1 else 0.99,
+                "max_gap_s": 180.0, "flown_ge_09gc": True,
+                "co2_kg_v0": 1000.0,
+            })
+        return pd.DataFrame(rows)
+
+    def test_flags_preserve_overlapping_failure_dimensions(self):
+        frame = self.population()
+        frame.loc[0, "coverage_frac"] = 0.80
+        flags = selection_flags(frame, coverage_min=0.85, gc_min_km=150.0)
+        self.assertFalse(flags.loc[0, "endpoints_resolved"])
+        self.assertFalse(flags.loc[0, "coverage_sufficient"])
+        self.assertEqual(int(flags.all(axis=1).sum()), 8)
+
+    def test_audit_rebuilds_exact_decomposition_keyset(self):
+        with tempfile.TemporaryDirectory(prefix="co2gap-selection-") as raw:
+            root = Path(raw)
+            flights_dir = root / "flights"
+            decomposition_dir = root / "decomposition"
+            (flights_dir / "2026-01-01").mkdir(parents=True)
+            decomposition_dir.mkdir()
+            self.population().to_parquet(
+                flights_dir / "2026-01-01" / "flights.parquet", index=False)
+            pd.DataFrame({"flight_id": list(range(2, 10))}).to_parquet(
+                decomposition_dir / "2026-01-01.parquet", index=False)
+            manifest = root / "release-manifest.json"
+            manifest.write_text(json.dumps({
+                "schema_version": 1,
+                "release": {"id": "test", "days": ["2026-01-01"]},
+                "configuration": {"track_quality": {
+                    "gap_threshold_s": 120.0,
+                    "coverage_min_fraction": 0.85,
+                    "flown_min_fraction": 0.9,
+                    "great_circle_min_km": 150,
+                }},
+            }))
+            result = selection_audit(
+                manifest_path=manifest, flights_dir=flights_dir,
+                decomposition_dir=decomposition_dir, min_group_n=10,
+                verify=False)
+            self.assertEqual(result["coverage_statement"]["source"]["flights"], 10)
+            self.assertEqual(result["coverage_statement"]["retained"]["flights"], 8)
+            self.assertTrue(result["gate"]["exact_keyset_match_to_decomposition"])
+
+            pd.DataFrame({"flight_id": list(range(1, 10))}).to_parquet(
+                decomposition_dir / "2026-01-01.parquet", index=False)
+            with self.assertRaisesRegex(UncertaintyError, "1 extra"):
+                selection_audit(
+                    manifest_path=manifest, flights_dir=flights_dir,
+                    decomposition_dir=decomposition_dir, min_group_n=10,
+                    verify=False)
 
 
 class MetricTests(unittest.TestCase):

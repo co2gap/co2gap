@@ -197,21 +197,66 @@ def _clean(points: list) -> list:
     return cleaned
 
 
-def flights_from_trace(trace_dict: dict, bbox: BBox) -> list:
-    """Yield complete, in-box flights for one aircraft trace."""
+def selection_configuration() -> dict:
+    """Return the upstream flight-selection thresholds for provenance."""
+    return {
+        "leg_gap_s": LEG_GAP_S,
+        "ground_alt_ft": GROUND_ALT_FT,
+        "min_cruise_alt_ft": MIN_CRUISE_ALT_FT,
+        "min_duration_s": MIN_DURATION_S,
+        "max_duration_s": MAX_DURATION_S,
+        "min_points": MIN_POINTS,
+        "max_groundspeed_kt": MAX_GROUNDSPEED_KT,
+        "max_implied_speed_kt": MAX_IMPLIED_SPEED_KT,
+    }
+
+
+def incomplete_reason(f: Flight, bbox: BBox) -> str | None:
+    """Return the first exclusive reason used by the complete-flight gate."""
+    p0, p1 = f.points[0], f.points[-1]
+    if not (bbox.contains(p0.lat, p0.lon) and bbox.contains(p1.lat, p1.lon)):
+        return "endpoint_outside_box"
+    a0 = p0.alt if p0.alt is not None else 99999
+    a1 = p1.alt if p1.alt is not None else 99999
+    if a0 > GROUND_ALT_FT or a1 > GROUND_ALT_FT:
+        return "endpoint_above_ground"
+    if f.max_alt < MIN_CRUISE_ALT_FT:
+        return "below_cruise_altitude"
+    if f.duration_s < MIN_DURATION_S:
+        return "duration_too_short"
+    if f.duration_s > MAX_DURATION_S:
+        return "duration_too_long"
+    return None
+
+
+def flights_from_trace_with_audit(trace_dict: dict, bbox: BBox) -> tuple[list, dict]:
+    """Yield complete flights and an exclusive aggregate ledger for all legs."""
     typecode = (trace_dict.get("t") or "").upper()
     icao = trace_dict.get("icao", "")
     reg = trace_dict.get("r")
     out = []
+    counts = Counter()
     for leg, callsign in split_legs(trace_dict):
+        counts["legs_total"] += 1
         pts = _clean(leg)
         if len(pts) < MIN_POINTS:
+            counts["legs_rejected_too_few_points"] += 1
             continue
         f = Flight(icao=icao, typecode=typecode, reg=reg, points=pts,
                    operator=icao_operator(callsign))
-        if is_complete_in_box(f, bbox):
-            out.append(f)
-    return out
+        reason = incomplete_reason(f, bbox)
+        if reason is not None:
+            counts[f"legs_rejected_{reason}"] += 1
+            continue
+        counts["complete_flights"] += 1
+        out.append(f)
+    return out, dict(counts)
+
+
+def flights_from_trace(trace_dict: dict, bbox: BBox) -> list:
+    """Yield complete, in-box flights for one aircraft trace."""
+    flights, _ = flights_from_trace_with_audit(trace_dict, bbox)
+    return flights
 
 
 def mcp_summary(points) -> dict:
@@ -250,15 +295,4 @@ def mcp_summary(points) -> dict:
 
 
 def is_complete_in_box(f: Flight, bbox: BBox) -> bool:
-    p0, p1 = f.points[0], f.points[-1]
-    if not (bbox.contains(p0.lat, p0.lon) and bbox.contains(p1.lat, p1.lon)):
-        return False
-    a0 = p0.alt if p0.alt is not None else 99999
-    a1 = p1.alt if p1.alt is not None else 99999
-    if a0 > GROUND_ALT_FT or a1 > GROUND_ALT_FT:
-        return False
-    if f.max_alt < MIN_CRUISE_ALT_FT:
-        return False
-    if not (MIN_DURATION_S <= f.duration_s <= MAX_DURATION_S):
-        return False
-    return True
+    return incomplete_reason(f, bbox) is None

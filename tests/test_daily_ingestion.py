@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import importlib
 import os
 import sys
@@ -13,7 +14,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "pipeline"))
 
-from store import validate_day_pair  # noqa: E402
+from store import _validate_ingestion_source, validate_day_pair  # noqa: E402
 
 
 def _load_run_daily():
@@ -34,9 +35,10 @@ def _load_run_daily():
     source.decode_failures = lambda: 0
 
     trajectories = types.ModuleType("trajectories")
-    trajectories.flights_from_trace = lambda obj, box: []
+    trajectories.flights_from_trace_with_audit = lambda obj, box: ([], {})
     trajectories.haversine_km = lambda *args: 0.0
     trajectories.mcp_summary = lambda points: {}
+    trajectories.selection_configuration = lambda: {"min_points": 30}
 
     emissions = types.ModuleType("emissions")
     emissions.openap_model = lambda typecode: None
@@ -92,7 +94,14 @@ class DailyIngestionTests(unittest.TestCase):
         point = SimpleNamespace(
             t=1.0, lat=45.0, lon=9.0, alt=1000.0,
             gs=200.0, ias=190.0, vs_rep=0.0)
-        return [({"day": None}, [point])], 0
+        return [({"day": None}, [point])], 0, {
+            "counts": {
+                "members_scanned": 1, "traces_in_box": 1,
+                "legs_total": 1, "complete_flights": 1,
+                "stored_flights": 1,
+            },
+            "gate_failure_combinations": {"0000": 1},
+        }
 
     def fake_members(self, consumed: int, complete: bool):
         def iterator(parts, progress, completed):
@@ -141,6 +150,20 @@ class DailyIngestionTests(unittest.TestCase):
         self.assertEqual(source["asset_manifest"]["assets"][0]["bytes"], 10)
         self.assertEqual(source["ingestion"]["dump_coverage"], 1.0)
         self.assertTrue(source["ingestion"]["tar_complete"])
+        funnel = source["ingestion"]["selection_funnel"]
+        self.assertEqual(funnel["counts"]["stored_flights"], 1)
+        self.assertEqual(funnel["gate_failure_combinations"]["0000"], 1)
+        self.assertEqual(contract["configuration"]["trajectory_selection"]
+                         ["min_points"], 30)
+
+    def test_selection_funnel_guard_rejects_an_open_partition(self):
+        self.write_assets()
+        self.run_with(consumed=10, complete=True)
+        contract = validate_day_pair(self.out / self.DAY)
+        source = copy.deepcopy(contract["source"])
+        source["ingestion"]["selection_funnel"]["counts"]["stored_flights"] = 2
+        with self.assertRaisesRegex(ValueError, "complete flights"):
+            _validate_ingestion_source(source)
 
     def test_exact_coverage_boundary_is_accepted(self):
         self.write_assets()

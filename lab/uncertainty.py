@@ -41,13 +41,25 @@ sys.path.insert(0, str(ROOT))
 from release_manifest import ReleaseManifest, sha256_file  # noqa: E402
 
 
-REGISTRY_STATUSES = {"quantified", "scenario_only", "needs_evidence", "out_of_scope"}
+REGISTRY_STATUSES = {
+    "quantified", "coverage_measured", "scenario_only",
+    "needs_evidence", "out_of_scope",
+}
 REGISTRY_CATEGORIES = {"observation", "parameter", "model", "selection", "variability"}
 GROUND_DEFINITIONS = {"suolo", "a1000t40", "a1000t70", "a1000t100", "a3000t70"}
 DISTANCE_EDGES = [-math.inf, 300, 500, 800, 1200, 2000, math.inf]
 DISTANCE_LABELS = ["lt300", "300_500", "500_800", "800_1200", "1200_2000", "ge2000"]
 COVERAGE_EDGES = [-math.inf, 0.90, 0.99, math.inf]
 COVERAGE_LABELS = ["lt090", "090_099", "ge099"]
+SELECTION_COLUMNS = (
+    "day", "flight_id", "typecode", "origin_icao", "dest_icao",
+    "gc_km", "flown_km", "coverage_frac", "max_gap_s",
+    "flown_ge_09gc", "co2_kg_v0",
+)
+SELECTION_GATE_ORDER = (
+    "endpoints_resolved", "coverage_sufficient",
+    "flown_distance_sufficient", "sector_length_sufficient",
+)
 METRIC_COLUMNS = (
     "co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes",
     "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct",
@@ -133,8 +145,9 @@ def validate_registry(data: dict) -> dict:
         for field in ("correlation_scope", "evidence", "propagation", "notes"):
             if not isinstance(source.get(field), str) or not source[field].strip():
                 raise UncertaintyError(f"source {sid} lacks {field}")
-        if source["status"] == "quantified" and source.get("range") is None:
-            raise UncertaintyError(f"quantified source {sid} has no range")
+        if (source["status"] in {"quantified", "coverage_measured"}
+                and source.get("range") is None):
+            raise UncertaintyError(f"measured source {sid} has no range")
     return {"estimands": len(estimand_ids), "sources": len(source_ids)}
 
 
@@ -247,6 +260,258 @@ def build_population(manifest: ReleaseManifest, flights_dir: Path,
     if sorted(population.day.unique()) != manifest.days:
         raise UncertaintyError("sample population differs from release day perimeter")
     return population
+
+
+def selection_flags(frame: pd.DataFrame, *, coverage_min: float,
+                    gc_min_km: float) -> pd.DataFrame:
+    """Rebuild the four release-gate predicates without hiding overlap."""
+    _require_columns(frame, SELECTION_COLUMNS, "pre-gate flight population")
+    return pd.DataFrame({
+        "endpoints_resolved": (
+            frame.origin_icao.notna() & frame.dest_icao.notna()),
+        "coverage_sufficient": (
+            pd.to_numeric(frame.coverage_frac, errors="coerce") >= coverage_min),
+        "flown_distance_sufficient": (
+            frame.flown_ge_09gc.fillna(False).astype(bool)),
+        "sector_length_sufficient": (
+            pd.to_numeric(frame.gc_km, errors="coerce") >= gc_min_km),
+    }, index=frame.index)
+
+
+def _selection_activity(frame: pd.DataFrame) -> dict[str, float | int]:
+    """Summarise observable exposure; CO2 remains the first-pass inventory."""
+    values = {}
+    for column in ("gc_km", "flown_km", "co2_kg_v0"):
+        series = pd.to_numeric(frame[column], errors="coerce").to_numpy(float)
+        if not np.isfinite(series).all() or (series < 0).any():
+            raise UncertaintyError(
+                f"selection population contains invalid {column} values")
+        values[column] = float(series.sum())
+    return {
+        "flights": int(len(frame)),
+        "great_circle_km": values["gc_km"],
+        "flown_km": values["flown_km"],
+        "first_pass_gate_to_gate_co2_tonnes": values["co2_kg_v0"] / 1000.0,
+    }
+
+
+def _activity_ratio(numerator: dict, denominator: dict) -> dict[str, float]:
+    result = {}
+    for key, value in numerator.items():
+        base = denominator[key]
+        if base <= 0:
+            raise UncertaintyError(f"selection denominator {key} is not positive")
+        result[key] = float(value / base)
+    return result
+
+
+def _selection_group_rows(frame: pd.DataFrame, flags: pd.DataFrame,
+                          group: pd.Series, *, min_n: int) -> list[dict]:
+    working = frame[["gc_km", "flown_km", "co2_kg_v0"]].copy()
+    working["_group"] = group.astype("string").fillna("UNKNOWN")
+    working["_pass"] = flags.all(axis=1).to_numpy()
+    rows = []
+    for name, subset in working.groupby("_group", sort=True, dropna=False):
+        if len(subset) < min_n:
+            continue
+        source = _selection_activity(subset)
+        retained = _selection_activity(subset.loc[subset._pass])
+        rows.append({
+            "group": str(name),
+            "source": source,
+            "retained": retained,
+            "retained_share": _activity_ratio(retained, source),
+        })
+    return rows
+
+
+def _selection_bands(frame: pd.DataFrame) -> dict[str, pd.Series]:
+    return {
+        "distance_band_km": pd.cut(
+            pd.to_numeric(frame.gc_km, errors="coerce"),
+            [-math.inf, 150, 300, 500, 800, 1200, 2000, math.inf],
+            labels=["lt150", "150_300", "300_500", "500_800",
+                    "800_1200", "1200_2000", "ge2000"], right=False),
+        "coverage_band": pd.cut(
+            pd.to_numeric(frame.coverage_frac, errors="coerce"),
+            [-math.inf, 0.50, 0.85, 0.95, 0.99, math.inf],
+            labels=["lt050", "050_085", "085_095", "095_099", "ge099"],
+            right=False),
+        "maximum_gap_band_s": pd.cut(
+            pd.to_numeric(frame.max_gap_s, errors="coerce"),
+            [-math.inf, 120, 300, 600, 900, math.inf],
+            labels=["lt120", "120_300", "300_600", "600_900", "ge900"],
+            right=False),
+    }
+
+
+def selection_audit(*, manifest_path: Path, flights_dir: Path,
+                    decomposition_dir: Path, min_group_n: int,
+                    verify: bool) -> dict:
+    """Measure release-gate selection conditional on durable source flights."""
+    if min_group_n < 10:
+        raise UncertaintyError("selection groups must aggregate at least 10 flights")
+    import track_quality
+
+    manifest = ReleaseManifest.load(manifest_path)
+    manifest.verify_track_quality(track_quality)
+    if verify:
+        manifest.verify_set("flights", flights_dir)
+        manifest.verify_set("decomposition", decomposition_dir, artifact=True)
+
+    frames = []
+    decomposition_rows = 0
+    for day in manifest.days:
+        flight_path = flights_dir / day / "flights.parquet"
+        dec_path = decomposition_dir / f"{day}.parquet"
+        try:
+            flights = pq.read_table(
+                flight_path, columns=list(SELECTION_COLUMNS)).to_pandas()
+            dec = pq.read_table(dec_path, columns=["flight_id"]).to_pandas()
+        except Exception as exc:
+            raise UncertaintyError(f"cannot read selection input for {day}: {exc}") from exc
+        if flights.flight_id.duplicated().any() or dec.flight_id.duplicated().any():
+            raise UncertaintyError(f"duplicate flight_id in selection input for {day}")
+        if set(flights.day.astype(str)) != {day}:
+            raise UncertaintyError(f"flight table identifies another day: {day}")
+        flags = selection_flags(
+            flights, coverage_min=track_quality.COV_MIN,
+            gc_min_km=track_quality.GC_MIN_KM)
+        expected = set(flights.loc[flags.all(axis=1), "flight_id"].astype(int))
+        actual = set(dec.flight_id.astype(int))
+        missing, extra = expected - actual, actual - expected
+        if missing or extra:
+            raise UncertaintyError(
+                f"{day}: release decomposition differs from rebuilt quality gate: "
+                f"{len(missing)} missing, {len(extra)} extra")
+        frames.append(flights)
+        decomposition_rows += len(dec)
+
+    population = pd.concat(frames, ignore_index=True)
+    flags = selection_flags(
+        population, coverage_min=track_quality.COV_MIN,
+        gc_min_km=track_quality.GC_MIN_KM)
+    passed = flags.all(axis=1)
+    source = _selection_activity(population)
+    retained = _selection_activity(population.loc[passed])
+    excluded = _selection_activity(population.loc[~passed])
+
+    independent = []
+    for criterion in SELECTION_GATE_ORDER:
+        failed = ~flags[criterion]
+        activity = _selection_activity(population.loc[failed])
+        independent.append({
+            "criterion": criterion,
+            "failed": activity,
+            "failed_share_of_source": _activity_ratio(activity, source),
+            "overlaps_other_failures": True,
+        })
+
+    combinations = []
+    masks = flags.apply(
+        lambda row: "".join("0" if bool(value) else "1" for value in row), axis=1)
+    for mask, indexes in masks.groupby(masks, sort=True).groups.items():
+        subset = population.loc[indexes]
+        combinations.append({
+            "failure_mask": str(mask),
+            "failed_criteria": [
+                name for name, bit in zip(SELECTION_GATE_ORDER, mask) if bit == "1"],
+            "activity": _selection_activity(subset),
+        })
+
+    cumulative = np.ones(len(population), dtype=bool)
+    cascade = [{"stage": "stored_modelled_complete_flights", "activity": source}]
+    for criterion in SELECTION_GATE_ORDER:
+        cumulative &= flags[criterion].to_numpy(bool)
+        cascade.append({
+            "stage": f"after_{criterion}",
+            "activity": _selection_activity(population.loc[cumulative]),
+        })
+
+    bands = _selection_bands(population)
+    grouped = {
+        "day": _selection_group_rows(
+            population, flags, population.day, min_n=min_group_n),
+        "aircraft_type": _selection_group_rows(
+            population, flags, population.typecode, min_n=min_group_n),
+    }
+    for name, values in bands.items():
+        grouped[name] = _selection_group_rows(
+            population, flags, values, min_n=min_group_n)
+    day_shares = np.asarray([
+        row["retained_share"]["flights"] for row in grouped["day"]], dtype=float)
+    day_quantiles = np.quantile(day_shares, [0.0, 0.05, 0.50, 0.95, 1.0])
+    lowest_days = sorted(
+        ({"day": row["group"], **row["retained_share"]}
+         for row in grouped["day"]),
+        key=lambda row: row["flights"],
+    )[:10]
+
+    return {
+        "schema_version": 1,
+        "kind": "co2gap-selection-audit",
+        "release_id": manifest.release_id,
+        "release_manifest_sha256": sha256_file(manifest.path),
+        "source_manifest_verified": bool(verify),
+        "population_boundary": {
+            "denominator": (
+                "Durable flights produced after regional trace filtering, complete-flight "
+                "reconstruction, OpenAP type support and successful first-pass fuel modelling."
+            ),
+            "upstream_reconstructible_for_release": False,
+            "unobserved_upstream_stages": [
+                "global trace members outside the geographic box",
+                "legs rejected as incomplete",
+                "complete flights with unsupported aircraft types",
+                "complete supported flights whose fuel model failed",
+            ],
+            "interpretation": (
+                "Retention shares are exact conditional coverage of the durable pre-gate "
+                "population, not coverage of all flights in the ECAC airspace."
+            ),
+        },
+        "gate": {
+            "criteria_order": list(SELECTION_GATE_ORDER),
+            "coverage_min_fraction": float(track_quality.COV_MIN),
+            "flown_min_fraction": float(track_quality.FLOWN_MIN_FRAC),
+            "great_circle_min_km": float(track_quality.GC_MIN_KM),
+            "exact_keyset_match_to_decomposition": True,
+            "decomposition_rows": int(decomposition_rows),
+        },
+        "coverage_statement": {
+            "source": source,
+            "retained": retained,
+            "excluded": excluded,
+            "retained_share": _activity_ratio(retained, source),
+            "estimand_bias_bounded": False,
+        },
+        "independent_failures": independent,
+        "failure_combinations": combinations,
+        "sequential_cascade": {
+            "order_is_diagnostic_not_causal": True,
+            "stages": cascade,
+        },
+        "group_diagnostics": {
+            "minimum_group_size": int(min_group_n),
+            "privacy": "Aggregate rows only; no flight identifiers are emitted.",
+            "day_flight_retention": {
+                "min": float(day_quantiles[0]),
+                "q05": float(day_quantiles[1]),
+                "median": float(day_quantiles[2]),
+                "q95": float(day_quantiles[3]),
+                "max": float(day_quantiles[4]),
+                "lowest_ten_days": lowest_days,
+            },
+            **grouped,
+        },
+        "limitations": [
+            "Independent failure counts overlap; use failure_combinations for an exact partition.",
+            "First-pass gate-to-gate CO2 is an exposure proxy here, not the published airborne estimate.",
+            "Retention coverage does not bound headline bias: rejected flights have no trustworthy decomposition.",
+            "Airport comparisons cannot recover the airport of an unresolved endpoint.",
+            "Historical upstream attrition cannot be reconstructed from the frozen source tables.",
+        ],
+    }
 
 
 def write_sample_manifest(*, manifest: ReleaseManifest, population: pd.DataFrame,
@@ -431,7 +696,9 @@ def release_summary(*, manifest_path: Path, decomposition_dir: Path,
             "No probability distribution is assigned to mass, engine, wind or model error.",
             "The frozen population is described exactly; resampling only probes "
             "temporal composition.",
-            "Selection bias from flights outside the quality gate is not yet bounded.",
+            "Quality-gate retention is audited separately, but its effect on the "
+            "headline is not bounded; selection before the durable pre-gate "
+            "population is not reconstructible for this release.",
             "Structural cruise-baseline sensitivity is measured by the paired "
             "runner, not this summary.",
         ],
@@ -810,6 +1077,15 @@ def main(argv: list[str] | None = None) -> int:
     summary_parser.add_argument("--seed", type=int, default=20260901)
     summary_parser.add_argument("--out", type=Path, required=True)
 
+    selection_parser = sub.add_parser(
+        "selection", help="audit release-gate selection and its observable boundary")
+    selection_parser.add_argument("--release-manifest", type=Path, required=True)
+    selection_parser.add_argument("--flights-dir", type=Path, required=True)
+    selection_parser.add_argument("--decomposition-dir", type=Path, required=True)
+    selection_parser.add_argument("--min-group-n", type=int, default=10)
+    selection_parser.add_argument("--out", type=Path, required=True)
+    selection_parser.add_argument("--skip-manifest-verification", action="store_true")
+
     sensitivity_parser = sub.add_parser(
         "sensitivity", help="run paired finite-difference scenarios")
     _common_release_arguments(sensitivity_parser)
@@ -846,6 +1122,21 @@ def main(argv: list[str] | None = None) -> int:
             verified=not args.skip_manifest_verification)
         print(f"sample: {value['sample_rows']:,} rows in {value['strata']} strata "
               f"expand to {value['weight_sum']:,.0f} release flights -> {args.out}")
+        return 0
+
+    if args.command == "selection":
+        result = selection_audit(
+            manifest_path=args.release_manifest, flights_dir=args.flights_dir,
+            decomposition_dir=args.decomposition_dir,
+            min_group_n=args.min_group_n,
+            verify=not args.skip_manifest_verification)
+        _atomic_json(args.out, result)
+        share = result["coverage_statement"]["retained_share"]
+        print(
+            f"selection: retained {share['flights'] * 100:.2f}% of flights, "
+            f"{share['great_circle_km'] * 100:.2f}% of great-circle km and "
+            f"{share['first_pass_gate_to_gate_co2_tonnes'] * 100:.2f}% of "
+            f"first-pass CO2 -> {args.out}")
         return 0
 
     verify = not args.skip_manifest_verification

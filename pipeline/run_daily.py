@@ -32,7 +32,7 @@ import tempfile
 import time
 import uuid
 import warnings
-from collections import deque
+from collections import Counter, deque
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -52,7 +52,8 @@ sys.path.insert(0, str(ROOT / "pipeline"))
 
 from source import (BBox, _MultiFileReader, _decode_member,  # noqa: E402
                     decode_failures)
-from trajectories import flights_from_trace, haversine_km, mcp_summary  # noqa: E402
+from trajectories import (flights_from_trace_with_audit, haversine_km,  # noqa: E402
+                          mcp_summary, selection_configuration)
 from emissions import openap_model, estimate_fuel            # noqa: E402
 from flightproc import process_flight                        # noqa: E402
 from airports import Airports                                # noqa: E402
@@ -81,6 +82,19 @@ AIRPORTS_CSV = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airport
 LOAD_FACTOR = 0.82
 RESERVE_KG = 2000.0
 BATCH = 150                      # trace members per work unit
+SELECTION_COUNT_KEYS = (
+    "members_scanned", "members_without_trace", "members_decode_failures",
+    "traces_outside_box", "traces_in_box", "legs_total",
+    "legs_rejected_too_few_points", "legs_rejected_endpoint_outside_box",
+    "legs_rejected_endpoint_above_ground", "legs_rejected_below_cruise_altitude",
+    "legs_rejected_duration_too_short", "legs_rejected_duration_too_long",
+    "complete_flights", "unsupported_aircraft", "fuel_model_failed",
+    "stored_flights",
+)
+GATE_FAILURE_MASK_ORDER = (
+    "endpoints_unresolved", "coverage_insufficient",
+    "flown_distance_insufficient", "sector_too_short",
+)
 
 # per-worker globals (set by _init)
 _BOX = None
@@ -100,23 +114,32 @@ def _init(box, airports_csv):
 def _process_batch(raw_batch):
     """Worker: decode a batch of raw trace members.
 
-    Returns (list of (meta, points), n_undecodable). The counter travels back
-    with the results because the workers are separate processes: a corrupt
-    member is now skipped rather than fatal, and the only way to notice how
-    much data that costs is to add it up in the parent.
+    Returns stored rows, the undecodable count and an aggregate selection
+    ledger. The counters travel back because the workers are separate
+    processes: a corrupt or rejected member must remain measurable even though
+    no aircraft or flight identifier is retained for it.
     """
     bad_before = decode_failures()
     out = []
+    audit = Counter()
+    masks = Counter()
     for raw in raw_batch:
+        audit["members_scanned"] += 1
         obj = _decode_member(raw)
         if obj is None or "trace" not in obj:
+            audit["members_without_trace"] += 1
             continue
         # box pre-filter (cheap: first in-box point wins)
         if not _any_in_box(obj["trace"]):
+            audit["traces_outside_box"] += 1
             continue
-        for fl in flights_from_trace(obj, _BOX):
+        audit["traces_in_box"] += 1
+        flights, leg_counts = flights_from_trace_with_audit(obj, _BOX)
+        audit.update(leg_counts)
+        for fl in flights:
             model = openap_model(fl.typecode)
             if model is None:
+                audit["unsupported_aircraft"] += 1
                 continue
             p0, p1 = fl.points[0], fl.points[-1]
             gc_km = haversine_km(p0.lat, p0.lon, p1.lat, p1.lon)
@@ -124,6 +147,7 @@ def _process_batch(raw_batch):
             res = estimate_fuel(fl, load_factor=LOAD_FACTOR,
                                 reserve_kg=RESERVE_KG, tas_mode="ias")
             if not res.ok:
+                audit["fuel_model_failed"] += 1
                 continue
             meta = {
                 "day": None,  # filled in main
@@ -151,7 +175,33 @@ def _process_batch(raw_batch):
                 **mcp_summary(fl.points),
             }
             out.append((meta, pts))
-    return out, decode_failures() - bad_before
+            audit["stored_flights"] += 1
+            failures = (
+                meta["origin_icao"] is None or meta["dest_icao"] is None,
+                meta["coverage_frac"] < track_quality.COV_MIN,
+                not meta["flown_ge_09gc"],
+                meta["gc_km"] < track_quality.GC_MIN_KM,
+            )
+            masks["".join("1" if failed else "0" for failed in failures)] += 1
+    n_bad = decode_failures() - bad_before
+    audit["members_decode_failures"] += n_bad
+    return out, n_bad, {
+        "counts": dict(audit),
+        "gate_failure_combinations": dict(masks),
+    }
+
+
+def _selection_funnel(counts: Counter, masks: Counter) -> dict:
+    """Normalise a day's aggregate selection ledger before it is contracted."""
+    return {
+        "schema_version": 1,
+        "counts": {key: int(counts[key]) for key in SELECTION_COUNT_KEYS},
+        "gate_failure_mask_order": list(GATE_FAILURE_MASK_ORDER),
+        "gate_failure_combinations": {
+            f"{mask:04b}": int(masks[f"{mask:04b}"]) for mask in range(16)
+        },
+        "privacy": "Aggregate counts only; no rejected trace or flight identifiers.",
+    }
 
 
 def _any_in_box(trace):
@@ -324,18 +374,23 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
                 "flown_min_fraction": track_quality.FLOWN_MIN_FRAC,
                 "great_circle_min_km": track_quality.GC_MIN_KM,
             },
+            "trajectory_selection": selection_configuration(),
         })
     t0 = time.time()
     n_batches = n_traces_est = 0
     n_undecodable = 0
+    selection_counts = Counter()
+    selection_masks = Counter()
 
     import multiprocessing as mp
     ctx = mp.get_context("fork")
 
     def _consume(result):
         nonlocal n_undecodable
-        results, n_bad = result
+        results, n_bad, selection = result
         n_undecodable += n_bad
+        selection_counts.update(selection["counts"])
+        selection_masks.update(selection["gate_failure_combinations"])
         for meta, pts in results:
             meta["day"] = day_iso
             writer.add(meta, pts)
@@ -381,6 +436,14 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
         consumed = reader_ref[0].n_bytes if reader_ref[0] is not None else 0
         dump_size = sum(asset["bytes"] for asset in asset_manifest["assets"])
         coverage = consumed / dump_size if dump_size else 0.0
+        funnel = _selection_funnel(selection_counts, selection_masks)
+        funnel_counts = funnel["counts"]
+        if funnel_counts["members_scanned"] != n_traces_est:
+            raise RuntimeError("selection ledger differs from scanned-member count")
+        if funnel_counts["members_decode_failures"] != n_undecodable:
+            raise RuntimeError("selection ledger differs from decode-failure count")
+        if funnel_counts["stored_flights"] != writer.n_flights:
+            raise RuntimeError("selection ledger differs from stored-flight count")
         summary = {
             "day": day_iso, "day_tag": base,
             "box": [BOX.lat_min, BOX.lat_max, BOX.lon_min, BOX.lon_max],
@@ -396,6 +459,7 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
             "elapsed_s": round(elapsed, 1),
             "peak_rss_mb": round(peak_rss_mb(), 1),
             "load_factor": LOAD_FACTOR, "reserve_kg": RESERVE_KG,
+            "selection_funnel": funnel,
         }
         print("\n=== SUMMARY ===")
         for k, v in summary.items():
@@ -418,6 +482,7 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
             "dump_coverage": coverage,
             "minimum_dump_coverage": MIN_DUMP_COVERAGE,
             "tar_complete": True,
+            "selection_funnel": funnel,
         }
         info = writer.flush()
         stage_day = stage_root / day_iso

@@ -217,3 +217,41 @@ and treats import, read, day-set and keyset phase failures as fatal.
 `--profile exploratory` is the only mode allowed to omit phase attribution. It
 announces at startup that release guarantees are disabled, prints the precise
 fallback reason to stderr, and does not apply the frozen release-headline gate.
+
+## 9. Historical attrition before the durable flight tables is unobservable
+
+**Measured at the quality gate; open upstream for the September release.** The
+frozen `flights_ecac` tables precede the four analysis predicates, so
+`lab/uncertainty.py selection` can rebuild those predicates and requires their
+passing `(day, flight_id)` keyset to equal the decomposition exactly. It can
+therefore state the gate's conditional coverage without sampling or inference.
+For the frozen 197 days the durable denominator is **2,115,824 flights** and the
+gate retains **1,833,127 (86.64%)**, representing **85.57% of great-circle
+kilometres**, **85.58% of flown kilometres** and **86.50% of first-pass
+gate-to-gate CO2**. The latter is only an exposure proxy, not the published
+airborne inventory. These shares measure coverage, not the bias in the 12.1%
+headline: the excluded rows do not have a trustworthy decomposition.
+
+The average hides a material time pattern. Retention falls to **30.28% on 24
+March** and **52.56% on 25 March**. Both source dumps are correctly marked
+`complete`; the loss is instead inside flight tracks, where the coverage
+criterion alone fails 67.45% and 42.82% of rows. Source-byte completeness and
+trajectory representativeness are different properties. The accepted
+population therefore underweights those two days, and block-resampling accepted
+days cannot recreate the flights rejected from them.
+
+The same files are already downstream of four earlier decisions: a trace must
+touch the geographic box, yield a complete flight, map to an OpenAP-supported
+aircraft and produce a successful first-pass fuel estimate. The September
+artefacts retained neither rejected records nor aggregate counts for those
+stages. Calling the durable pre-gate table “all ECAC flights” would therefore be
+false, and no retrospective percentage is reported.
+
+New ingestion closes the prospective part of the problem. Each promoted day
+stores, in both parquet source contracts, an internally validated aggregate
+funnel from declared dump members through trace location, exclusive leg
+rejection reasons, aircraft support, fuel-model success and all 16 combinations
+of the four quality predicates. No rejected trace, aircraft or flight identifier
+is retained. Historical contracts without the optional block remain valid; the
+missing September denominator can only be closed by rerunning the raw dumps or
+by measuring a future representative period.

@@ -236,6 +236,28 @@ python lab/uncertainty.py validate
 The full commands intentionally write their sample and aggregate results to
 `/tmp`. They do not alter a frozen release or the public site.
 
+The release-gate denominator and attrition can be audited independently of the
+fuel sensitivities:
+
+```bash
+python lab/uncertainty.py selection \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --out /tmp/co2gap-selection-audit.json
+```
+
+This rebuilds the four gate predicates from the durable pre-gate flight tables
+and requires their passing keyset to equal the release decomposition exactly.
+Its denominator begins after complete-flight reconstruction, aircraft-model
+support and successful first-pass fuel modelling; it does not call that subset
+all ECAC traffic. The retained shares measure coverage, not the direction or
+size of bias in the 12.1% headline: rejected flights have no trustworthy
+decomposition. New daily ingestion records the earlier attrition stages as
+an aggregate, internally closed funnel in the parquet source contract. The
+September inputs predate that funnel, so their upstream attrition cannot be
+recovered retrospectively.
+
 ## Reproducing
 
 The two machines have separate direct-dependency locks:
@@ -263,6 +285,13 @@ Production (per-day accumulation):
 ```bash
 WORKERS=3 python pipeline/run_daily.py --day 2026.07.19
 ```
+
+Each newly promoted day contracts an aggregate selection funnel from dump
+members through regional traces, exclusive complete-flight rejection reasons,
+aircraft support, fuel-model success and the quality-gate failure combinations.
+It stores no rejected trace or flight identifier. Historical days without this
+new optional contract block remain readable rather than being quarantined for
+lacking information that was never collected.
 
 The source downloader obtains the complete asset list and declared byte sizes
 from the official GitHub release API before transferring anything. A confirmed

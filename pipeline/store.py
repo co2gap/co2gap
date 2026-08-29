@@ -30,6 +30,19 @@ PIPELINE_VER = "phase1-v3-staged-ingestion"
 SOURCE_CONTRACT_KEY = b"co2gap.source-contract"
 SOURCE_CONTRACT_VERSION = 2
 MIN_DUMP_COVERAGE = 0.90
+SELECTION_COUNT_KEYS = {
+    "members_scanned", "members_without_trace", "members_decode_failures",
+    "traces_outside_box", "traces_in_box", "legs_total",
+    "legs_rejected_too_few_points", "legs_rejected_endpoint_outside_box",
+    "legs_rejected_endpoint_above_ground", "legs_rejected_below_cruise_altitude",
+    "legs_rejected_duration_too_short", "legs_rejected_duration_too_long",
+    "complete_flights", "unsupported_aircraft", "fuel_model_failed",
+    "stored_flights",
+}
+GATE_FAILURE_MASK_ORDER = [
+    "endpoints_unresolved", "coverage_insufficient",
+    "flown_distance_insufficient", "sector_too_short",
+]
 
 
 def _schema_checksum(schema: pa.Schema) -> str:
@@ -225,6 +238,44 @@ class DayWriter:
         self._fw = None
 
 
+def _validate_selection_funnel(funnel: dict) -> None:
+    """Reject internally inconsistent aggregate attrition provenance."""
+    if not isinstance(funnel, dict) or funnel.get("schema_version") != 1:
+        raise ValueError("selection funnel lacks schema version 1")
+    counts = funnel.get("counts")
+    if not isinstance(counts, dict) or set(counts) != SELECTION_COUNT_KEYS:
+        raise ValueError("selection funnel has an unexpected count schema")
+    if any(isinstance(value, bool) or not isinstance(value, int) or value < 0
+           for value in counts.values()):
+        raise ValueError("selection funnel counts must be non-negative integers")
+    if counts["members_decode_failures"] > counts["members_without_trace"]:
+        raise ValueError("selection funnel has more decode failures than unusable members")
+    if counts["members_scanned"] != (
+            counts["members_without_trace"] + counts["traces_outside_box"]
+            + counts["traces_in_box"]):
+        raise ValueError("selection funnel does not partition scanned members")
+    leg_rejections = sum(
+        value for key, value in counts.items() if key.startswith("legs_rejected_"))
+    if counts["legs_total"] != leg_rejections + counts["complete_flights"]:
+        raise ValueError("selection funnel does not partition reconstructed legs")
+    if counts["complete_flights"] != (
+            counts["unsupported_aircraft"] + counts["fuel_model_failed"]
+            + counts["stored_flights"]):
+        raise ValueError("selection funnel does not partition complete flights")
+
+    if funnel.get("gate_failure_mask_order") != GATE_FAILURE_MASK_ORDER:
+        raise ValueError("selection funnel gate-mask order is unknown")
+    combinations = funnel.get("gate_failure_combinations")
+    masks = {f"{value:04b}" for value in range(16)}
+    if not isinstance(combinations, dict) or set(combinations) != masks:
+        raise ValueError("selection funnel gate combinations are incomplete")
+    if any(isinstance(value, bool) or not isinstance(value, int) or value < 0
+           for value in combinations.values()):
+        raise ValueError("selection funnel gate counts must be non-negative integers")
+    if sum(combinations.values()) != counts["stored_flights"]:
+        raise ValueError("selection funnel gate combinations do not cover stored flights")
+
+
 def _validate_ingestion_source(source: dict) -> None:
     """Require proof that the whole declared dump preceded promotion."""
     dump_tag = source.get("dump_tag")
@@ -294,6 +345,11 @@ def _validate_ingestion_source(source: dict) -> None:
         raise ValueError("source dump coverage is below its recorded minimum")
     if ingestion.get("tar_complete") is not True:
         raise ValueError("source tar was not read to normal completion")
+    # Historical days predate this aggregate ledger. New ingestion always
+    # writes it; when present it is a contracted, internally closed partition.
+    funnel = ingestion.get("selection_funnel")
+    if funnel is not None:
+        _validate_selection_funnel(funnel)
 
 
 def validate_day_pair(day_dir: Path) -> dict:
