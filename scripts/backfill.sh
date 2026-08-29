@@ -103,10 +103,9 @@ except Exception:
 PY
 }
 
-published() {   # is the dump released? (HEAD the first part)
+release_status() {  # 0=asset manifest valid, 44=release absent, other=lookup failure
     local tag="v${1}-planes-readsb-prod-0"
-    [ "$(curl -sIL -o /dev/null -w '%{http_code}' --max-time 30 \
-        "https://github.com/adsblol/globe_history_2026/releases/download/${tag}/${tag}.tar.aa")" = "200" ]
+    "$VENV" "$ROOT/scripts/release_assets.py" "$tag" >/dev/null
 }
 
 wait_out_quiet_window() {
@@ -145,10 +144,18 @@ while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
 
     wait_out_quiet_window
 
-    if ! published "$DAY"; then
-        echo "$ISO" >> "$MISSING"
-        log "$ISO  MANCANTE (nessuna release su adsb.lol)"
-        n_missing=$((n_missing+1))
+    if release_status "$DAY"; then
+        :
+    else
+        rc=$?
+        if [ "$rc" -eq 44 ]; then
+            echo "$ISO" >> "$MISSING"
+            log "$ISO  MANCANTE (GitHub API: release inesistente)"
+            n_missing=$((n_missing+1))
+        else
+            log "$ISO  FALLITO (manifesto asset non disponibile, rc=$rc)"
+            n_fail=$((n_fail+1))
+        fi
         ISO=$(date -u -d "$ISO -1 day" +%Y-%m-%d)
         sleep 5; continue
     fi

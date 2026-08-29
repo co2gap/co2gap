@@ -229,6 +229,14 @@ Production (per-day accumulation):
 WORKERS=3 python pipeline/run_daily.py --day 2026.07.19
 ```
 
+The source downloader obtains the complete asset list and declared byte sizes
+from the official GitHub release API before transferring anything. A confirmed
+release-tag 404 is the only condition recorded as “not published”; API errors,
+timeouts, incomplete lists and size mismatches are failures and remain
+retryable. Both the sequential and parallel downloaders verify every declared
+part, rather than guessing the end of a split archive from the first missing
+suffix.
+
 Analysis chain — idempotent and resumable, and **no step publishes anything**.
 The two modes are deliberately different commands: `--update` consumes every
 ready day in the accumulating caches; `--release-manifest` selects and verifies

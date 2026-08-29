@@ -20,34 +20,37 @@ DAY="${1:?uso: dl_day_fast.sh YYYY.MM.DD}"
 ROOT="${ADSB_ROOT:-/opt/adsb-co2}"
 TAG="v${DAY}-planes-readsb-prod-0"
 DEST="$ROOT/data/raw"
-BASE="https://github.com/adsblol/globe_history_2026/releases/download/${TAG}"
+ASSET_PY="${ADSB_ASSET_PY:-$ROOT/venv/bin/python}"
 
 mkdir -p "$DEST"
 cd "$DEST" || exit 1
 
-# 1) Discover how many parts this day has. The count varies per day (2 or 3),
-#    and assuming a fixed 3 silently skipped every 2-part day in an earlier
-#    version of this pipeline. A HEAD is ~0.2 s, so probing in order is cheap.
-PARTS=()
-for p in aa ab ac ad ae af; do
-    code=$(curl -sIL -o /dev/null -w '%{http_code}' --max-time 30 "${BASE}/${TAG}.tar.${p}")
-    [ "$code" = "200" ] || break
-    PARTS+=("$p")
-done
-
-if [ ${#PARTS[@]} -eq 0 ]; then
-    echo "$(date -Is) ERRORE: nessuna parte trovata per $TAG (release inesistente?)"
-    exit 1
+asset_list="$DEST/.${TAG}.assets.$$"
+trap 'rm -f "$asset_list"' EXIT
+if "$ASSET_PY" "$ROOT/scripts/release_assets.py" "$TAG" >"$asset_list"; then
+    :
+else
+    rc=$?
+    [ "$rc" -eq 44 ] && echo "$(date -Is) ERRORE: release $TAG inesistente"
+    [ "$rc" -eq 44 ] || echo "$(date -Is) ERRORE: manifesto asset non disponibile"
+    exit "$rc"
 fi
+NAMES=(); SIZES=(); URLS=()
+while IFS=$'\t' read -r name size url; do
+    [ -n "$name" ] || continue
+    NAMES+=("$name"); SIZES+=("$size"); URLS+=("$url")
+done <"$asset_list"
+[ ${#NAMES[@]} -gt 0 ] || { echo "$(date -Is) ERRORE: manifesto vuoto"; exit 1; }
 
-# 2) Fetch every part at once. Stale files are removed first so a truncated
+# Fetch every declared part at once. Stale files are removed first so a truncated
 #    part from an interrupted run is never resumed into a corrupt tar.
-echo "$(date -Is) scarico ${#PARTS[@]} parti in parallelo: $TAG"
+echo "$(date -Is) scarico ${#NAMES[@]} parti in parallelo: $TAG"
 pids=()
-for p in "${PARTS[@]}"; do
-    rm -f "${TAG}.tar.${p}"
+for idx in "${!NAMES[@]}"; do
+    name="${NAMES[$idx]}"
+    rm -f "$name"
     curl -fL --no-progress-meter --retry 5 --retry-delay 10 \
-         -o "${TAG}.tar.${p}" "${BASE}/${TAG}.tar.${p}" &
+         -o "$name" "${URLS[$idx]}" &
     pids+=($!)
 done
 
@@ -62,4 +65,13 @@ if [ "$rc" -ne 0 ]; then
     exit 1
 fi
 
-echo "$(date -Is) DONE $TAG (${#PARTS[@]} parti in parallelo)"
+for idx in "${!NAMES[@]}"; do
+    actual=$(wc -c <"${NAMES[$idx]}" | tr -d ' ')
+    if [ "$actual" != "${SIZES[$idx]}" ]; then
+        echo "$(date -Is) ERRORE: ${NAMES[$idx]} ha $actual byte, attesi ${SIZES[$idx]}"
+        rm -f "${NAMES[@]}"
+        exit 1
+    fi
+done
+
+echo "$(date -Is) DONE $TAG (${#NAMES[@]} parti in parallelo, dimensioni verificate)"

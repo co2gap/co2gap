@@ -90,12 +90,6 @@ except Exception:
 PY
 }
 
-published() {
-    local tag="v${1//-/.}-planes-readsb-prod-0"
-    [ "$(curl -sIL -o /dev/null -w '%{http_code}' --max-time 30 \
-        "https://github.com/adsblol/globe_history_2026/releases/download/${tag}/${tag}.tar.aa")" = "200" ]
-}
-
 # ---- prefetch ---------------------------------------------------------------
 # DL_PID/DL_DAY must be set by a function called in the CURRENT shell, not in a
 # $(...) subshell: `wait` only works on direct children of this shell.
@@ -154,16 +148,16 @@ for idx in "${!DAYS[@]}"; do
     DL_PID=""; DL_DAY=""
 
     if [ "$dl_rc" -ne 0 ]; then
-        # dl_day.sh exits non-zero both when the release does not exist and on a
-        # genuine network failure. Classify, so a missing day is recorded once
-        # and never retried in a loop, while a transient error stays retryable.
-        if published "$iso"; then
-            log "$iso  FALLITO (download), $(( $(date +%s) - day_t0 ))s"
-            n_fail=$((n_fail+1))
-        else
+        # The downloader preserves release_assets.py's dedicated 44 status.
+        # Only that confirmed API 404 is durable; every other failure stays
+        # retryable and must never poison backfill_missing.txt.
+        if [ "$dl_rc" -eq 44 ]; then
             echo "$iso" >> "$MISSING"
-            log "$iso  MANCANTE (nessuna release su adsb.lol)"
+            log "$iso  MANCANTE (GitHub API: release inesistente)"
             n_missing=$((n_missing+1))
+        else
+            log "$iso  FALLITO (download/manifesto asset, rc=$dl_rc), $(( $(date +%s) - day_t0 ))s"
+            n_fail=$((n_fail+1))
         fi
         drop_raw "$iso"
         # still prefetch the next one before moving on

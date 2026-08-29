@@ -36,12 +36,9 @@ if ! flock -n 9; then
   exit 0
 fi
 
-available() {  # is the dump published on the release? (HEAD one part)
+available() {  # 0=manifest valid, 44=release absent, other=lookup failure
   local day="$1" tag="v${1}-planes-readsb-prod-0"
-  local code
-  code=$(curl -sIL -o /dev/null -w "%{http_code}" --max-time 30 \
-    "https://github.com/adsblol/globe_history_2026/releases/download/${tag}/${tag}.tar.aa")
-  [ "$code" = "200" ]
+  "$VENV" "$ROOT/scripts/release_assets.py" "$tag" >/dev/null
 }
 
 processed=0
@@ -57,8 +54,15 @@ for off in $(seq 1 "$CATCHUP_DAYS"); do
     continue  # already done
   fi
   echo "$(date -Is) target $DAY (missing parquet)"
-  if ! available "$DAY"; then
-    echo "$(date -Is) dump for $DAY not published yet; will retry next run"
+  if available "$DAY"; then
+    :
+  else
+    rc=$?
+    if [ "$rc" -eq 44 ]; then
+      echo "$(date -Is) dump for $DAY not published yet; will retry next run"
+    else
+      echo "$(date -Is) asset lookup FAILED for $DAY (rc=$rc); will retry next run"
+    fi
     continue
   fi
   if ! bash "$ROOT/scripts/dl_day.sh" "$DAY"; then
