@@ -59,11 +59,13 @@ ECAC area, 2026-01-01 → 2026-07-20, **197 days, 1,833,127 flights**:
 | Routes with n≥10 | 5,483 (2,787 ranked at n≥100) |
 | Airports with n≥2,000 movements | 152 |
 
-Of the median flight's 14.0 points of vertical gap, **5.5 remain for a flight
-going direct through an empty night sky**. We read that as the baseline staying
-out of reach rather than inefficiency — a reading, not a second measurement,
-since nothing here separates the two. The remaining 8.5 points move with
-traffic, routing and profile.
+Of the median flight's 5.1 points of vertical gap, **2.2 remain for a flight
+going direct through an empty night sky** (3,120 such flights). We read that as
+the baseline staying out of reach rather than inefficiency — a reading, not a
+second measurement, since nothing here separates the two. Only 2.9 points move
+with traffic, routing and profile, and even that subtraction compares two
+groups of different length: the floor is measured above 1,000 km, and at equal
+distance the margin is about 0.9 points. The rest is the distance mix.
 
 ## External validation
 
