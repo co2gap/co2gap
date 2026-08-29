@@ -74,7 +74,10 @@ echo $$ > "$GLOBAL_LOCK"
 
 raw_glob() { echo "$ROOT/data/raw/v${1//-/.}-planes-readsb-prod-0.tar."*; }
 
-drop_raw() { rm -f "$ROOT/data/raw/v${1//-/.}-planes-readsb-prod-0.tar."*; }
+drop_raw() {
+    rm -f "$ROOT/data/raw/v${1//-/.}-planes-readsb-prod-0.tar."* \
+          "$ROOT/data/raw/v${1//-/.}-planes-readsb-prod-0.assets.tsv"
+}
 
 is_valid_day() {
     local d="$FLIGHTS_DIR/$1"
@@ -176,8 +179,7 @@ for idx in "${!DAYS[@]}"; do
         log "$iso  OK    voli=${nf:-?}  $(( $(date +%s) - day_t0 ))s"
         n_ok=$((n_ok+1))
     else
-        log "$iso  FALLITO (pipeline), $(( $(date +%s) - day_t0 ))s"
-        rm -rf "$FLIGHTS_DIR/$iso"
+        log "$iso  FALLITO (pipeline; eventuale output precedente resta in quarantena), $(( $(date +%s) - day_t0 ))s"
         n_fail=$((n_fail+1))
     fi
     drop_raw "$iso"

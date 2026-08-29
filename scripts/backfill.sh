@@ -172,14 +172,16 @@ while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
         if is_valid_day "$ISO"; then echo "RACE_DONE"; exit 92; fi
 
         # never resume a possibly-truncated part from an interrupted run
-        rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."*
+        rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."* \
+              "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.assets.tsv"
 
         bash "$ROOT/scripts/dl_day.sh" "$DAY" >>"$VERBOSE" 2>&1 || exit 93
 
         WORKERS="$WORKERS" nice -n15 ionice -c3 \
             "$VENV" "$ROOT/pipeline/run_daily.py" --day "$DAY" >>"$VERBOSE" 2>&1 || exit 94
 
-        rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."*
+        rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."* \
+              "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.assets.tsv"
     ) 9>"$LOCKFILE"
     rc=$?
     day_dt=$(( $(date +%s) - day_t0 ))
@@ -192,17 +194,17 @@ while [[ "$ISO" > "$TO_DAY" || "$ISO" == "$TO_DAY" ]]; do
             n_ok=$((n_ok+1)); n_done=$((n_done+1))
         else
             log "$ISO  FALLITO (parquet non valido dopo il run), ${day_dt}s"
-            rm -rf "$FLIGHTS_DIR/$ISO"
             n_fail=$((n_fail+1)); n_done=$((n_done+1))
         fi ;;
       91) log "$ISO  RIMANDATO (lock occupato oltre ${LOCK_WAIT_S}s)"; n_fail=$((n_fail+1)) ;;
       92) log "$ISO  già fatto dal cron mentre attendevo il lock"; n_skip=$((n_skip+1)) ;;
       93) log "$ISO  FALLITO (download), ${day_dt}s"
-          rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."*
+          rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."* \
+                "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.assets.tsv"
           n_fail=$((n_fail+1)); n_done=$((n_done+1)) ;;
-      94) log "$ISO  FALLITO (pipeline), ${day_dt}s"
-          rm -rf "$FLIGHTS_DIR/$ISO"
-          rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."*
+      94) log "$ISO  FALLITO (pipeline; eventuale output precedente resta in quarantena), ${day_dt}s"
+          rm -f "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.tar."* \
+                "$ROOT/data/raw/v${DAY}-planes-readsb-prod-0.assets.tsv"
           n_fail=$((n_fail+1)); n_done=$((n_done+1)) ;;
       *)  log "$ISO  FALLITO (rc=$rc), ${day_dt}s"; n_fail=$((n_fail+1)); n_done=$((n_done+1)) ;;
     esac

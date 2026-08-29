@@ -292,12 +292,18 @@ mode rejects that flag. A failed Pi sync is fatal unless an update run explicitl
 uses `--allow-stale-inputs`, which is also forbidden for a release.
 
 New daily parquet outputs are self-validating. Durable flight/point pairs record
-their shared counts and keyset, source-part identity, schemas and configuration;
-derived decomposition, phase and ground files additionally record full SHA-256
-fingerprints of their upstream inputs. Resume checks validate those contracts
-instead of treating any readable non-empty file as complete. The September
-artefacts predate the footer contract and are accepted only through the full
-checksums in their manifest.
+their shared counts and keyset, the downloader's complete asset manifest, the
+number and fraction of declared dump bytes actually consumed, schemas and
+configuration. The pair is written under a sibling staging directory and is
+promoted only after the tar reaches normal completion and at least 90% of its
+declared bytes were read. A failed run exits non-zero and leaves no final day.
+An older promoted day that fails the current contract is moved intact to the
+sibling `flights*.quarantine` directory and reported, never deleted or
+overwritten automatically. Derived decomposition, phase and ground files
+additionally record full SHA-256 fingerprints of their upstream inputs. Resume
+checks validate those contracts instead of treating any readable non-empty file
+as complete. The September artefacts predate the footer contract and are
+accepted only through the full checksums in their manifest.
 
 Before a phase parquet is promoted, the rebuilt hybrid must reproduce its
 decomposition input exactly and the six phase/position buckets must close to

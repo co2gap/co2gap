@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import subprocess
 import sys
@@ -32,14 +33,33 @@ class BackfillPathTests(unittest.TestCase):
         self.assertEqual(script.count("$ROOT/data/flights"), 1)  # default only
         self.assertIn('local iso="$1" d="$FLIGHTS_DIR/$1"', script)
         self.assertIn("$FLIGHTS_DIR/$ISO/flights.parquet", script)
-        self.assertEqual(script.count('rm -rf "$FLIGHTS_DIR/$ISO"'), 2)
+        self.assertNotIn('rm -rf "$FLIGHTS_DIR/$ISO"', script)
+        self.assertIn("output precedente resta in quarantena", script)
         self.assertIn('export ADSB_FLIGHTS_DIR="$FLIGHTS_DIR"', script)
 
     def test_pi_backfill_recognises_a_valid_day_in_the_configured_directory(self):
         with tempfile.TemporaryDirectory(prefix="co2gap-backfill-path-") as raw:
             root = Path(raw)
             alternate = root / "alternate-flights"
-            writer = DayWriter(alternate, "2026-01-01")
+            tag = "v2026.01.01-planes-readsb-prod-0"
+            url = "https://example.invalid/aa"
+            line = f"{tag}.tar.aa\t10\t{url}\n"
+            source = {
+                "dump_tag": tag,
+                "asset_manifest": {
+                    "schema_version": 1,
+                    "file": f"{tag}.assets.tsv",
+                    "sha256": hashlib.sha256(line.encode()).hexdigest(),
+                    "assets": [{"name": f"{tag}.tar.aa", "bytes": 10,
+                                "url": url}],
+                },
+                "ingestion": {
+                    "dump_bytes": 10, "bytes_consumed": 10,
+                    "dump_coverage": 1.0, "minimum_dump_coverage": 0.9,
+                    "tar_complete": True,
+                },
+            }
+            writer = DayWriter(alternate, "2026-01-01", source=source)
             point = SimpleNamespace(
                 t=1.0, lat=45.0, lon=9.0, alt=1000.0,
                 gs=200.0, ias=190.0, vs_rep=0.0)

@@ -26,7 +26,9 @@ mkdir -p "$DEST"
 cd "$DEST" || exit 1
 
 asset_list="$DEST/.${TAG}.assets.$$"
+asset_manifest="$DEST/${TAG}.assets.tsv"
 trap 'rm -f "$asset_list"' EXIT
+rm -f "$asset_manifest"
 if "$ASSET_PY" "$ROOT/scripts/release_assets.py" "$TAG" >"$asset_list"; then
     :
 else
@@ -74,4 +76,5 @@ for idx in "${!NAMES[@]}"; do
     fi
 done
 
+mv "$asset_list" "$asset_manifest"
 echo "$(date -Is) DONE $TAG (${#NAMES[@]} parti in parallelo, dimensioni verificate)"

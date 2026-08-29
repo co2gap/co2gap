@@ -12,7 +12,9 @@ ASSET_PY="${ADSB_ASSET_PY:-$ROOT/venv/bin/python}"
 mkdir -p "$DEST"
 cd "$DEST"
 asset_list="$DEST/.${TAG}.assets.$$"
+asset_manifest="$DEST/${TAG}.assets.tsv"
 trap 'rm -f "$asset_list"' EXIT
+rm -f "$asset_manifest"
 if "$ASSET_PY" "$ROOT/scripts/release_assets.py" "$TAG" >"$asset_list"; then
   :
 else
@@ -43,4 +45,5 @@ while IFS=$'\t' read -r f expected url; do
   got=$((got+1))
 done <"$asset_list"
 [ "$got" -gt 0 ] || { echo "$(date -Is) ERROR: empty asset manifest"; exit 1; }
+mv "$asset_list" "$asset_manifest"
 echo "$(date -Is) DONE $TAG ($got parts)"

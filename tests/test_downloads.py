@@ -65,6 +65,43 @@ class ReleaseAssetTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("ha 3 byte, attesi 10", result.stdout)
             self.assertFalse((root / "data/raw" / f"{self.TAG}.tar.aa").exists())
+            self.assertFalse((root / "data/raw" / f"{self.TAG}.assets.tsv").exists())
+
+    def test_success_persists_exact_asset_manifest_for_ingestion(self):
+        with tempfile.TemporaryDirectory(prefix="co2gap-download-manifest-") as raw:
+            root = Path(raw)
+            (root / "data/raw").mkdir(parents=True)
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            expected = (
+                f"{self.TAG}.tar.aa\t3\thttps://example.invalid/aa\n"
+                f"{self.TAG}.tar.ab\t3\thttps://example.invalid/ab\n")
+            asset_python = fake_bin / "asset-python"
+            asset_python.write_text("#!/bin/sh\nprintf '" + expected + "'\n")
+            asset_python.chmod(0o755)
+            curl = fake_bin / "curl"
+            curl.write_text(
+                "#!/bin/sh\n"
+                "out=\n"
+                "while [ $# -gt 0 ]; do\n"
+                "  if [ \"$1\" = -o ]; then out=$2; shift 2; else shift; fi\n"
+                "done\n"
+                "printf abc > \"$out\"\n")
+            curl.chmod(0o755)
+            env = dict(os.environ)
+            env.update({
+                "ADSB_ROOT": str(root),
+                "ADSB_ASSET_PY": str(asset_python),
+                "PATH": f"{fake_bin}:/usr/bin:/bin",
+            })
+            result = subprocess.run(
+                ["/bin/bash", str(ROOT / "scripts/dl_day_fast.sh"), "2026.01.01"],
+                env=env, text=True, capture_output=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            manifest = root / "data/raw" / f"{self.TAG}.assets.tsv"
+            self.assertEqual(manifest.read_text(), expected)
+            self.assertEqual((root / "data/raw" / f"{self.TAG}.tar.aa").read_bytes(), b"abc")
+            self.assertEqual((root / "data/raw" / f"{self.TAG}.tar.ab").read_bytes(), b"abc")
 
 
 if __name__ == "__main__":

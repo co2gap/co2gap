@@ -169,3 +169,27 @@ input after its figures and provenance were fixed.
 correct method string during the single January rerun and update its checksum
 together with the other release inputs. The 20 numeric records need not move
 unless their source table, OpenAP version or segment-selection rule changes.
+
+## 7. An early-ending dump could be promoted as a complete day
+
+**Closed for future ingestion on `hardening-2027-01`; the September release was
+not affected.** `pipeline/run_daily.py` used to write the final flight and point
+parquet before checking how much of the split tar had actually been consumed.
+Below `MIN_DUMP_COVERAGE` it set `summary["incomplete"] = True` but returned
+success. The nightly job could therefore report `pipeline OK`, and its next run
+could accept the readable pair as finished.
+
+The two real dumps named in the incident comment, **2026-04-30** and
+**2026-05-04**, do not contaminate the published release. They were downloaded
+again after the damage was observed and the frozen population marks both
+`complete`, with respectively **11,021** and **14,642** flights. This was a risk
+to future ingestion, not evidence of missing published flights.
+
+New runs preserve the downloader's complete asset list, require every declared
+part at its declared byte size, write into a sibling staging directory, and
+promote only after the tar reaches normal completion and dump coverage is at
+least 90%. The final source contract records the asset-manifest SHA-256, each
+asset name/size/URL, consumed and declared bytes, coverage threshold and result.
+A failure exits non-zero and removes only its staging tree. An older promoted
+day that fails the new contract is moved intact into a sibling quarantine and
+reported; no acquisition script deletes it automatically.

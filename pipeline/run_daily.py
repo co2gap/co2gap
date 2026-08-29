@@ -23,10 +23,14 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import resource
+import shutil
 import sys
 import tarfile
+import tempfile
 import time
+import uuid
 import warnings
 from collections import deque
 from datetime import date, datetime, timedelta, timezone
@@ -52,9 +56,10 @@ from trajectories import flights_from_trace, haversine_km, mcp_summary  # noqa: 
 from emissions import openap_model, estimate_fuel            # noqa: E402
 from flightproc import process_flight                        # noqa: E402
 from airports import Airports                                # noqa: E402
-from store import DayWriter, PIPELINE_VER                    # noqa: E402
+from store import (DayWriter, MIN_DUMP_COVERAGE, PIPELINE_VER,  # noqa: E402
+                   validate_day_pair)
 import track_quality                                         # noqa: E402
-from release_manifest import optional_manifest               # noqa: E402
+from release_manifest import optional_manifest, sha256_file   # noqa: E402
 
 # Default box: EU-South, lat 35-52, lon -10..25 (Iberia, France, Italy, Alps,
 # Balkans, Greece, Malta, N-Africa coast). A wider box (full ECAC) is selected
@@ -76,7 +81,6 @@ AIRPORTS_CSV = Path(os.environ.get("ADSB_AIRPORTS_CSV") or (ROOT / "data/airport
 LOAD_FACTOR = 0.82
 RESERVE_KG = 2000.0
 BATCH = 150                      # trace members per work unit
-MIN_DUMP_COVERAGE = 0.90         # below this the dump was not read to the end
 
 # per-worker globals (set by _init)
 _BOX = None
@@ -160,7 +164,7 @@ def _any_in_box(trace):
     return False
 
 
-def _iter_raw_members(part_paths, progress=None):
+def _iter_raw_members(part_paths, progress=None, completed=None):
     """Yield raw (still-gzipped) bytes of every trace_full member, streaming.
 
     `progress`, if given, is a one-element list that receives the number of
@@ -189,6 +193,8 @@ def _iter_raw_members(part_paths, progress=None):
             if f is None:
                 continue
             yield f.read()
+    if completed is not None:
+        completed[0] = True
 
 
 def _batched(iterable, n):
@@ -206,21 +212,108 @@ def peak_rss_mb():
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
 
 
+def _asset_manifest(base: str) -> tuple[list[Path], dict]:
+    """Load the downloader's authoritative asset list and verify local parts."""
+    raw_dir = ROOT / "data/raw"
+    path = raw_dir / f"{base}.assets.tsv"
+    if not path.is_file():
+        raise SystemExit(
+            f"asset manifest missing for {base}: {path}. Re-run dl_day.sh; "
+            "the pipeline cannot prove that the last split part is present.")
+    assets = []
+    try:
+        for line_no, line in enumerate(path.read_text().splitlines(), 1):
+            fields = line.split("\t")
+            if len(fields) != 3:
+                raise ValueError(f"line {line_no} has {len(fields)} fields")
+            name, raw_size, url = fields
+            if not re.fullmatch(re.escape(base) + r"\.tar\.[a-z]{2}", name):
+                raise ValueError(f"line {line_no} names an unexpected asset {name!r}")
+            size = int(raw_size)
+            if size <= 0 or not url.startswith(("https://", "http://")):
+                raise ValueError(f"line {line_no} has invalid size or URL")
+            assets.append({"name": name, "bytes": size, "url": url})
+    except Exception as exc:
+        raise SystemExit(f"invalid asset manifest {path}: {exc}") from exc
+    if not assets:
+        raise SystemExit(f"asset manifest is empty: {path}")
+    names = [asset["name"] for asset in assets]
+    suffixes = [name[-2:] for name in names]
+    expected_suffixes = [
+        chr(ord("a") + i // 26) + chr(ord("a") + i % 26)
+        for i in range(len(names))
+    ]
+    if names != sorted(set(names)) or suffixes != expected_suffixes:
+        raise SystemExit(
+            f"asset manifest for {base} is not sorted, unique and contiguous from aa")
+
+    declared = set(names)
+    actual = {p.name for p in raw_dir.glob(f"{base}.tar.*") if p.is_file()}
+    missing, extra = sorted(declared - actual), sorted(actual - declared)
+    if missing or extra:
+        raise SystemExit(
+            f"raw assets differ from manifest for {base}: "
+            f"{len(missing)} missing {missing[:3]}, {len(extra)} extra {extra[:3]}")
+    parts = [raw_dir / name for name in names]
+    wrong = [(p.name, p.stat().st_size, asset["bytes"])
+             for p, asset in zip(parts, assets)
+             if p.stat().st_size != asset["bytes"]]
+    if wrong:
+        raise SystemExit(f"raw asset sizes differ from manifest for {base}: {wrong[:3]}")
+    return parts, {
+        "schema_version": 1,
+        "file": path.name,
+        "sha256": sha256_file(path),
+        "assets": assets,
+    }
+
+
+def _quarantine_invalid_day(final_day: Path) -> dict | None:
+    """Keep an invalid promoted day recoverable and report where it moved."""
+    if not final_day.exists() and not final_day.is_symlink():
+        return None
+    try:
+        contract = validate_day_pair(final_day)
+    except Exception as exc:
+        quarantine = OUT_DIR.parent / f"{OUT_DIR.name}.quarantine"
+        quarantine.mkdir(parents=True, exist_ok=True)
+        target = quarantine / (
+            f"{final_day.name}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+            f"-{uuid.uuid4().hex[:8]}")
+        final_day.rename(target)
+        print(f"QUARANTINE: existing {final_day} failed the current contract: {exc}")
+        print(f"QUARANTINE: moved intact to {target}; nothing was deleted")
+        return None
+    print(f"already complete under the current ingestion contract: {final_day}")
+    return contract
+
+
+def _promote_day(stage_day: Path, final_day: Path) -> None:
+    """Promote one validated day without overwriting a concurrent result."""
+    if final_day.exists() or final_day.is_symlink():
+        raise RuntimeError(f"refusing to overwrite day created during this run: {final_day}")
+    stage_day.rename(final_day)
+
+
 def run(day_tag: str, workers: int, max_flights: int | None = None):
     # dump tag date -> ISO day for the output dir
     d = datetime.strptime(day_tag.split("-")[0].lstrip("v"), "%Y.%m.%d").date()
     day_iso = d.isoformat()
     # accept either "2026.07.19" or the full release tag
     base = day_tag if day_tag.startswith("v") else f"v{day_tag}-planes-readsb-prod-0"
-    # the dump has a day-dependent number of parts (aa, ab, [ac], ...) — take all
-    parts = sorted((ROOT / "data/raw").glob(f"{base}.tar.*"))
-    if not parts:
-        raise SystemExit(f"no dump parts for {base} in data/raw")
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    final_day = OUT_DIR / day_iso
+    existing = _quarantine_invalid_day(final_day)
+    if existing is not None:
+        return {"day": day_iso, "already_complete": True,
+                "dump_coverage": existing["source"]["ingestion"]["dump_coverage"]}
 
+    parts, asset_manifest = _asset_manifest(base)
+    source = {"dump_tag": base, "asset_manifest": asset_manifest}
+    stage_root = Path(tempfile.mkdtemp(
+        prefix=f".{OUT_DIR.name}.{day_iso}.build-", dir=OUT_DIR.parent))
     writer = DayWriter(
-        OUT_DIR, day_iso,
-        source={"dump_tag": base,
-                "parts": [{"name": p.name, "bytes": p.stat().st_size} for p in parts]},
+        stage_root, day_iso, source=source,
         configuration={
             "box": [BOX.lat_min, BOX.lat_max, BOX.lon_min, BOX.lon_max],
             "load_factor": LOAD_FACTOR,
@@ -248,81 +341,96 @@ def run(day_tag: str, workers: int, max_flights: int | None = None):
             writer.add(meta, pts)
 
     reader_ref = [None]
+    tar_complete = [False]
 
-    if workers <= 1:
-        _init(BOX, AIRPORTS_CSV)
-        for batch in _batched(_iter_raw_members(parts, reader_ref), BATCH):
-            n_batches += 1
-            n_traces_est += len(batch)
-            _consume(_process_batch(batch))
-            if max_flights and writer.n_flights >= max_flights:
-                break
-            if n_batches % 100 == 0:
-                print(f"  ... {n_traces_est} members, {writer.n_flights} flights, "
-                      f"{time.time()-t0:.0f}s, peakRSS {peak_rss_mb():.0f} MB", flush=True)
-    else:
-        pool = ctx.Pool(workers, initializer=_init, initargs=(BOX, AIRPORTS_CSV))
-        pending = deque()
-        max_pending = workers * 3
-        try:
-            for batch in _batched(_iter_raw_members(parts, reader_ref), BATCH):
+    try:
+        if workers <= 1:
+            _init(BOX, AIRPORTS_CSV)
+            for batch in _batched(_iter_raw_members(parts, reader_ref, tar_complete), BATCH):
                 n_batches += 1
                 n_traces_est += len(batch)
-                pending.append(pool.apply_async(_process_batch, (batch,)))
-                if len(pending) >= max_pending:
-                    _consume(pending.popleft().get())
+                _consume(_process_batch(batch))
+                if max_flights and writer.n_flights >= max_flights:
+                    break
                 if n_batches % 100 == 0:
                     print(f"  ... {n_traces_est} members, {writer.n_flights} flights, "
                           f"{time.time()-t0:.0f}s, peakRSS {peak_rss_mb():.0f} MB", flush=True)
-                if max_flights and writer.n_flights >= max_flights:
-                    break
-            while pending:
-                _consume(pending.popleft().get())
-        finally:
-            pool.terminate()
-            pool.join()
+        else:
+            pool = ctx.Pool(workers, initializer=_init, initargs=(BOX, AIRPORTS_CSV))
+            pending = deque()
+            max_pending = workers * 3
+            try:
+                for batch in _batched(_iter_raw_members(parts, reader_ref, tar_complete), BATCH):
+                    n_batches += 1
+                    n_traces_est += len(batch)
+                    pending.append(pool.apply_async(_process_batch, (batch,)))
+                    if len(pending) >= max_pending:
+                        _consume(pending.popleft().get())
+                    if n_batches % 100 == 0:
+                        print(f"  ... {n_traces_est} members, {writer.n_flights} flights, "
+                              f"{time.time()-t0:.0f}s, peakRSS {peak_rss_mb():.0f} MB", flush=True)
+                    if max_flights and writer.n_flights >= max_flights:
+                        break
+                while pending:
+                    _consume(pending.popleft().get())
+            finally:
+                pool.terminate()
+                pool.join()
 
-    info = writer.flush()
-    elapsed = time.time() - t0
-    consumed = reader_ref[0].n_bytes if reader_ref[0] is not None else 0
-    dump_size = sum(p.stat().st_size for p in parts)
-    coverage = consumed / dump_size if dump_size else 0.0
-    summary = {
-        "day": day_iso, "day_tag": base,
-        "box": [BOX.lat_min, BOX.lat_max, BOX.lon_min, BOX.lon_max],
-        "workers": workers,
-        "n_parts": len(parts),
-        "dump_bytes": dump_size,
-        "bytes_consumed": consumed,
-        "dump_coverage": round(coverage, 4),
-        "n_members_scanned": n_traces_est,
-        "n_undecodable_members": n_undecodable,
-        "n_flights": writer.n_flights,
-        "points_rows": info["points_rows"],
-        "elapsed_s": round(elapsed, 1),
-        "peak_rss_mb": round(peak_rss_mb(), 1),
-        "load_factor": LOAD_FACTOR, "reserve_kg": RESERVE_KG,
-    }
-    print("\n=== SUMMARY ===")
-    for k, v in summary.items():
-        print(f"  {k}: {v}")
+        elapsed = time.time() - t0
+        consumed = reader_ref[0].n_bytes if reader_ref[0] is not None else 0
+        dump_size = sum(asset["bytes"] for asset in asset_manifest["assets"])
+        coverage = consumed / dump_size if dump_size else 0.0
+        summary = {
+            "day": day_iso, "day_tag": base,
+            "box": [BOX.lat_min, BOX.lat_max, BOX.lon_min, BOX.lon_max],
+            "workers": workers,
+            "n_parts": len(parts),
+            "dump_bytes": dump_size,
+            "bytes_consumed": consumed,
+            "dump_coverage": round(coverage, 4),
+            "n_members_scanned": n_traces_est,
+            "n_undecodable_members": n_undecodable,
+            "n_flights": writer.n_flights,
+            "points_rows": writer.n_points,
+            "elapsed_s": round(elapsed, 1),
+            "peak_rss_mb": round(peak_rss_mb(), 1),
+            "load_factor": LOAD_FACTOR, "reserve_kg": RESERVE_KG,
+        }
+        print("\n=== SUMMARY ===")
+        for k, v in summary.items():
+            print(f"  {k}: {v}")
 
-    # Coverage guard. A tar stream ends at the first pair of zero blocks, and a
-    # damaged dump can carry that pattern at the seam between split parts: the
-    # reader then stops early, reports no error, and the day looks like a clean
-    # success while a whole part was silently dropped. Observed on the two
-    # damaged dumps 2026-05-04 and 2026-04-30, which stop at the end of part
-    # aa. Across 80 healthy days the member count never fell below 57.744, so a
-    # day that reads well under its own file size is anomalous by construction.
-    if coverage < MIN_DUMP_COVERAGE:
-        print(f"\n!!! ATTENZIONE: letti solo {coverage*100:.1f}% dei byte del "
-              f"dump ({consumed:,} di {dump_size:,}).")
-        print("!!! Il tar si e' chiuso prima della fine: la giornata e' "
-              "INCOMPLETA, non fidarsi del conteggio voli.")
-        summary["incomplete"] = True
-    print(f"wrote {info['flights_file']} ({info['flights_rows']} flights) "
-          f"and {info['points_file']} ({info['points_rows']} points)")
-    return summary
+        # Coverage guard. A tar stream ends at the first pair of zero blocks,
+        # and a damaged dump can carry that pattern at the seam between split
+        # parts: the reader then stops early without a read error. The two days
+        # named in the original incident note were later downloaded again and
+        # are complete in the published release; this protects future runs.
+        if coverage < MIN_DUMP_COVERAGE or not tar_complete[0]:
+            print(f"\n!!! INCOMPLETE: read {coverage*100:.1f}% of declared dump bytes "
+                  f"({consumed:,} of {dump_size:,}); tar_complete={tar_complete[0]}.")
+            print("!!! Staged parquet will not be promoted; raw assets are kept for retry.")
+            raise SystemExit(1)
+
+        source["ingestion"] = {
+            "dump_bytes": dump_size,
+            "bytes_consumed": consumed,
+            "dump_coverage": coverage,
+            "minimum_dump_coverage": MIN_DUMP_COVERAGE,
+            "tar_complete": True,
+        }
+        info = writer.flush()
+        stage_day = stage_root / day_iso
+        validate_day_pair(stage_day)
+        _promote_day(stage_day, final_day)
+        print(f"promoted {final_day / 'flights.parquet'} "
+              f"({info['flights_rows']} flights) and {final_day / 'points.parquet'} "
+              f"({info['points_rows']} points)")
+        return summary
+    finally:
+        writer.abort()
+        if stage_root.exists():
+            shutil.rmtree(stage_root)
 
 
 def main():

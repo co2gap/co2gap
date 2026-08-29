@@ -19,14 +19,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+import re
 from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-PIPELINE_VER = "phase1-v2-contracts"
+PIPELINE_VER = "phase1-v3-staged-ingestion"
 SOURCE_CONTRACT_KEY = b"co2gap.source-contract"
-SOURCE_CONTRACT_VERSION = 1
+SOURCE_CONTRACT_VERSION = 2
+MIN_DUMP_COVERAGE = 0.90
 
 
 def _schema_checksum(schema: pa.Schema) -> str:
@@ -169,7 +172,12 @@ class DayWriter:
     def n_flights(self) -> int:
         return self._n
 
+    @property
+    def n_points(self) -> int:
+        return self._pt_rows + len(self._pt_cols["flight_id"])
+
     def flush(self) -> dict:
+        _validate_ingestion_source(self.source)
         self._write_rowgroup()
         if self._pw is not None:
             key_hash = _flight_keyset_checksum(self.day_iso, range(self._n))
@@ -199,6 +207,8 @@ class DayWriter:
                     points_contract, sort_keys=True, separators=(",", ":"))})
             self._pw.close()
             self._fw.close()
+            self._pw = None
+            self._fw = None
         return {
             "points_rows": self._pt_rows,
             "flights_rows": self._n,
@@ -206,10 +216,97 @@ class DayWriter:
             "flights_file": str(self._d / "flights.parquet"),
         }
 
+    def abort(self) -> None:
+        """Close an unpromoted pair so its staging tree can be discarded."""
+        for writer in (self._pw, self._fw):
+            if writer is not None:
+                writer.close()
+        self._pw = None
+        self._fw = None
+
+
+def _validate_ingestion_source(source: dict) -> None:
+    """Require proof that the whole declared dump preceded promotion."""
+    dump_tag = source.get("dump_tag")
+    if not isinstance(dump_tag, str) or not re.fullmatch(
+            r"v\d{4}\.\d{2}\.\d{2}-planes-readsb-prod-0", dump_tag):
+        raise ValueError("source contract has an invalid dump tag")
+    manifest = source.get("asset_manifest")
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
+        raise ValueError("source contract lacks a versioned asset manifest")
+    digest = manifest.get("sha256")
+    if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise ValueError("source asset manifest lacks a SHA-256")
+    if manifest.get("file") != f"{dump_tag}.assets.tsv":
+        raise ValueError("source asset manifest filename differs from dump tag")
+    assets = manifest.get("assets")
+    if not isinstance(assets, list) or not assets:
+        raise ValueError("source asset manifest is empty")
+    names = []
+    declared_total = 0
+    canonical = []
+    for asset in assets:
+        if not isinstance(asset, dict):
+            raise ValueError("source asset manifest has an invalid entry")
+        name, size, url = asset.get("name"), asset.get("bytes"), asset.get("url")
+        if not isinstance(name, str) or not name:
+            raise ValueError("source asset manifest has an invalid name")
+        if not isinstance(size, int) or size <= 0:
+            raise ValueError("source asset manifest has an invalid byte size")
+        if not isinstance(url, str) or not url.startswith(("https://", "http://")):
+            raise ValueError("source asset manifest has an invalid URL")
+        names.append(name)
+        declared_total += size
+        canonical.append(f"{name}\t{size}\t{url}\n")
+    if names != sorted(set(names)):
+        raise ValueError("source asset manifest names are not sorted and unique")
+    expected_names = [
+        f"{dump_tag}.tar."
+        f"{chr(ord('a') + i // 26)}{chr(ord('a') + i % 26)}"
+        for i in range(len(names))
+    ]
+    if names != expected_names:
+        raise ValueError("source asset manifest is not contiguous from part aa")
+    if hashlib.sha256("".join(canonical).encode()).hexdigest() != digest:
+        raise ValueError("source asset manifest entries differ from its SHA-256")
+
+    ingestion = source.get("ingestion")
+    if not isinstance(ingestion, dict):
+        raise ValueError("source contract lacks ingestion coverage")
+    dump_bytes = ingestion.get("dump_bytes")
+    consumed = ingestion.get("bytes_consumed")
+    coverage = ingestion.get("dump_coverage")
+    minimum = ingestion.get("minimum_dump_coverage")
+    if (not isinstance(dump_bytes, int) or dump_bytes <= 0
+            or not isinstance(consumed, int) or consumed < 0
+            or not isinstance(coverage, (int, float)) or not math.isfinite(coverage)
+            or not isinstance(minimum, (int, float)) or not math.isfinite(minimum)):
+        raise ValueError("source ingestion coverage is malformed")
+    if dump_bytes != declared_total:
+        raise ValueError("source dump size differs from its asset manifest")
+    if consumed > dump_bytes:
+        raise ValueError("source reports more consumed bytes than the dump contains")
+    if not math.isclose(coverage, consumed / dump_bytes, rel_tol=0, abs_tol=1e-12):
+        raise ValueError("source dump coverage disagrees with its byte counts")
+    if minimum != MIN_DUMP_COVERAGE:
+        raise ValueError("source dump threshold differs from the current pipeline")
+    if coverage < minimum:
+        raise ValueError("source dump coverage is below its recorded minimum")
+    if ingestion.get("tar_complete") is not True:
+        raise ValueError("source tar was not read to normal completion")
+
 
 def validate_day_pair(day_dir: Path) -> dict:
     """Validate the two durable source tables as one indivisible day."""
     day_dir = Path(day_dir)
+    actual_files = ({path.name for path in day_dir.iterdir()}
+                    if day_dir.is_dir() else set())
+    expected_files = {"flights.parquet", "points.parquet"}
+    if actual_files != expected_files:
+        raise ValueError(
+            f"{day_dir} is not an exact source pair: "
+            f"missing {sorted(expected_files - actual_files)}, "
+            f"extra {sorted(actual_files - expected_files)}")
     contracts = {}
     metadata = {}
     for table in ("flights", "points"):
@@ -221,6 +318,8 @@ def validate_day_pair(day_dir: Path) -> dict:
         contract = json.loads(raw)
         if contract.get("contract_version") != SOURCE_CONTRACT_VERSION:
             raise ValueError(f"{path} has unsupported source contract")
+        if contract.get("pipeline_version") != PIPELINE_VER:
+            raise ValueError(f"{path} was produced by another pipeline version")
         if contract.get("table") != table or contract.get("day") != day_dir.name:
             raise ValueError(f"{path} contract identifies another table or day")
         if contract.get("rows") != md.num_rows:
@@ -236,6 +335,7 @@ def validate_day_pair(day_dir: Path) -> dict:
     for key in common:
         if contracts["flights"].get(key) != contracts["points"].get(key):
             raise ValueError(f"source pair disagrees on {key}")
+    _validate_ingestion_source(contracts["flights"].get("source", {}))
     flight_ids = pq.read_table(day_dir / "flights.parquet",
                                columns=["flight_id"])["flight_id"].to_pylist()
     if len(flight_ids) != len(set(flight_ids)):
