@@ -198,12 +198,21 @@ def coverage_note(days) -> str:
     that passes every check in the pipeline, because the file downloads
     cleanly, reads to the last byte and parses.
     """
+    # ⚠️ Tornare "" quando il file manca ha gia' fatto danno: il default punta a
+    # data/coverage.json, che non esiste (l'audit ECAC si chiama
+    # coverage_ecac.json), il comando del README non passava la variabile, e il
+    # sito e' uscito SENZA la nota sul 7 marzo -- una lacuna della fonte che il
+    # progetto aveva misurato apposta per dichiararla. Un limite che si sceglie
+    # di pubblicare e poi sparisce in silenzio e' peggio di uno non misurato.
     if not COVERAGE.exists():
-        return ""
+        raise SystemExit(
+            f"audit di copertura assente: {COVERAGE}. Serve ADSB_COVERAGE_JSON "
+            "(per ECAC: data/coverage_ecac.json). Senza, la pagina tacerebbe "
+            "sui giorni incompleti alla fonte invece di dichiararli.")
     try:
         cov = json.loads(COVERAGE.read_text())
-    except Exception:
-        return ""
+    except Exception as e:
+        raise SystemExit(f"audit di copertura illeggibile ({COVERAGE}): {e}")
     lo, hi = days[0], days[-1]
     inside = [d for d in cov.get("days", [])
               if d.get("status") == "incomplete" and lo <= d["day"] <= hi]
@@ -1949,6 +1958,16 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 
 
 def main():
+    # Prima di scrivere QUALUNQUE pagina. Il controllo vive dentro
+    # coverage_note(), che pero' gira a meta' della metodologia: fallire li'
+    # lascia mezzo sito rigenerato e mezzo della build precedente, perche' le
+    # pagine si scrivono una dopo l'altra sulla destinazione definitiva. Finche'
+    # la build non e' atomica (KNOWN-ISSUES), i controlli si fanno all'inizio.
+    if not COVERAGE.exists():
+        raise SystemExit(
+            f"audit di copertura assente: {COVERAGE}. Serve ADSB_COVERAGE_JSON "
+            "(per ECAC: data/coverage_ecac.json). Senza, la pagina tacerebbe "
+            "sui giorni incompleti alla fonte invece di dichiararli.")
     df = load()
     names = airport_names()
     coords = {}

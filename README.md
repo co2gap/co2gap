@@ -278,6 +278,7 @@ ADSB_PHASE_DIR=$PWD/data/decomposition_ecac_phase \
 ADSB_GROUND_DIR=$PWD/data/ground_share_ecac \
 ADSB_CALIB=$PWD/data/calibration_ecac.json \
 ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
+ADSB_COVERAGE_JSON=$PWD/data/coverage_ecac.json \
 ADSB_SITE_OUT=$PWD/site/index.html \
 python lab/site_build.py
 ```

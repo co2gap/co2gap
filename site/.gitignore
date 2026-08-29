@@ -13,6 +13,7 @@
 #   ADSB_GROUND_DIR=$PWD/data/ground_share_ecac \
 #   ADSB_CALIB=$PWD/data/calibration_ecac.json \
 #   ADSB_AIRPORTS_CSV=$PWD/data/airports_ecac.csv \
+#   ADSB_COVERAGE_JSON=$PWD/data/coverage_ecac.json \
 #   ADSB_SITE_OUT=$PWD/site/index.html \
 #   lab-venv/bin/python lab/site_build.py
 #
