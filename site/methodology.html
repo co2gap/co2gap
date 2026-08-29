@@ -181,7 +181,7 @@ flights there is a spread of this size" — and only the second is something the
 data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-29 08:05 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-29 08:37 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -485,6 +485,37 @@ both sides exclude the ground. One consequence is that the CO&#8322; total on
 this site is <b>CO&#8322; emitted in flight</b>, and understates what the same
 traffic actually emitted: taxi burns real fuel, and pricing it needs reference
 values this method does not have.</li>
+<li><b>Where the ground begins is a choice, and the headline figure moves with
+it.</b> A point counts as ground here when the aircraft is below 3,000 ft and
+slower than 70 knots: below that speed nothing in the modelled fleet is flying.
+Other defensible cuts give other headlines. Taking only the transponder's own
+surface flag gives <b>11.1%</b>; cutting at 40 knots
+instead of 70 gives <b>12.7%</b>; the figure published
+here is <b>12.1%</b>. The altitude threshold turns out not to
+matter — cutting at 1,000 ft instead of 3,000 moves the total by
+0.01 of a point — so the
+whole sensitivity is in the speed. <b>The airport table is far less sensitive
+than the headline:</b> across the two most distant definitions an airport's
+deviation moves by 0.4 points at the median, and none of the twenty furthest
+from the norm moves by a full point. That is the reason this site presents the
+ordering of the tails and not the value of the headline as the durable
+result.</li>
+<li><b>The table follows the map of ADS-B receivers, and we cannot fully
+separate that from the traffic.</b> The trajectories come from a volunteer
+network whose receivers cluster where people and money are. Airports in densely
+covered parts of that network deviate more, and the relationship
+(0.36 in rank correlation) survives holding the airport's own
+traffic fixed — it is in fact stronger than the traffic relationship itself
+(0.27) once each is held against the other. We tested the
+obvious worry, that thin coverage reconstructs trajectories badly and biases the
+result, and <b>found no support for it</b>: trajectory coverage is essentially
+complete everywhere (median 1.00 of the flight, worst airport
+0.89), and controlling for it leaves the relationship
+unchanged at 0.39. The likelier reading is that receiver
+density and congested airspace share a cause, both following dense and wealthy
+regions — which would mean the first finding is better stated as busy
+<i>airspace</i> than as busy airports. Nothing here separates the two, and the
+measurement is of today's receiver map, not of the published period.</li>
 <li><b>Only the tails of the rankings are reliable.</b> Half the routes sit
 within a few points of the norm, inside the uncertainty of the method: between
 900th and 1000th place the ordering means nothing. Rankings show only routes
@@ -687,7 +718,7 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026 — <a href="releases.html">what changes</a>.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-29 08:05 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-29 08:37 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>

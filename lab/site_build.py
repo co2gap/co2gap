@@ -62,6 +62,12 @@ GROUND_DIR = Path(os.environ.get("ADSB_GROUND_DIR") or (ROOT / "data/ground_shar
 # flag del transponder) vale ~1 punto sulla cifra di testa, ed e' dichiarata.
 GROUND_DEF = os.environ.get("ADSB_GROUND_DEF", "a3000t70")
 
+# Le cinque definizioni che lab/ground_share.py calcola e salva tutte. La cifra
+# di testa dipende da quale si sceglie, e la scelta e' dichiarata in §8 con la
+# banda misurata: non e' un dettaglio implementativo, e' un grado di liberta'.
+GROUND_DEFS = ["suolo", "a1000t40", "a1000t70", "a1000t100", "a3000t70"]
+GROUND_BAND: dict[str, float] = {}
+
 
 def pct0(v) -> str:
     """Percentuale intera col segno, senza «-0%» e senza «+-0%».
@@ -292,6 +298,11 @@ GATE = {"January": (8.6, 5.1, 1798), "February": (9.9, 5.2, 1781),
         "July": (8.5, 4.6, 2458)}          # lab/gate.py
 STAB = {"pairs": 21, "median": 0.867, "worst": 0.789,
         "worst_pair": "Feb→Jul", "consec": 0.924}   # lab/stability.py
+# lab/coverage_check.py, misurato il 2026-08-29 sulla mappa MLAT pubblica di
+# adsb.lol. Costanti come STAB e GATE: vengono da un run che questo script non
+# esegue, e non puo' eseguire, perche' dipendono da un'API esterna.
+COVER = {"r_feeder": 0.36, "r_traffic": 0.27, "cov_med": 1.00, "cov_min": 0.89,
+         "r_partial": 0.385}
 # Verified against primary sources on 2026-07-27, see reports/.
 BENCH = {"cco_cdo_kg": 39, "cco_cdo_pct": 1.1,
          "pasutto_pct": 4.6, "pasutto_kg": 60, "pasutto_avg_pct": 7.5,
@@ -454,6 +465,27 @@ def load() -> pd.DataFrame:
     # Un GIORNO senza quota entrerebbe nelle cifre con share 0, cioe' col
     # rullaggio dentro, e il fillna lo renderebbe invisibile: e' successo con il
     # 2026-02-14. Il buco di un giorno intero e' un errore, non una lacuna.
+    # La soglia e' una SCELTA, e il titolo dipende da dove cade. Si misura qui,
+    # dove il parquet di terra e' gia' aperto e contiene tutte e cinque le
+    # definizioni: dichiarare una sensibilita' senza quantificarla vale poco, e
+    # digitarla la farebbe invecchiare al primo ricalcolo.
+    _idl = df.ideal_gc_co2_kg.sum()
+    _lat = (df.hybrid_co2_kg.sum() - _idl) / _idl * 100.0
+    _gm = g[["day", "flight_id"]].copy()
+    for _d in GROUND_DEFS:
+        _c = f"fuel_{_d}_kg"
+        if _c in g.columns:
+            _gm[_d] = np.where(g.fuel_recomputed_kg > 0,
+                               g[_c] / g.fuel_recomputed_kg, 0.0)
+    _mm = df[["day", "flight_id", "co2_kg_v0", "hybrid_co2_kg"]].merge(
+        _gm, on=["day", "flight_id"], how="left")
+    for _d in GROUND_DEFS:
+        if _d not in _mm.columns:
+            continue
+        _sh = _mm[_d].fillna(0.0).to_numpy()
+        _real = _mm.co2_kg_v0.to_numpy() * (1 - _sh)
+        GROUND_BAND[_d] = _lat + (_real.sum() - _mm.hybrid_co2_kg.sum()) / _idl * 100.0
+
     manca = sorted(set(df.day.unique()) - set(g.day.unique()))
     if manca:
         raise SystemExit(
@@ -1644,6 +1676,37 @@ both sides exclude the ground. One consequence is that the CO&#8322; total on
 this site is <b>CO&#8322; emitted in flight</b>, and understates what the same
 traffic actually emitted: taxi burns real fuel, and pricing it needs reference
 values this method does not have.</li>
+<li><b>Where the ground begins is a choice, and the headline figure moves with
+it.</b> A point counts as ground here when the aircraft is below 3,000 ft and
+slower than 70 knots: below that speed nothing in the modelled fleet is flying.
+Other defensible cuts give other headlines. Taking only the transponder's own
+surface flag gives <b>{GROUND_BAND['suolo']:.1f}%</b>; cutting at 40 knots
+instead of 70 gives <b>{GROUND_BAND['a1000t40']:.1f}%</b>; the figure published
+here is <b>{(lat_w+vert_w):.1f}%</b>. The altitude threshold turns out not to
+matter — cutting at 1,000 ft instead of 3,000 moves the total by
+{abs(GROUND_BAND['a1000t70']-GROUND_BAND['a3000t70']):.2f} of a point — so the
+whole sensitivity is in the speed. <b>The airport table is far less sensitive
+than the headline:</b> across the two most distant definitions an airport's
+deviation moves by 0.4 points at the median, and none of the twenty furthest
+from the norm moves by a full point. That is the reason this site presents the
+ordering of the tails and not the value of the headline as the durable
+result.</li>
+<li><b>The table follows the map of ADS-B receivers, and we cannot fully
+separate that from the traffic.</b> The trajectories come from a volunteer
+network whose receivers cluster where people and money are. Airports in densely
+covered parts of that network deviate more, and the relationship
+({COVER['r_feeder']:.2f} in rank correlation) survives holding the airport's own
+traffic fixed — it is in fact stronger than the traffic relationship itself
+({COVER['r_traffic']:.2f}) once each is held against the other. We tested the
+obvious worry, that thin coverage reconstructs trajectories badly and biases the
+result, and <b>found no support for it</b>: trajectory coverage is essentially
+complete everywhere (median {COVER['cov_med']:.2f} of the flight, worst airport
+{COVER['cov_min']:.2f}), and controlling for it leaves the relationship
+unchanged at {COVER['r_partial']:.2f}. The likelier reading is that receiver
+density and congested airspace share a cause, both following dense and wealthy
+regions — which would mean the first finding is better stated as busy
+<i>airspace</i> than as busy airports. Nothing here separates the two, and the
+measurement is of today's receiver map, not of the published period.</li>
 <li><b>Only the tails of the rankings are reliable.</b> Half the routes sit
 within a few points of the norm, inside the uncertainty of the method: between
 900th and 1000th place the ordering means nothing. Rankings show only routes
