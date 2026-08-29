@@ -16,6 +16,20 @@ set -uo pipefail
 
 ROOT="${ADSB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 PY="${ADSB_PY:-$ROOT/../lab-venv/bin/python}"
+
+# La scatola sta nell'ambiente, non nel codice — ma un runbook che dice "una sola
+# riga" deve nominarla, altrimenti i default portano su data/flights e
+# data/decomposition, cioe' il vecchio box EU-Sud da 64 giorni, e la catena
+# gira fino in fondo senza un errore producendo aggregati di un altro dataset.
+# Si esportano solo se non sono gia' impostate, cosi' chi ne vuole un'altra la
+# passa davanti al comando.
+export ADSB_ROOT="$ROOT"
+export ADSB_FLIGHTS_DIR="${ADSB_FLIGHTS_DIR:-$ROOT/data/flights_ecac}"
+export ADSB_DECOMP_DIR="${ADSB_DECOMP_DIR:-$ROOT/data/decomposition_ecac}"
+export ERA5_DIR="${ERA5_DIR:-$ROOT/data/era5_ecac}"
+export ADSB_AIRPORTS_CSV="${ADSB_AIRPORTS_CSV:-$ROOT/data/airports_ecac.csv}"
+export ADSB_CALIB="${ADSB_CALIB:-$ROOT/data/calibration_ecac.json}"
+export ERA5_AREA="${ERA5_AREA:-72,-32,27,45}"
 FROM_DAY="${FROM_DAY:-2026-01-01}"
 TO_DAY="${TO_DAY:-2026-07-23}"
 
