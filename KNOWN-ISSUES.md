@@ -312,3 +312,18 @@ masks require declared proxy mappings, and the historical upstream population
 is still absent. The calculation does identify where new evidence matters:
 coverage-only `0100` and unresolved-endpoint `1000` contribute **94.4%** of the
 central stress magnitude and should dominate the held-out external sample.
+
+That targeted sample is now frozen separately from the canonical design:
+2,279 rows comprising 600 controls and all canonical `0100`, `1000` and `1100`
+rows. The blinded external list contains no gate, quality, release key, stratum
+or weight. Its aggregate registration fixes both private hashes; regeneration
+is byte-identical. Minimum measured counts are 400, 300, 450 and 200
+respectively. Falling below any one of them blocks every contrast rather than
+adding response weights or an imputation. Passing them still does not close the
+issue: response remains conditional, receiver independence is a source
+declaration rather than code-verifiable evidence, rare masks and upstream
+ingestion are outside the tranche, and the provider-specific raw adapter cannot
+be written honestly before the provider exposes an extract format and usage
+permission. The aggregate analyzer checks the returned numerical diagnostics
+against the frozen thresholds, but without that raw adapter it cannot establish
+that those diagnostics were faithfully derived from the provider states.

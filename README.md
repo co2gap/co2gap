@@ -352,6 +352,33 @@ stress magnitude and are therefore the two priorities for a held-out external
 extract. `selection-sensitivity-design.json` and the output both forbid calling
 these stresses a correction, confidence interval or bound.
 
+A separate provider-neutral held-out tranche is now frozen without changing
+the canonical 5,000-flight sample. It contains 600 passing controls and every
+canonical `0100`, `1000` and `1100` row, **2,279 flights** in total. Generate the
+private sample and the only file that may be sent to an external matcher with:
+
+```bash
+python lab/uncertainty.py targeted-validation-sample \
+  --parent-sample /tmp/co2gap-selection-validation-sample.json \
+  --parent-match-list /tmp/co2gap-selection-validation-match-list.json \
+  --out /tmp/co2gap-targeted-validation-sample.json \
+  --match-out /tmp/co2gap-targeted-validation-match-list.json \
+  --registration-out /tmp/co2gap-targeted-validation-registration.json
+```
+
+The public `targeted-validation-design.json` freezes allocation, blinding,
+requested fields, matching, source quality, model and minimum support before a
+new source is seen. `targeted-validation-registration.json` freezes the private
+file hashes and aggregate partition. The 600 controls cover all 231 canonical
+passing strata and have Kish effective size 539.92. External outcomes follow
+`lab/targeted-validation-outcomes.schema.json`; the analyzer exits non-zero and
+releases no mask contrast when any mask is below its frozen minimum. It also
+recomputes the frozen match score, runner-up rule and numerical source-quality
+thresholds from the returned diagnostics. A complete result remains conditional
+on external response and never corrects or bounds the release headline. Full
+interpretation and commands are in
+[`UNCERTAINTY.md`](UNCERTAINTY.md).
+
 ## Reproducing
 
 The two machines have separate direct-dependency locks:

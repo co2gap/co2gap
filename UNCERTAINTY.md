@@ -398,6 +398,92 @@ should prioritise those two groups rather than sample all rejected masks
 uniformly. This ranking is the permitted decision use of the diagnostic; the
 release headline remains unchanged and unbounded.
 
+## 10. Targeted provider-neutral held-out tranche
+
+`targeted-validation-design.json` freezes a supplementary 2,279-flight design
+before any Wingbits or other new source record is accessed. It does not replace
+or edit the canonical 5,000-flight design. The tranche contains every canonical
+row in the three masks that supply nearly all of the stress, plus 600 controls:
+
+| mask | requested | minimum measured | canonical strata |
+|---|---:|---:|---:|
+| `0000` controls | 600 | 400 | 231 |
+| `0100` coverage | 533 | 300 | 149 |
+| `1000` endpoint | 761 | 450 | 217 |
+| `1100` both | 385 | 200 | 134 |
+
+Every passing stratum supplies at least one control. The remaining controls are
+allocated with a frozen capacity-limited rule that minimises the sum of squared
+second-stage weights. A private-input-only check changed the first proportional
+rule before source access: Kish effective size rose from 529.20 to **539.92**
+out of 600 and the maximum weight fell from 4,931 to **4,898**. The original
+protocol commit `6c8809e`, matching/estimand clarification `88d71a4` and final
+allocation commit `a7f5af6` preserve that chronology. The implementation review
+then found, still before source access, that the first outcome contract trusted
+a quality-pass boolean and simultaneously described a runner-up rule while
+requiring singleton matches. Commit `4fc13df` records the correction: measured
+rows now carry the numerical source-quality diagnostics, singleton and
+non-singleton matches have distinct contracts, and both runner-up ratios are
+checked.
+
+Regenerate and verify the canonical files first with the command in section 7,
+then derive the targeted tranche:
+
+```bash
+python lab/uncertainty.py targeted-validation-sample \
+  --parent-sample /tmp/co2gap-selection-validation-sample.json \
+  --parent-match-list /tmp/co2gap-selection-validation-match-list.json \
+  --out /tmp/co2gap-targeted-validation-sample.json \
+  --match-out /tmp/co2gap-targeted-validation-match-list.json \
+  --registration-out /tmp/co2gap-targeted-validation-registration.json
+```
+
+The private sample contains masks, release keys and weights and never leaves
+the lab. Only the blinded match list may be supplied to the external matcher;
+it contains opaque sample id, day, typecode, times and endpoint coordinates.
+`targeted-validation-registration.json` is the tracked aggregate registration:
+it contains counts, weight diagnostics and SHA-256 of both private files, but no
+flight, time, endpoint or aircraft row.
+
+The requested source fields and immutable processing profile are provider-
+neutral. Ground speed, position, altitude and vertical rate are required; IAS
+or TAS and receiver provenance are preferred. Matching uses the already
+developed mutual-nearest score, one-minute source aggregation and frozen source-
+quality thresholds. No threshold or source transformation may be amended after
+access. Raw provider data remain private and are not redistributed without
+permission.
+
+Returned model outcomes must satisfy
+`lab/targeted-validation-outcomes.schema.json`. Analyse them with:
+
+```bash
+python lab/uncertainty.py targeted-validation \
+  --sample /tmp/co2gap-targeted-validation-sample.json \
+  --match-list /tmp/co2gap-targeted-validation-match-list.json \
+  --outcomes /private/path/targeted-outcomes.json \
+  --out /tmp/co2gap-targeted-validation-result.json
+```
+
+Every requested id must have a measured, not-found, unusable or source-error
+status. Measured rows must be mutual-nearest, remain inside every frozen match
+limit and score, satisfy the runner-up rule when the candidate set is not a
+singleton, and numerically pass minimum points, coverage, distance, flown/GC
+and maximum-speed thresholds. The runner exits non-zero and withholds all mask
+contrasts if any mask is below its minimum. Passing the minimum only provides
+descriptive support: missing outcomes are never imputed and targeted weights do
+not fix source nonresponse.
+
+The primary diagnostic is the targeted-weighted ratio-of-sums proxy difference
+between each rejected mask and `0000`; unweighted contrasts diagnose
+composition. Rejected masks are never pooled. A source may declare either
+receiver independence or unverified receiver overlap, but the declaration is
+not proof and neither case produces a release-wide correction, interval or
+bound. A provider-specific raw-data adapter remains intentionally pending until
+an actual extract format and permission are known; inventing one now would not
+test the contract it is meant to enforce. Until that adapter exists, the
+analyzer can reject inconsistent returned diagnostics but cannot independently
+prove that they were computed faithfully from the provider's raw states.
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:
