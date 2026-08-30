@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-opensky-day-selection-audit-design",
+  "publication_status": "aggregate_preregistration",
+  "analysis_status": "matching_and_outcomes_not_yet_read",
+  "registered_at": "2026-08-30",
+  "release_id": "2026-09-01",
+  "release_manifest_sha256": "db69266d5a4d9ce66f1d1f9bc4533cb31e6fd1b6d8e4fbcc600c53e6a5266a0c",
+  "day": "2026-03-01",
+  "day_epoch": 1772323200,
+  "population_boundary": "All durable complete, OpenAP-supported and successfully first-pass-modelled flights before the four release quality gates on 2026-03-01.",
+  "population_rows": 10290,
+  "gate_pass_rows": 9067,
+  "gate_rejected_rows": 1223,
+  "failure_mask_order": [
+    "endpoints_resolved",
+    "coverage_sufficient",
+    "flown_distance_sufficient",
+    "sector_length_sufficient"
+  ],
+  "by_failure_mask": [
+    {"failure_mask": "0000", "gate_pass": true, "population_rows": 9067},
+    {"failure_mask": "0001", "gate_pass": false, "population_rows": 3},
+    {"failure_mask": "0100", "gate_pass": false, "population_rows": 352},
+    {"failure_mask": "0101", "gate_pass": false, "population_rows": 1},
+    {"failure_mask": "1000", "gate_pass": false, "population_rows": 787},
+    {"failure_mask": "1001", "gate_pass": false, "population_rows": 2},
+    {"failure_mask": "1100", "gate_pass": false, "population_rows": 78}
+  ],
+  "external_source": {
+    "name": "OpenSky Complete One Day Trino Tables Snapshot (March 2026)",
+    "dataset_number": 11,
+    "dataset_page": "https://opensky-network.org/datasets/#trino-tables/",
+    "object_root": "s3://data-samples/trino-tables",
+    "flights_partition": "flights/day=1772323200",
+    "state_vector_partitions": "state_vectors/hour=1772323200 through hour=1772406000",
+    "source_relation": "Different aggregation and distribution chain from adsb.lol; overlap among underlying community receivers is possible and is not observable in this snapshot.",
+    "independence_status": "separate_source_not_receiver_independent",
+    "raw_data_redistributed": false
+  },
+  "blinding": {
+    "matching_allowed_primary_fields": [
+      "opaque_primary_id",
+      "dep_ts",
+      "arr_ts",
+      "o_lat",
+      "o_lon",
+      "d_lat",
+      "d_lon"
+    ],
+    "matching_prohibited_primary_fields": [
+      "flight_id",
+      "typecode",
+      "origin_icao",
+      "dest_icao",
+      "failure_mask",
+      "gate_pass",
+      "coverage_frac",
+      "max_gap_s",
+      "flown_km",
+      "co2_kg_v0"
+    ],
+    "failure_mask_joined_after_matching": true,
+    "source_quality_evaluated_before_failure_mask_join": true
+  },
+  "source_flight_anchor": {
+    "time_preference": "takeoffLandingInfo takeoffTime/landingTime; fall back as a pair to firstSeen/lastSeen",
+    "coordinate_preference": "takeoffLandingInfo coordinates; fall back independently at each endpoint to the first/last valid point in track",
+    "invalid_if": "times are absent or non-increasing, or either endpoint lacks finite valid latitude/longitude"
+  },
+  "matching": {
+    "candidate_max_departure_delta_s": 2700,
+    "candidate_max_arrival_delta_s": 2700,
+    "candidate_max_origin_distance_km": 100.0,
+    "candidate_max_destination_distance_km": 100.0,
+    "score": "abs(dep_delta)/900 + abs(arr_delta)/900 + origin_km/25 + destination_km/25",
+    "maximum_score": 8.0,
+    "assignment": "one-to-one mutual nearest neighbour",
+    "runner_up_rule": "on both primary and source sides, accept a non-singleton candidate set only when best_score <= 0.75 * second_best_score",
+    "tie_epsilon": 1e-09,
+    "manual_overrides": false
+  },
+  "state_vector_extraction": {
+    "columns": [
+      "time",
+      "lastPosUpdate",
+      "icao24",
+      "lat",
+      "lon",
+      "velocity",
+      "baroAltitude",
+      "geoAltitude",
+      "vertRate",
+      "onGround"
+    ],
+    "point_time": "lastPosUpdate",
+    "deduplication": "for each icao24 and lastPosUpdate retain the row with the latest snapshot time",
+    "matched_window_padding_s": 300,
+    "units": {
+      "velocity_input": "m/s",
+      "velocity_model": "knots ground speed",
+      "barometric_altitude_input": "metres",
+      "altitude_model": "feet",
+      "vertical_rate_input": "m/s",
+      "vertical_rate_model": "feet/minute"
+    }
+  },
+  "source_quality": {
+    "minimum_unique_points": 11,
+    "gap_threshold_s": 120.0,
+    "coverage_min_fraction": 0.85,
+    "coverage_definition": "one minus the sum of entire consecutive gaps longer than 120 seconds divided by first-to-last point duration",
+    "flown_min_fraction_of_source_gc": 0.9,
+    "great_circle_min_km": 150.0,
+    "maximum_segment_speed_kt": 1200.0,
+    "required": [
+      "strictly increasing point time after deduplication",
+      "finite valid coordinates",
+      "at least ten positive model steps no longer than 600 seconds",
+      "all numerical quality thresholds above"
+    ]
+  },
+  "proxy_model": {
+    "typecode_source": "primary durable table, joined only after matching and source-quality classification",
+    "observed_fuel": "OpenAP with source ground speed; no IAS is available in the snapshot",
+    "load_factor": 0.82,
+    "reserve_kg": 2000.0,
+    "wind": "the same immutable ERA5 grid and baseline code as the release",
+    "calibration": "none",
+    "ground_correction": "none",
+    "reported_components": [
+      "gate-to-gate real CO2 proxy",
+      "ideal great-circle CO2",
+      "hybrid source-track-distance CO2",
+      "total, lateral and vertical ratio-of-sums gaps"
+    ]
+  },
+  "estimands": {
+    "primary": "For this one day and for source-quality-pass matches, difference in the OpenSky proxy total-gap percentage between flights that passed and failed the primary release gate.",
+    "secondary": [
+      "matching and source-quality response rates by frozen primary failure mask",
+      "same pass-minus-reject contrast for lateral and vertical proxy gaps",
+      "comparison of OpenSky proxy and frozen primary decomposition on primary-gate controls"
+    ],
+    "missing_outcomes": "No correction or imputation; report nonresponse by failure mask and treat the outcome contrast as conditional on external match and source quality.",
+    "inference": "day census diagnostic; no sampling confidence interval and no extrapolation to the 197-day release"
+  },
+  "decision_rule": {
+    "primary_headline_bias_bounded": false,
+    "reason": "A single-day, partly receiver-overlapping source can reveal or refute a large conditional selection gradient, but cannot bound the full-release bias or upstream ingestion exclusions."
+  },
+  "privacy": "Per-flight matching, source identifiers and extracted state vectors remain outside git; only aggregate diagnostics and hashes may be committed."
+}
