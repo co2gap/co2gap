@@ -1,0 +1,94 @@
+{
+  "by_failure_mask": [
+    {
+      "failure_mask": "0000",
+      "gate_pass": true,
+      "matching": {"ambiguous_primary": 371, "ambiguous_source": 94, "matched": 7813, "no_candidate": 661, "not_mutual_nearest": 114, "score_exceeded": 14},
+      "population_rows": 9067,
+      "proxy": {"flights": 7615, "ideal_co2_tonnes": 73919.04801916731, "lateral_gap_pct": 5.628064480868665, "real_co2_tonnes": 79955.87670396619, "total_gap_pct": 8.166810648364287, "vertical_gap_pct": 2.538746167495621},
+      "source_quality_and_model": {"model_success_after_source_quality_pass": 7615, "source_quality_fail": 198},
+      "source_quality_failure_reasons": {"coverage_below_threshold": 40, "implausible_segment_speed": 157, "sector_below_threshold": 7}
+    },
+    {
+      "failure_mask": "0001",
+      "gate_pass": false,
+      "matching": {"matched": 3},
+      "population_rows": 3,
+      "proxy": null,
+      "source_quality_and_model": {"source_quality_fail": 3},
+      "source_quality_failure_reasons": {"sector_below_threshold": 3}
+    },
+    {
+      "failure_mask": "0100",
+      "gate_pass": false,
+      "matching": {"ambiguous_primary": 27, "ambiguous_source": 15, "matched": 234, "no_candidate": 61, "not_mutual_nearest": 14, "score_exceeded": 1},
+      "population_rows": 352,
+      "proxy": {"flights": 194, "ideal_co2_tonnes": 1098.2978206620633, "lateral_gap_pct": 6.828108154956486, "real_co2_tonnes": 1229.6691424844419, "total_gap_pct": 11.961356869777525, "vertical_gap_pct": 5.133248714821039},
+      "source_quality_and_model": {"model_success_after_source_quality_pass": 194, "source_quality_fail": 40},
+      "source_quality_failure_reasons": {"coverage_below_threshold": 37, "implausible_segment_speed": 10, "too_few_model_steps": 1}
+    },
+    {
+      "failure_mask": "0101",
+      "gate_pass": false,
+      "matching": {"score_exceeded": 1},
+      "population_rows": 1,
+      "proxy": null,
+      "source_quality_and_model": {},
+      "source_quality_failure_reasons": {}
+    },
+    {
+      "failure_mask": "1000",
+      "gate_pass": false,
+      "matching": {"ambiguous_primary": 19, "ambiguous_source": 3, "matched": 619, "no_candidate": 131, "not_mutual_nearest": 12, "score_exceeded": 3},
+      "population_rows": 787,
+      "proxy": {"flights": 593, "ideal_co2_tonnes": 7542.32075536879, "lateral_gap_pct": 3.957256133963486, "real_co2_tonnes": 7990.372800531791, "total_gap_pct": 5.94050637324152, "vertical_gap_pct": 1.9832502392780345},
+      "source_quality_and_model": {"model_success_after_source_quality_pass": 593, "source_quality_fail": 26},
+      "source_quality_failure_reasons": {"coverage_below_threshold": 3, "implausible_segment_speed": 22, "sector_below_threshold": 1}
+    },
+    {
+      "failure_mask": "1001",
+      "gate_pass": false,
+      "matching": {"matched": 2},
+      "population_rows": 2,
+      "proxy": null,
+      "source_quality_and_model": {"source_quality_fail": 2},
+      "source_quality_failure_reasons": {"sector_below_threshold": 2}
+    },
+    {
+      "failure_mask": "1100",
+      "gate_pass": false,
+      "matching": {"ambiguous_primary": 3, "matched": 55, "no_candidate": 19, "not_mutual_nearest": 1},
+      "population_rows": 78,
+      "proxy": {"flights": 42, "ideal_co2_tonnes": 610.0093367607433, "lateral_gap_pct": 5.142253687850756, "real_co2_tonnes": 645.9716230735943, "total_gap_pct": 5.895366537144671, "vertical_gap_pct": 0.7531128492939152},
+      "source_quality_and_model": {"model_success_after_source_quality_pass": 42, "source_quality_fail": 13},
+      "source_quality_failure_reasons": {"coverage_below_threshold": 10, "implausible_segment_speed": 4}
+    }
+  ],
+  "conditional_proxy": {
+    "primary_gate_pass": {"flights": 7615, "ideal_co2_tonnes": 73919.04801916731, "lateral_gap_pct": 5.628064480868665, "real_co2_tonnes": 79955.87670396619, "total_gap_pct": 8.166810648364287, "vertical_gap_pct": 2.538746167495621},
+    "primary_gate_rejected": {"flights": 829, "ideal_co2_tonnes": 9250.62791279159, "lateral_gap_pct": 4.376244998995159, "real_co2_tonnes": 9866.013566089812, "total_gap_pct": 6.652366294479102, "vertical_gap_pct": 2.276121295483943},
+    "rejected_minus_passed_percentage_points": {"lateral_gap_pct": -1.2518194818735058, "total_gap_pct": -1.5144443538851844, "vertical_gap_pct": -0.26262487201167817}
+  },
+  "day": "2026-03-01",
+  "design_sha256": "002aebf1ff9cc5b22e52f6dc1bc08d4f89f8243918e033aa1ba968f569f69fef",
+  "input_hashes": {
+    "matches": "08db89a3c184f78c237197292cade1264c917cea86835a211492d5f5bf1fa95a",
+    "private_primary": "c269a2ae15ccc3536043bacbbc10e73d6f1eaa3ddc7ba039383b0a956cb6015d",
+    "state_vector_partition_contract": "c73109f324e2854f396111c94cee074694a7f161930ae39693bc34aeacef39e2"
+  },
+  "interpretation": "One-day conditional diagnostic. Missing source matches and failed source quality are not imputed; receiver independence is not established; no full-release selection-bias bound follows from this result.",
+  "kind": "co2gap-opensky-day-selection-audit-result",
+  "matching_status_counts": {"ambiguous_primary": 420, "ambiguous_source": 112, "matched": 8726, "no_candidate": 872, "not_mutual_nearest": 141, "score_exceeded": 19},
+  "model_failures": {},
+  "primary_control_comparison": {
+    "flights": 7615,
+    "opensky_minus_primary_percentage_points": {"lateral_gap_pct": -1.6248481705070867, "total_gap_pct": -4.60600129722433, "vertical_gap_pct": -2.9811531267172424},
+    "opensky_takeoff_to_landing_ground_speed_proxy": {"flights": 7615, "ideal_co2_tonnes": 73919.04801916731, "lateral_gap_pct": 5.628064480868665, "real_co2_tonnes": 79955.87670396619, "total_gap_pct": 8.166810648364287, "vertical_gap_pct": 2.538746167495621},
+    "primary_frozen_airborne_a3000t70": {"flights": 7615, "ideal_co2_tonnes": 74302.13622242541, "lateral_gap_pct": 7.252912651375752, "real_co2_tonnes": 83792.60835367089, "total_gap_pct": 12.772811945588616, "vertical_gap_pct": 5.5198992942128635}
+  },
+  "primary_headline_bias_bounded": false,
+  "publication_status": "aggregate_diagnostic",
+  "release_id": "2026-09-01",
+  "schema_version": 1,
+  "source_relation": "separate_source_not_receiver_independent"
+}

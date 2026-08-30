@@ -320,6 +320,19 @@ rule. A complete result carries a design-based sampling interval for the
 independent proxy; it is still not a general uncertainty interval or automatic
 correction of the published headline.
 
+A free one-day external audit has also been completed with OpenSky scientific
+dataset 11. The matching code never receives gate status or primary track
+quality, all per-flight material stays in `/tmp`, and the aggregate design and
+result are tracked in `opensky-day-audit-design.json` and
+`opensky-day-audit-result.json`. It finds useful failure-mask heterogeneity but
+does not close the problem: matching succeeds for 86.17% of gate passes versus
+74.65% of rejects, and on 7,615 like-for-like airborne controls the OpenSky
+ground-speed proxy is 4.61 percentage points below the frozen primary gap. The
+observed -1.51-point rejected-minus-passed contrast is therefore diagnostic,
+not a headline correction or bound. Full commands, the failed raw-state pilot
+and its explicitly post-pilot amendment are documented in
+[`UNCERTAINTY.md`](UNCERTAINTY.md).
+
 ## Reproducing
 
 The two machines have separate direct-dependency locks:

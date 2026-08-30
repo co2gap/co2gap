@@ -279,3 +279,23 @@ or operational source returns complete outcomes, the analyzer exits with an
 explicit blocked estimate and the headline bias remains unbounded. The design
 also cannot recover the earlier regional, incomplete-leg, unsupported-type or
 fuel-model exclusions.
+
+A free OpenSky scientific snapshot now supplies a narrower observed test for
+1 March 2026. The matcher is blind to the primary gate and finds 8,726 of the
+10,290 durable pre-gate flights, but response is differential: **86.17%** among
+gate passes and **74.65%** among rejects. Source quality leaves **7,615** and
+**829** model outcomes, or 83.99% and 67.78% of the original groups. The raw
+state-vector pilot also exposed sporadic one-second coordinate contaminants;
+the recorded post-pilot protocol uses fixed one-minute medians and is labelled
+exploratory rather than retroactively pre-registered.
+
+Conditional on those two filters, the OpenSky proxy gap is 8.17% for passes and
+6.65% for rejects, but the combined number hides different failure mechanisms:
+coverage-only failures are at **11.96%**, whereas unresolved-endpoint failures
+are at **5.94%**. More importantly, on the same 7,615 controls the source proxy
+is **4.61 percentage points below** the frozen like-for-like airborne primary
+gap (-1.62 lateral and -2.98 vertical). OpenSky therefore demonstrates that a
+free external-day audit is feasible and that failure masks must not be pooled
+blindly; it does not yet provide an unbiased missing outcome. Possible overlap
+among community receivers, one-day scope, differential matching and the proxy
+offset keep the release-wide selection bias unbounded.

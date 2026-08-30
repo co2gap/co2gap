@@ -152,6 +152,91 @@ def validate_design(design: dict, manifest_path: Path) -> dict:
     }
 
 
+def validate_result(result: dict, design: dict, design_path: Path) -> dict:
+    """Require the tracked aggregate result to close on the frozen design."""
+    if result.get("schema_version") != 1:
+        raise UncertaintyError("OpenSky audit result schema_version must be 1")
+    if result.get("kind") != "co2gap-opensky-day-selection-audit-result":
+        raise UncertaintyError("unexpected OpenSky audit result kind")
+    if result.get("publication_status") != "aggregate_diagnostic":
+        raise UncertaintyError("OpenSky audit result must remain aggregate_diagnostic")
+    if result.get("design_sha256") != sha256_file(design_path):
+        raise UncertaintyError("OpenSky audit result belongs to another design")
+    if result.get("release_id") != design.get("release_id"):
+        raise UncertaintyError("OpenSky audit result release differs from design")
+    if result.get("day") != design.get("day"):
+        raise UncertaintyError("OpenSky audit result day differs from design")
+    if result.get("primary_headline_bias_bounded") is not False:
+        raise UncertaintyError("OpenSky one-day result cannot bound the headline")
+    matching = result.get("matching_status_counts")
+    if not isinstance(matching, dict) or sum(int(v) for v in matching.values()) != int(
+            design["population_rows"]):
+        raise UncertaintyError("OpenSky result matching statuses do not close")
+    rows = result.get("by_failure_mask")
+    if not isinstance(rows, list):
+        raise UncertaintyError("OpenSky result has no failure-mask rows")
+    registered = {str(row["failure_mask"]): row for row in design["by_failure_mask"]}
+    observed = {str(row.get("failure_mask")): row for row in rows if isinstance(row, dict)}
+    if set(observed) != set(registered) or len(observed) != len(rows):
+        raise UncertaintyError("OpenSky result failure masks differ from design")
+    pass_outcomes = reject_outcomes = 0
+    for mask, expected in registered.items():
+        row = observed[mask]
+        population = int(row.get("population_rows", -1))
+        if population != int(expected["population_rows"]):
+            raise UncertaintyError(f"OpenSky result population differs for mask {mask}")
+        if row.get("gate_pass") is not bool(expected["gate_pass"]):
+            raise UncertaintyError(f"OpenSky result gate label differs for mask {mask}")
+        row_matching = row.get("matching", {})
+        if sum(int(value) for value in row_matching.values()) != population:
+            raise UncertaintyError(f"OpenSky result matching does not close for mask {mask}")
+        matched = int(row_matching.get("matched", 0))
+        outcomes = row.get("source_quality_and_model", {})
+        if sum(int(value) for value in outcomes.values()) != matched:
+            raise UncertaintyError(
+                f"OpenSky source quality/model outcomes do not close for mask {mask}")
+        success = int(outcomes.get("model_success_after_source_quality_pass", 0))
+        proxy = row.get("proxy")
+        if (proxy is None) is not (success == 0):
+            raise UncertaintyError(f"OpenSky proxy presence differs from success for {mask}")
+        if proxy is not None and int(proxy.get("flights", -1)) != success:
+            raise UncertaintyError(f"OpenSky proxy flights differ from success for {mask}")
+        if bool(expected["gate_pass"]):
+            pass_outcomes += success
+        else:
+            reject_outcomes += success
+    conditional = result.get("conditional_proxy", {})
+    if int(conditional.get("primary_gate_pass", {}).get("flights", -1)) != pass_outcomes:
+        raise UncertaintyError("OpenSky passing conditional proxy does not close")
+    if int(conditional.get("primary_gate_rejected", {}).get("flights", -1)) != reject_outcomes:
+        raise UncertaintyError("OpenSky rejected conditional proxy does not close")
+    control = result.get("primary_control_comparison", {})
+    if int(control.get("flights", -1)) != pass_outcomes:
+        raise UncertaintyError("OpenSky control comparison does not close")
+    forbidden = {
+        "icao24", "flight_id", "opaque_primary_id", "source_id", "dep_ts", "arr_ts"}
+
+    def walk(value):
+        if isinstance(value, dict):
+            leaked = forbidden & set(value)
+            if leaked:
+                raise UncertaintyError(
+                    "OpenSky aggregate result leaks per-flight field(s): "
+                    + ", ".join(sorted(leaked)))
+            for child in value.values():
+                walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child)
+
+    walk(result)
+    return {
+        "matches": int(matching.get("matched", 0)),
+        "pass_outcomes": int(pass_outcomes),
+        "reject_outcomes": int(reject_outcomes),
+    }
+
+
 def _failure_mask(flags: pd.DataFrame) -> pd.Series:
     return flags.apply(
         lambda row: "".join("0" if bool(value) else "1" for value in row), axis=1)
@@ -561,6 +646,34 @@ def _inside_windows(times: np.ndarray, windows: list[tuple[float, float]]) -> np
     return keep
 
 
+def select_state_vector_objects(source_paths: list[str], design: dict) -> list[str]:
+    """Select exactly the 24 registered hourly partitions when names expose them."""
+    parsed = []
+    for raw in source_paths:
+        parent = Path(str(raw)).parent.name
+        if not parent.startswith("hour="):
+            continue
+        try:
+            hour = int(parent.removeprefix("hour="))
+        except ValueError as exc:
+            raise UncertaintyError(f"invalid OpenSky state-vector partition: {parent}") from exc
+        parsed.append((str(raw), hour))
+    if not parsed:
+        return list(source_paths)
+    expected = {
+        int(design["day_epoch"]) + offset * 3600 for offset in range(24)}
+    available = {hour for _, hour in parsed}
+    missing = sorted(expected - available)
+    if missing:
+        raise UncertaintyError(
+            f"OpenSky state-vector day is incomplete: {len(missing)} hour(s) missing; "
+            f"first hour={missing[0]}")
+    selected = sorted(path for path, hour in parsed if hour in expected)
+    if not selected:
+        raise UncertaintyError("OpenSky state-vector selection is empty")
+    return selected
+
+
 def extract_state_vectors(*, design_path: Path, matches_path: Path,
                           source_paths: list[str], output: Path,
                           filesystem=None, batch_size: int = 500_000) -> dict:
@@ -583,6 +696,7 @@ def extract_state_vectors(*, design_path: Path, matches_path: Path,
             (float(row.source_dep_ts) - padding, float(row.source_arr_ts) + padding))
     windows = {key: _merge_windows(value) for key, value in windows.items()}
     addresses = pa.array(sorted(windows), type=pa.string())
+    source_paths = select_state_vector_objects(source_paths, design)
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     tmp = output.with_name(f".{output.name}.tmp")
@@ -1114,6 +1228,8 @@ def main(argv: list[str] | None = None) -> int:
         "--design", type=Path, default=ROOT / "opensky-day-audit-design.json")
     parser.add_argument(
         "--release-manifest", type=Path, default=ROOT / "release-manifest.json")
+    parser.add_argument(
+        "--result", type=Path, default=ROOT / "opensky-day-audit-result.json")
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("validate", help="validate the frozen one-day design")
@@ -1153,9 +1269,13 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "validate":
-        result = validate_design(_load_json(args.design), args.release_manifest)
+        design = _load_json(args.design)
+        result = validate_design(design, args.release_manifest)
+        measured = validate_result(_load_json(args.result), design, args.design)
         print(
             f"OpenSky audit: {result['day']}, {result['population_rows']:,} flights, "
+            f"{measured['matches']:,} matches, "
+            f"{measured['pass_outcomes']:,}+{measured['reject_outcomes']:,} outcomes, "
             f"design {result['design_sha256']}")
         return 0
     if args.command == "prepare":

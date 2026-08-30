@@ -268,6 +268,85 @@ conditional on the proxy and sample design. It contains neither proxy error nor
 model uncertainty, does not cover upstream ingestion exclusions and cannot by
 itself be attached to the public 12.1% figure.
 
+## 8. Free OpenSky one-day audit
+
+OpenSky's scientific dataset 11 contains a complete Trino-table snapshot for
+1 March 2026, a day inside the frozen release. It is enough for a useful
+external diagnostic without buying an API plan, but not for the complete
+5,000-flight validation above: it covers one day, may share underlying
+community receivers with adsb.lol and supplies ground speed rather than IAS.
+
+`opensky-day-audit-design.json` freezes the 10,290-flight pre-gate census, the
+four-bit failure partition, a matching whitelist that excludes gate status and
+primary quality, mutual-nearest matching thresholds and source-only quality
+rules. Private frames, source identifiers and state vectors remain in `/tmp`.
+Alongside the public design, only the aggregate
+`opensky-day-audit-result.json` is tracked.
+
+The original registration is preserved at commit `75dfae4`. Its literal
+sub-second maximum-segment-speed guard fired on sporadic coordinate contaminants
+in OpenSky state snapshots and left only 172 outcomes. That was a guardian
+failure, not a selection result. The public design records the result hash and
+the post-pilot amendment: after deduplicating equal position times, source
+states are represented by medians in fixed 60-second Unix bins. Sensitivity at
+10, 20, 30 and 60 seconds was inspected before the amendment, so the amended
+analysis is explicitly exploratory and cannot inherit the original
+pre-registration label.
+
+The complete amended run found 8,726 unique matches: 86.17% of primary-gate
+passes but only 74.65% of rejected flights. Source quality and modelling then
+left 7,615 passing controls and 829 rejected outcomes, respectively 83.99% and
+67.78% of their original groups. No missing outcome is imputed.
+
+Conditional on both matching and source quality, the OpenSky proxy gap is
+8.17% for primary-gate passes and 6.65% for rejected flights, a rejected-minus-
+passed contrast of -1.51 percentage points. The aggregate hides opposite
+failure-mask results: primary coverage failures show 11.96%, while unresolved-
+endpoint failures show 5.94%. The latter group is much larger and drives the
+combined contrast.
+
+That contrast is not a correction. On the same 7,615 controls, the frozen
+airborne primary calculation is 12.77%, versus 8.17% for the OpenSky
+takeoff-to-landing ground-speed proxy: -4.61 points, split into -1.62 lateral
+and -2.98 vertical. The source proxy therefore has a large measurement/model
+offset even after comparing like with like. Together with differential
+matching and possible receiver overlap, this leaves the full-release headline
+bias unbounded. The result is nevertheless informative: it demonstrates
+failure-mask heterogeneity, proves that a free external-day workflow is
+practical, and specifies what a second held-out day or Wingbits extract must
+improve.
+
+The reproducible stages are separate so every private boundary is inspectable:
+
+```bash
+python lab/opensky_day_audit.py validate
+python lab/opensky_day_audit.py prepare \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --ground-dir /path/to/data/ground_share_ecac \
+  --match-out /tmp/co2gap-opensky-primary.json \
+  --private-out /tmp/co2gap-opensky-private.json
+python lab/opensky_day_audit.py match \
+  --primary /tmp/co2gap-opensky-primary.json \
+  --source-flight /tmp/opensky-flight-part-1.parquet \
+  --source-flight /tmp/opensky-flight-part-2.parquet \
+  --out /tmp/co2gap-opensky-matches.json
+python lab/opensky_day_audit.py extract \
+  --matches /tmp/co2gap-opensky-matches.json \
+  --s3-anonymous-prefix data-samples/trino-tables/state_vectors \
+  --out /tmp/co2gap-opensky-state-vectors.parquet
+python lab/opensky_day_audit.py partition \
+  --matches /tmp/co2gap-opensky-matches.json \
+  --state-vectors /tmp/co2gap-opensky-state-vectors.parquet \
+  --out-dir /tmp/co2gap-opensky-state-buckets
+python lab/opensky_day_audit.py audit \
+  --private /tmp/co2gap-opensky-private.json \
+  --matches /tmp/co2gap-opensky-matches.json \
+  --state-vectors /tmp/co2gap-opensky-state-buckets \
+  --era5-dir /path/to/data/era5_ecac \
+  --out /tmp/co2gap-opensky-audit-result.json
+```
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:

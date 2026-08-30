@@ -16,8 +16,10 @@ from lab.opensky_day_audit import (
     match_flights,
     normalize_source_flights,
     partition_state_vectors,
+    select_state_vector_objects,
     source_track_quality,
     validate_design,
+    validate_result,
 )
 
 
@@ -67,6 +69,21 @@ class OpenSkyDesignTests(unittest.TestCase):
         broken["matching"]["maximum_score"] = 0
         with self.assertRaisesRegex(UncertaintyError, "maximum_score"):
             validate_design(broken, ROOT / "release-manifest.json")
+
+    def test_tracked_result_closes_on_design(self):
+        result = json.loads((ROOT / "opensky-day-audit-result.json").read_text())
+        measured = validate_result(
+            result, _design(), ROOT / "opensky-day-audit-design.json")
+        self.assertEqual(measured["matches"], 8_726)
+        self.assertEqual(measured["pass_outcomes"], 7_615)
+        self.assertEqual(measured["reject_outcomes"], 829)
+
+    def test_non_closing_result_is_rejected(self):
+        result = json.loads((ROOT / "opensky-day-audit-result.json").read_text())
+        result["by_failure_mask"][0]["matching"]["matched"] -= 1
+        with self.assertRaisesRegex(UncertaintyError, "matching does not close"):
+            validate_result(
+                result, _design(), ROOT / "opensky-day-audit-design.json")
 
 
 class OpenSkyNormalisationTests(unittest.TestCase):
@@ -269,6 +286,25 @@ class OpenSkySourceQualityTests(unittest.TestCase):
                     matches_path=Path(raw) / "unused.json",
                     state_vectors_path=Path(raw) / "unused.parquet",
                     output_dir=Path(raw), buckets=4)
+
+    def test_exact_state_vector_day_is_selected_from_a_wider_prefix(self):
+        epoch = int(_design()["day_epoch"])
+        paths = [
+            f"root/hour={epoch + hour * 3600}/part.parquet"
+            for hour in range(24)
+        ] + [f"root/hour={epoch + 24 * 3600}/next-day.parquet"]
+        selected = select_state_vector_objects(paths, _design())
+        self.assertEqual(len(selected), 24)
+        self.assertNotIn("next-day.parquet", "\n".join(selected))
+
+    def test_missing_state_vector_hour_is_rejected(self):
+        epoch = int(_design()["day_epoch"])
+        paths = [
+            f"root/hour={epoch + hour * 3600}/part.parquet"
+            for hour in range(23)
+        ]
+        with self.assertRaisesRegex(UncertaintyError, "incomplete"):
+            select_state_vector_objects(paths, _design())
 
 
 if __name__ == "__main__":
