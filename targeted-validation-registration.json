@@ -1,0 +1,61 @@
+{
+  "analysis_status": "awaiting_external_outcomes",
+  "by_failure_mask": [
+    {
+      "canonical_strata": 231,
+      "failure_mask": "0000",
+      "kish_effective_sample_size": 539.9157526516058,
+      "maximum_targeted_weight": 4898.0,
+      "minimum_measured_rows": 400,
+      "sample_rows": 600,
+      "targeted_weight_sum": 1833127.0
+    },
+    {
+      "canonical_strata": 149,
+      "failure_mask": "0100",
+      "kish_effective_sample_size": 263.88808311659454,
+      "maximum_targeted_weight": 616.5555555555555,
+      "minimum_measured_rows": 300,
+      "sample_rows": 533,
+      "targeted_weight_sum": 108104.0
+    },
+    {
+      "canonical_strata": 217,
+      "failure_mask": "1000",
+      "kish_effective_sample_size": 389.45814189252724,
+      "maximum_targeted_weight": 641.4285714285714,
+      "minimum_measured_rows": 450,
+      "sample_rows": 761,
+      "targeted_weight_sum": 150221.0
+    },
+    {
+      "canonical_strata": 134,
+      "failure_mask": "1100",
+      "kish_effective_sample_size": 125.93972183793298,
+      "maximum_targeted_weight": 312.5,
+      "minimum_measured_rows": 200,
+      "sample_rows": 385,
+      "targeted_weight_sum": 20684.0
+    }
+  ],
+  "canonical_design_unchanged": true,
+  "gate_status_disclosed_to_matching": false,
+  "kind": "co2gap-targeted-heldout-registration",
+  "outcome_contract_sha256": "ba869eadc9a6d4f713f2cbbcd8128f0761d1f6e8dc42c8e08b5ffed7567e4e9e",
+  "parent_artifact_sha256": {
+    "match_list": "0b8244faea95b2d0059545c66fef76de515607513ff5bcf43313011920d62ae3",
+    "sample": "c8dd48e4486676c001c9df5c23ab527329ce48a02fc9fb62bc0f34a86e92112e"
+  },
+  "primary_headline_bias_bounded": false,
+  "primary_track_quality_disclosed_to_matching": false,
+  "privacy": "Aggregate registration only; contains no sample id, flight key, time, endpoint or aircraft type.",
+  "private_artifact_sha256": {
+    "match_list": "8fedf21be0236784e37ec00048988614ff905729fadf0cb2a8459d3fbea9c02b",
+    "sample": "46119ebc28db0c287175ae11d316a11924f653e6b371f3a6dcb290db5ee2ddfa"
+  },
+  "publication_status": "aggregate_preregistration",
+  "release_id": "2026-09-01",
+  "sample_rows": 2279,
+  "schema_version": 1,
+  "targeted_design_sha256": "f9355e44524774efb82fa94d810dbfda96e82766dbc3e381a7d115938fdb6e06"
+}

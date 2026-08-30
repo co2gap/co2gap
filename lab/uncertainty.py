@@ -83,6 +83,11 @@ SELECTION_SENSITIVITY_STRESSES = {"prudente", "centrale", "severo"}
 SELECTION_SENSITIVITY_PROFILES = {
     "signed_transfer", "adverse_lower", "adverse_upper",
 }
+TARGETED_VALIDATION_MASKS = ("0000", "0100", "1000", "1100")
+TARGETED_SOURCE_RELATIONS = {
+    "receiver_independent",
+    "separate_source_receiver_overlap_unverified",
+}
 NORMAL_95 = 1.959963984540054
 
 
@@ -432,6 +437,268 @@ def validate_selection_sensitivity_design(data: dict, design_path: Path) -> dict
         raise UncertaintyError(
             "selection-sensitivity design lacks the frozen profiles")
     return {"stress_levels": len(stresses), "mapped_masks": len(mappings)}
+
+
+def validate_targeted_validation_design(data: dict, design_path: Path) -> dict:
+    """Validate the frozen provider-neutral targeted held-out protocol."""
+    if (data.get("schema_version"), data.get("kind")) != (
+            1, "co2gap-targeted-heldout-validation-design"):
+        raise UncertaintyError("unknown targeted-validation design contract")
+    if data.get("publication_status") != "aggregate_preregistration":
+        raise UncertaintyError(
+            "targeted-validation design must remain an aggregate preregistration")
+    if data.get("analysis_status") != (
+            "protocol_frozen_before_external_source_access"):
+        raise UncertaintyError(
+            "targeted-validation protocol was not frozen before source access")
+    parent = data.get("parent_contract")
+    if not isinstance(parent, dict):
+        raise UncertaintyError("targeted-validation design lacks parent contract")
+    base = Path(design_path).resolve().parent
+    parent_path_value = parent.get("design_path")
+    if not isinstance(parent_path_value, str) or not parent_path_value.strip():
+        raise UncertaintyError("targeted-validation parent design path is invalid")
+    parent_path = base / parent_path_value
+    if (not parent_path.is_file()
+            or not _valid_sha256(parent.get("design_sha256"))
+            or sha256_file(parent_path) != parent["design_sha256"]):
+        raise UncertaintyError(
+            "targeted-validation parent design differs from registration")
+    parent_design = _load_json(parent_path)
+    validate_selection_design(parent_design, base / "release-manifest.json")
+    if (data.get("release_id") != parent_design.get("release_id")
+            or parent.get("canonical_sample_rows")
+            != parent_design.get("sample_rows")):
+        raise UncertaintyError(
+            "targeted-validation design differs from canonical population")
+    parent_hashes = parent_design.get("private_artifact_sha256", {})
+    if (parent.get("private_sample_sha256") != parent_hashes.get("sample")
+            or parent.get("blinded_match_list_sha256")
+            != parent_hashes.get("match_list")):
+        raise UncertaintyError(
+            "targeted-validation parent artifact hashes differ")
+    if parent.get("canonical_design_unchanged") is not True:
+        raise UncertaintyError(
+            "targeted-validation design cannot replace the canonical design")
+
+    allocation = data.get("target_allocation")
+    if not isinstance(allocation, list):
+        raise UncertaintyError("targeted-validation design lacks allocation")
+    allocation_masks = [row.get("failure_mask") for row in allocation
+                        if isinstance(row, dict)]
+    if (len(allocation_masks) != len(allocation)
+            or tuple(allocation_masks) != TARGETED_VALIDATION_MASKS):
+        raise UncertaintyError(
+            "targeted-validation allocation must use the frozen mask order")
+    parent_by_mask = {
+        str(row["failure_mask"]): int(row["sample_rows"])
+        for row in parent_design["by_failure_mask"]
+    }
+    target_sum = 0
+    for row in allocation:
+        mask = row["failure_mask"]
+        target = row.get("target_rows")
+        if (not isinstance(target, int) or isinstance(target, bool)
+                or not 0 < target <= parent_by_mask[mask]):
+            raise UncertaintyError(
+                f"targeted-validation allocation is invalid for mask {mask}")
+        if mask != "0000" and target != parent_by_mask[mask]:
+            raise UncertaintyError(
+                f"targeted-validation must retain every canonical {mask} row")
+        if not isinstance(row.get("selection"), str) or not row["selection"].strip():
+            raise UncertaintyError(
+                f"targeted-validation mask {mask} lacks a selection rule")
+        target_sum += target
+    if target_sum != data.get("target_rows"):
+        raise UncertaintyError(
+            "targeted-validation allocation does not close")
+
+    controls = data.get("control_selection")
+    if (not isinstance(controls, dict)
+            or not isinstance(controls.get("namespace"), str)
+            or not controls["namespace"].strip()
+            or controls.get("randomness_claimed") is not False):
+        raise UncertaintyError(
+            "targeted-validation control selection is invalid")
+    blinding = data.get("blinding")
+    if not isinstance(blinding, dict):
+        raise UncertaintyError("targeted-validation design lacks blinding")
+    allowed = blinding.get("external_matching_allowed_fields")
+    prohibited = blinding.get("external_matching_prohibited_fields")
+    if (not isinstance(allowed, list) or not isinstance(prohibited, list)
+            or len(allowed) != len(set(allowed))
+            or len(prohibited) != len(set(prohibited))
+            or set(allowed).intersection(prohibited)
+            or "sample_id" not in allowed
+            or "failure_mask" not in prohibited
+            or blinding.get("failure_mask_joined_after_matching_and_source_quality")
+            is not True
+            or blinding.get("matching_received_gate_status") is not False
+            or blinding.get("matching_received_primary_track_quality") is not False):
+        raise UncertaintyError(
+            "targeted-validation blinding contract is invalid")
+
+    matching = data.get("matching")
+    if (not isinstance(matching, dict)
+            or matching.get("required_profile") != "targeted_mutual_nearest_v1"
+            or matching.get("score") != (
+                "abs(dep_delta)/900 + abs(arr_delta)/900 + origin_km/25 + "
+                "destination_km/25")
+            or matching.get("assignment") != "one-to-one mutual nearest neighbour"
+            or matching.get("manual_overrides") is not False):
+        raise UncertaintyError(
+            "targeted-validation matching protocol is invalid")
+    for field in (
+            "candidate_max_departure_delta_s",
+            "candidate_max_arrival_delta_s",
+            "candidate_max_origin_distance_km",
+            "candidate_max_destination_distance_km",
+            "maximum_score", "tie_epsilon"):
+        if _finite_number(matching.get(field), f"matching.{field}") <= 0:
+            raise UncertaintyError(
+                f"targeted-validation matching.{field} must be positive")
+
+    quality = data.get("source_quality")
+    if (not isinstance(quality, dict)
+            or quality.get("required_profile") != "targeted_source_quality_v1"
+            or quality.get("quality_evaluated_before_failure_mask_join") is not True
+            or quality.get("post_source_amendment_allowed") is not False):
+        raise UncertaintyError(
+            "targeted-validation source-quality protocol is not frozen")
+    for field in (
+            "temporal_aggregation_seconds", "minimum_unique_points",
+            "gap_threshold_s", "coverage_min_fraction",
+            "flown_min_fraction_of_source_gc", "great_circle_min_km",
+            "maximum_segment_speed_kt"):
+        if _finite_number(quality.get(field), f"source_quality.{field}") <= 0:
+            raise UncertaintyError(
+                f"targeted-validation source_quality.{field} must be positive")
+
+    minimum = data.get("minimum_measured_rows")
+    targets = {row["failure_mask"]: row["target_rows"] for row in allocation}
+    if not isinstance(minimum, dict) or set(minimum) != set(targets):
+        raise UncertaintyError(
+            "targeted-validation minimum support masks differ from allocation")
+    for mask, value in minimum.items():
+        if (not isinstance(value, int) or isinstance(value, bool)
+                or not 0 < value <= targets[mask]):
+            raise UncertaintyError(
+                f"targeted-validation minimum support is invalid for {mask}")
+
+    estimands = data.get("estimands")
+    if (not isinstance(estimands, dict)
+            or estimands.get("pool_rejected_masks") is not False
+            or "weighted" not in str(estimands.get("primary", "")).lower()):
+        raise UncertaintyError(
+            "targeted-validation rejected masks must remain separate")
+    clarification = data.get("pre_source_clarification")
+    if (not isinstance(clarification, dict)
+            or clarification.get("original_design_commit") != "6c8809e"
+            or clarification.get("external_source_accessed") is not False
+            or clarification.get("outcome_schema_changed") is not True):
+        raise UncertaintyError(
+            "targeted-validation pre-source clarification is not preserved")
+    outcome = data.get("outcome_contract")
+    if not isinstance(outcome, dict) or not isinstance(outcome.get("path"), str):
+        raise UncertaintyError(
+            "targeted-validation design lacks outcome contract")
+    outcome_path = base / outcome["path"]
+    if (not outcome_path.is_file()
+            or not _valid_sha256(outcome.get("sha256"))
+            or sha256_file(outcome_path) != outcome["sha256"]):
+        raise UncertaintyError(
+            "targeted-validation outcome contract differs")
+    claims = data.get("claims")
+    if not isinstance(claims, dict):
+        raise UncertaintyError("targeted-validation design lacks claims")
+    for field in (
+            "replaces_canonical_validation", "corrects_release_headline",
+            "bounds_release_headline", "is_confidence_interval",
+            "is_probability_model"):
+        if claims.get(field) is not False:
+            raise UncertaintyError(
+                f"targeted-validation design cannot claim {field}")
+    return {"target_rows": target_sum, "masks": len(allocation)}
+
+
+def validate_targeted_validation_registration(
+        registration: dict, design: dict, design_path: Path) -> dict:
+    """Validate the public hashes and aggregate partition of a private tranche."""
+    validate_targeted_validation_design(design, design_path)
+    if (registration.get("schema_version"), registration.get("kind")) != (
+            1, "co2gap-targeted-heldout-registration"):
+        raise UncertaintyError("unknown targeted-validation registration contract")
+    if registration.get("publication_status") != "aggregate_preregistration":
+        raise UncertaintyError(
+            "targeted-validation registration must remain aggregate")
+    if registration.get("release_id") != design.get("release_id"):
+        raise UncertaintyError(
+            "targeted-validation registration names another release")
+    if registration.get("targeted_design_sha256") != sha256_file(design_path):
+        raise UncertaintyError(
+            "targeted-validation registration names another design")
+    hashes = registration.get("private_artifact_sha256")
+    if (not isinstance(hashes, dict)
+            or not all(_valid_sha256(hashes.get(name))
+                       for name in ("sample", "match_list"))):
+        raise UncertaintyError(
+            "targeted-validation registration has invalid private hashes")
+    if registration.get("sample_rows") != design.get("target_rows"):
+        raise UncertaintyError(
+            "targeted-validation registration row count differs")
+    rows = registration.get("by_failure_mask")
+    allocation = {
+        row["failure_mask"]: row["target_rows"]
+        for row in design["target_allocation"]
+    }
+    if (not isinstance(rows, list)
+            or [row.get("failure_mask") for row in rows]
+            != list(TARGETED_VALIDATION_MASKS)):
+        raise UncertaintyError(
+            "targeted-validation registration has invalid mask partition")
+    for row in rows:
+        if row.get("sample_rows") != allocation[row["failure_mask"]]:
+            raise UncertaintyError(
+                "targeted-validation registration mask counts do not close")
+        for field in (
+                "canonical_strata", "targeted_weight_sum",
+                "maximum_targeted_weight", "kish_effective_sample_size"):
+            if _finite_number(
+                    row.get(field),
+                    f"targeted registration {row['failure_mask']}.{field}") <= 0:
+                raise UncertaintyError(
+                    "targeted-validation registration has invalid diagnostics")
+        if row["kish_effective_sample_size"] > row["sample_rows"]:
+            raise UncertaintyError(
+                "targeted-validation effective size exceeds sample rows")
+        if row.get("minimum_measured_rows") != design[
+                "minimum_measured_rows"][row["failure_mask"]]:
+            raise UncertaintyError(
+                "targeted-validation registration support threshold differs")
+    parent_hashes = registration.get("parent_artifact_sha256")
+    if parent_hashes != {
+            "sample": design["parent_contract"]["private_sample_sha256"],
+            "match_list": design["parent_contract"][
+                "blinded_match_list_sha256"]}:
+        raise UncertaintyError(
+            "targeted-validation registration parent hashes differ")
+    if registration.get("outcome_contract_sha256") != design[
+            "outcome_contract"]["sha256"]:
+        raise UncertaintyError(
+            "targeted-validation registration outcome contract differs")
+    if registration.get("canonical_design_unchanged") is not True:
+        raise UncertaintyError(
+            "targeted-validation registration changes the canonical design")
+    if registration.get("primary_headline_bias_bounded") is not False:
+        raise UncertaintyError(
+            "targeted-validation registration claims a headline bound")
+    if registration.get("gate_status_disclosed_to_matching") is not False:
+        raise UncertaintyError(
+            "targeted-validation registration discloses gate status")
+    if registration.get("primary_track_quality_disclosed_to_matching") is not False:
+        raise UncertaintyError(
+            "targeted-validation registration discloses primary quality")
+    return {"sample_rows": registration["sample_rows"], "masks": len(rows)}
 
 
 def verify_registered_selection_artifacts(
@@ -1431,6 +1698,306 @@ def write_selection_validation_artifacts(
     return value, match_value
 
 
+def _targeted_control_allocation(
+        controls: pd.DataFrame, target_rows: int) -> dict[str, int]:
+    """Allocate deterministic second-stage controls with every stratum covered."""
+    metadata = []
+    for stratum, group in controls.groupby("stratum", sort=True):
+        population = pd.to_numeric(group.population_n, errors="coerce").unique()
+        parent_sample = pd.to_numeric(group.sample_n, errors="coerce").unique()
+        if (len(population) != 1 or len(parent_sample) != 1
+                or int(parent_sample[0]) != len(group)
+                or not 0 < int(parent_sample[0]) <= int(population[0])):
+            raise UncertaintyError(
+                f"targeted control stratum metadata is invalid: {stratum}")
+        metadata.append({
+            "stratum": str(stratum),
+            "population_n": int(population[0]),
+            "capacity": int(parent_sample[0]),
+        })
+    if not metadata:
+        raise UncertaintyError("targeted validation has no passing control strata")
+    if target_rows < len(metadata) or target_rows > len(controls):
+        raise UncertaintyError(
+            "targeted control count cannot cover every canonical stratum")
+    allocation = {row["stratum"]: 1 for row in metadata}
+    capacity = {row["stratum"]: row["capacity"] - 1 for row in metadata}
+    population = {row["stratum"]: row["population_n"] for row in metadata}
+    remaining = target_rows - len(metadata)
+    while remaining:
+        active = [name for name in sorted(allocation) if capacity[name] > 0]
+        if not active:
+            raise UncertaintyError(
+                "targeted control allocation exhausted before reaching target")
+        selected = max(
+            active,
+            key=lambda name: (
+                population[name] ** 2
+                / (allocation[name] * (allocation[name] + 1)),
+                population[name], name),
+        )
+        allocation[selected] += 1
+        capacity[selected] -= 1
+        remaining -= 1
+    if sum(allocation.values()) != target_rows:
+        raise UncertaintyError("targeted control allocation does not close")
+    return allocation
+
+
+def write_targeted_validation_artifacts(
+        *, design_path: Path, parent_sample_path: Path,
+        parent_match_path: Path, output: Path, match_output: Path,
+        registration_output: Path) -> tuple[dict, dict, dict]:
+    """Build a blinded targeted tranche without altering the canonical sample."""
+    _require_outside_repository(output, "targeted-validation sample")
+    _require_outside_repository(match_output, "targeted-validation match list")
+    output_paths = {
+        output.resolve(), match_output.resolve(), registration_output.resolve()}
+    if len(output_paths) != 3:
+        raise UncertaintyError(
+            "targeted-validation outputs must be three different files")
+    parent_paths = {parent_sample_path.resolve(), parent_match_path.resolve()}
+    if output_paths.intersection(parent_paths):
+        raise UncertaintyError(
+            "targeted-validation outputs cannot overwrite canonical artifacts")
+    design = _load_json(design_path)
+    validate_targeted_validation_design(design, design_path)
+    parent = design["parent_contract"]
+    if sha256_file(parent_sample_path) != parent["private_sample_sha256"]:
+        raise UncertaintyError(
+            "canonical private sample differs from targeted design")
+    if sha256_file(parent_match_path) != parent["blinded_match_list_sha256"]:
+        raise UncertaintyError(
+            "canonical blinded match list differs from targeted design")
+    sample = _load_json(parent_sample_path)
+    match = _load_json(parent_match_path)
+    if (sample.get("schema_version"), sample.get("kind")) != (
+            1, "co2gap-selection-validation-sample"):
+        raise UncertaintyError("unknown canonical sample contract")
+    if (match.get("schema_version"), match.get("kind")) != (
+            1, "co2gap-selection-validation-match-list"):
+        raise UncertaintyError("unknown canonical match-list contract")
+    if (sample.get("release_id") != design.get("release_id")
+            or match.get("release_id") != design.get("release_id")
+            or match.get("sample_sha256") != sha256_file(parent_sample_path)
+            or sample.get("sample_rows") != parent["canonical_sample_rows"]):
+        raise UncertaintyError(
+            "canonical artifacts differ from targeted release contract")
+    if (match.get("gate_status_disclosed") is not False
+            or match.get("primary_track_quality_disclosed") is not False):
+        raise UncertaintyError(
+            "canonical match list discloses gate or primary quality")
+    sample_rows = sample.get("rows")
+    match_rows = match.get("rows")
+    if not isinstance(sample_rows, list) or not isinstance(match_rows, list):
+        raise UncertaintyError("canonical artifacts lack rows")
+    sample_frame = pd.DataFrame(sample_rows)
+    match_frame = pd.DataFrame(match_rows)
+    for frame, label in ((sample_frame, "canonical sample"),
+                         (match_frame, "canonical match list")):
+        _require_columns(frame, ("sample_id",), label)
+        if frame.sample_id.duplicated().any():
+            raise UncertaintyError(f"{label} has duplicate sample ids")
+    if (set(sample_frame.sample_id.astype(str))
+            != set(match_frame.sample_id.astype(str))):
+        raise UncertaintyError(
+            "canonical sample and match-list ids differ")
+    _require_columns(
+        sample_frame,
+        ("failure_mask", "gate_pass", "stratum", "population_n",
+         "sample_n", "weight"),
+        "canonical sample")
+    allowed_match = design["blinding"]["external_matching_allowed_fields"]
+    _require_columns(match_frame, allowed_match, "canonical match list")
+    disclosed = sorted(
+        set(design["blinding"]["external_matching_prohibited_fields"])
+        .intersection(match_frame.columns))
+    if disclosed:
+        raise UncertaintyError(
+            f"canonical match list discloses targeted design fields: {disclosed}")
+
+    targets = {
+        row["failure_mask"]: int(row["target_rows"])
+        for row in design["target_allocation"]
+    }
+    parent_counts = sample_frame.failure_mask.astype(str).value_counts().to_dict()
+    for mask in TARGETED_VALIDATION_MASKS:
+        if int(parent_counts.get(mask, 0)) < targets[mask]:
+            raise UncertaintyError(
+                f"canonical sample lacks targeted rows for mask {mask}")
+    selected_parts = []
+    controls = sample_frame.loc[
+        sample_frame.failure_mask.astype(str) == "0000"].copy()
+    control_allocation = _targeted_control_allocation(
+        controls, targets["0000"])
+    namespace = design["control_selection"]["namespace"]
+    for stratum, group in controls.groupby("stratum", sort=True):
+        n_target = control_allocation[str(stratum)]
+        ranked = group.copy()
+        ranked["_target_rank"] = [
+            hashlib.sha256(
+                f"{namespace}\0{sample_id}".encode()).hexdigest()
+            for sample_id in ranked.sample_id.astype(str)
+        ]
+        chosen = ranked.sort_values(
+            ["_target_rank", "sample_id"]).head(n_target).drop(
+                columns=["_target_rank"])
+        chosen["targeted_sample_n"] = n_target
+        chosen["targeted_weight"] = (
+            pd.to_numeric(chosen.population_n, errors="raise") / n_target)
+        selected_parts.append(chosen)
+    for mask in TARGETED_VALIDATION_MASKS[1:]:
+        chosen = sample_frame.loc[
+            sample_frame.failure_mask.astype(str) == mask].copy()
+        if len(chosen) != targets[mask]:
+            raise UncertaintyError(
+                f"targeted design requires every canonical row for mask {mask}")
+        chosen["targeted_sample_n"] = pd.to_numeric(
+            chosen.sample_n, errors="raise").astype(int)
+        chosen["targeted_weight"] = pd.to_numeric(
+            chosen.weight, errors="raise").astype(float)
+        selected_parts.append(chosen)
+    targeted = pd.concat(selected_parts, ignore_index=True)
+    targeted["failure_mask"] = targeted.failure_mask.astype(str)
+    targeted = targeted.sort_values("sample_id").reset_index(drop=True)
+    observed_counts = targeted.failure_mask.value_counts().to_dict()
+    if (len(targeted) != design["target_rows"]
+            or any(int(observed_counts.get(mask, 0)) != targets[mask]
+                   for mask in TARGETED_VALIDATION_MASKS)
+            or targeted.sample_id.duplicated().any()):
+        raise UncertaintyError("targeted private sample does not close")
+    for stratum, group in targeted.groupby("stratum", sort=True):
+        weights = pd.to_numeric(group.targeted_weight, errors="coerce")
+        if not np.isfinite(weights.to_numpy(float)).all() or (weights <= 0).any():
+            raise UncertaintyError(
+                f"targeted sample has invalid weights in {stratum}")
+
+    private_rows = []
+    for row in targeted.itertuples(index=False):
+        private_rows.append({
+            "sample_id": str(row.sample_id),
+            "day": str(row.day),
+            "flight_id": int(row.flight_id),
+            "failure_mask": str(row.failure_mask),
+            "gate_pass": bool(row.gate_pass),
+            "stratum": str(row.stratum),
+            "distance_band": str(row.distance_band),
+            "coverage_band": str(row.coverage_band),
+            "type_group": str(row.type_group),
+            "population_n": int(row.population_n),
+            "canonical_sample_n": int(row.sample_n),
+            "canonical_weight": float(row.weight),
+            "targeted_sample_n": int(row.targeted_sample_n),
+            "targeted_weight": float(row.targeted_weight),
+        })
+    private_value = {
+        "schema_version": 1,
+        "kind": "co2gap-targeted-heldout-sample",
+        "publication_status": "private_per_flight",
+        "analysis_status": "awaiting_external_outcomes",
+        "release_id": design["release_id"],
+        "targeted_design_sha256": sha256_file(design_path),
+        "parent_sample_sha256": sha256_file(parent_sample_path),
+        "parent_match_list_sha256": sha256_file(parent_match_path),
+        "sample_rows": int(len(targeted)),
+        "privacy": (
+            "Contains release-local keys, failure masks and weights. Keep outside "
+            "git and never give this file to the external matcher."),
+        "rows": private_rows,
+    }
+    _atomic_json(output, private_value)
+    sample_hash = sha256_file(output)
+    selected_ids = set(targeted.sample_id.astype(str))
+    blinded = match_frame.loc[
+        match_frame.sample_id.astype(str).isin(selected_ids), allowed_match].copy()
+    blinded = blinded.sort_values("sample_id").reset_index(drop=True)
+    if len(blinded) != len(targeted):
+        raise UncertaintyError("targeted blinded match list does not close")
+    blinded_rows = []
+    for row in blinded.to_dict(orient="records"):
+        blinded_rows.append({
+            name: (int(row[name]) if name in {"dep_ts", "arr_ts"}
+                   else float(row[name]) if name in {
+                       "o_lat", "o_lon", "d_lat", "d_lon"}
+                   else str(row[name]))
+            for name in allowed_match
+        })
+    match_value = {
+        "schema_version": 1,
+        "kind": "co2gap-targeted-heldout-match-list",
+        "publication_status": "private_per_flight",
+        "release_id": design["release_id"],
+        "targeted_design_sha256": sha256_file(design_path),
+        "sample_sha256": sample_hash,
+        "gate_status_disclosed": False,
+        "primary_track_quality_disclosed": False,
+        "matching_fields": allowed_match[1:],
+        "privacy": (
+            "Times and endpoints can identify a flight. Share only under the "
+            "held-out validation protocol and do not publish."),
+        "rows": blinded_rows,
+    }
+    _atomic_json(match_output, match_value)
+    match_hash = sha256_file(match_output)
+
+    by_mask = []
+    for mask in TARGETED_VALIDATION_MASKS:
+        group = targeted.loc[targeted.failure_mask == mask]
+        group_weights = group.targeted_weight.to_numpy(float)
+        by_mask.append({
+            "failure_mask": mask,
+            "sample_rows": int(len(group)),
+            "canonical_strata": int(group.stratum.nunique()),
+            "targeted_weight_sum": float(group_weights.sum()),
+            "maximum_targeted_weight": float(group_weights.max()),
+            "kish_effective_sample_size": float(
+                group_weights.sum() ** 2 / np.square(group_weights).sum()),
+            "minimum_measured_rows": int(
+                design["minimum_measured_rows"][mask]),
+        })
+    registration = {
+        "schema_version": 1,
+        "kind": "co2gap-targeted-heldout-registration",
+        "publication_status": "aggregate_preregistration",
+        "analysis_status": "awaiting_external_outcomes",
+        "release_id": design["release_id"],
+        "targeted_design_sha256": sha256_file(design_path),
+        "parent_artifact_sha256": {
+            "sample": sha256_file(parent_sample_path),
+            "match_list": sha256_file(parent_match_path),
+        },
+        "private_artifact_sha256": {
+            "sample": sample_hash,
+            "match_list": match_hash,
+        },
+        "sample_rows": int(len(targeted)),
+        "by_failure_mask": by_mask,
+        "gate_status_disclosed_to_matching": False,
+        "primary_track_quality_disclosed_to_matching": False,
+        "outcome_contract_sha256": design["outcome_contract"]["sha256"],
+        "canonical_design_unchanged": True,
+        "primary_headline_bias_bounded": False,
+        "privacy": (
+            "Aggregate registration only; contains no sample id, flight key, "
+            "time, endpoint or aircraft type."),
+    }
+    validate_targeted_validation_registration(
+        registration, design, design_path)
+    _atomic_json(registration_output, registration)
+    return private_value, match_value, registration
+
+
+def verify_registered_targeted_artifacts(
+        registration: dict, *, sample_path: Path, match_path: Path) -> None:
+    hashes = registration["private_artifact_sha256"]
+    if sha256_file(sample_path) != hashes["sample"]:
+        raise UncertaintyError(
+            "private targeted-validation sample differs from registration")
+    if sha256_file(match_path) != hashes["match_list"]:
+        raise UncertaintyError(
+            "private targeted-validation match list differs from registration")
+
+
 def _proxy_metrics(totals: np.ndarray) -> dict[str, float]:
     real, ideal, hybrid = (float(value) for value in totals)
     if not all(math.isfinite(value) and value >= 0 for value in totals):
@@ -1725,6 +2292,406 @@ def selection_validation_result(*, sample_path: Path, match_path: Path,
             "Every sampled flight must have an independent measured outcome; response "
             "weighting would add a second unvalidated selection model."
         )
+    return result
+
+
+def _targeted_gap_metrics(values: np.ndarray, weights: np.ndarray | None) -> dict:
+    if weights is None:
+        totals = values.sum(axis=0)
+    else:
+        totals = (values * weights[:, None]).sum(axis=0)
+    metrics = _proxy_metrics(totals)
+    return {
+        name: float(metrics[name])
+        for name in ("gap_total_pct", "gap_lateral_pct", "gap_vertical_pct")
+    }
+
+
+def targeted_validation_result(
+        *, design_path: Path, registration_path: Path, sample_path: Path,
+        match_path: Path, outcomes_path: Path) -> dict:
+    """Validate and aggregate the frozen targeted held-out diagnostic."""
+    design = _load_json(design_path)
+    registration = _load_json(registration_path)
+    validate_targeted_validation_registration(
+        registration, design, design_path)
+    verify_registered_targeted_artifacts(
+        registration, sample_path=sample_path, match_path=match_path)
+    sample = _load_json(sample_path)
+    match = _load_json(match_path)
+    outcomes = _load_json(outcomes_path)
+    if (sample.get("schema_version"), sample.get("kind")) != (
+            1, "co2gap-targeted-heldout-sample"):
+        raise UncertaintyError("unknown targeted-validation sample contract")
+    if (match.get("schema_version"), match.get("kind")) != (
+            1, "co2gap-targeted-heldout-match-list"):
+        raise UncertaintyError("unknown targeted-validation match-list contract")
+    if (outcomes.get("schema_version"), outcomes.get("kind")) != (
+            1, "co2gap-targeted-heldout-outcomes"):
+        raise UncertaintyError("unknown targeted-validation outcome contract")
+    design_hash = sha256_file(design_path)
+    if (sample.get("targeted_design_sha256") != design_hash
+            or match.get("targeted_design_sha256") != design_hash
+            or outcomes.get("targeted_design_sha256") != design_hash):
+        raise UncertaintyError(
+            "targeted-validation private artifact names another design")
+    if (match.get("sample_sha256") != sha256_file(sample_path)
+            or outcomes.get("sample_sha256") != sha256_file(sample_path)
+            or outcomes.get("match_list_sha256") != sha256_file(match_path)):
+        raise UncertaintyError(
+            "targeted-validation private artifact hashes do not close")
+    if (sample.get("publication_status") != "private_per_flight"
+            or match.get("publication_status") != "private_per_flight"
+            or outcomes.get("publication_status") != "private_per_flight"):
+        raise UncertaintyError(
+            "targeted-validation private artifacts must remain private_per_flight")
+    if (sample.get("release_id") != design.get("release_id")
+            or match.get("release_id") != design.get("release_id")):
+        raise UncertaintyError(
+            "targeted-validation private artifacts name another release")
+    if (match.get("gate_status_disclosed") is not False
+            or match.get("primary_track_quality_disclosed") is not False):
+        raise UncertaintyError(
+            "targeted-validation match list discloses gate or primary quality")
+
+    top_allowed = {
+        "schema_version", "kind", "publication_status",
+        "targeted_design_sha256", "sample_sha256", "match_list_sha256",
+        "source", "rows",
+    }
+    extra_top = sorted(set(outcomes) - top_allowed)
+    if extra_top:
+        raise UncertaintyError(
+            f"targeted-validation outcomes have unknown fields: {extra_top}")
+    source = outcomes.get("source")
+    source_allowed = {
+        "name", "version", "method_reference", "quality_rule",
+        "licence_or_permission_reference", "receiver_provenance_statement",
+        "matching_profile", "source_quality_profile", "processing_profile",
+        "source_relation", "primary_trajectory_used",
+        "matching_received_gate_status",
+        "matching_received_primary_track_quality",
+        "protocol_frozen_before_source_access",
+    }
+    if not isinstance(source, dict):
+        raise UncertaintyError("targeted-validation outcomes lack source declarations")
+    extra_source = sorted(set(source) - source_allowed)
+    if extra_source:
+        raise UncertaintyError(
+            f"targeted-validation source has unknown fields: {extra_source}")
+    for field in (
+            "name", "version", "method_reference", "quality_rule",
+            "licence_or_permission_reference", "receiver_provenance_statement"):
+        if not isinstance(source.get(field), str) or not source[field].strip():
+            raise UncertaintyError(
+                f"targeted-validation outcome source lacks {field}")
+    required_source = {
+        "matching_profile": design["matching"]["required_profile"],
+        "source_quality_profile": design["source_quality"]["required_profile"],
+        "processing_profile": design["proxy_model"]["required_profile"],
+        "primary_trajectory_used": False,
+        "matching_received_gate_status": False,
+        "matching_received_primary_track_quality": False,
+        "protocol_frozen_before_source_access": True,
+    }
+    for field, expected in required_source.items():
+        if source.get(field) != expected:
+            raise UncertaintyError(
+                f"targeted-validation source must declare {field}={expected!r}")
+    if source.get("source_relation") not in TARGETED_SOURCE_RELATIONS:
+        raise UncertaintyError(
+            "targeted-validation source relation is unknown")
+
+    sample_rows = sample.get("rows")
+    match_rows = match.get("rows")
+    outcome_rows = outcomes.get("rows")
+    for rows, label in ((sample_rows, "sample"), (match_rows, "match list"),
+                        (outcome_rows, "outcomes")):
+        if not isinstance(rows, list) or not rows:
+            raise UncertaintyError(f"targeted-validation {label} has no rows")
+    sample_frame = pd.DataFrame(sample_rows)
+    match_frame = pd.DataFrame(match_rows)
+    outcome_frame = pd.DataFrame(outcome_rows)
+    for frame, label in ((sample_frame, "sample"), (match_frame, "match list"),
+                         (outcome_frame, "outcomes")):
+        _require_columns(frame, ("sample_id",), f"targeted-validation {label}")
+        if frame.sample_id.duplicated().any():
+            raise UncertaintyError(
+                f"targeted-validation {label} has duplicate ids")
+        ids = frame.sample_id.astype(str)
+        if any(len(value) != 24 or set(value) - set("0123456789abcdef")
+               for value in ids):
+            raise UncertaintyError(
+                f"targeted-validation {label} has invalid ids")
+    expected_ids = set(sample_frame.sample_id.astype(str))
+    if (set(match_frame.sample_id.astype(str)) != expected_ids
+            or set(outcome_frame.sample_id.astype(str)) != expected_ids):
+        raise UncertaintyError(
+            "targeted-validation sample, match and outcome ids differ")
+    if len(sample_frame) != design["target_rows"]:
+        raise UncertaintyError(
+            "targeted-validation sample row count differs from design")
+    _require_columns(
+        sample_frame,
+        ("failure_mask", "gate_pass", "stratum", "targeted_weight"),
+        "targeted-validation sample")
+    weights = pd.to_numeric(sample_frame.targeted_weight, errors="coerce")
+    if (not np.isfinite(weights.to_numpy(float)).all() or (weights <= 0).any()):
+        raise UncertaintyError("targeted-validation sample has invalid weights")
+    sample_frame["targeted_weight"] = weights
+    sample_masks = sample_frame.failure_mask.astype(str)
+    if (set(sample_masks) != set(TARGETED_VALIDATION_MASKS)
+            or any(bool(value) is not (mask == "0000")
+                   for value, mask in zip(sample_frame.gate_pass, sample_masks))):
+        raise UncertaintyError(
+            "targeted-validation sample has invalid gate partition")
+    disclosed = sorted(
+        set(design["blinding"]["external_matching_prohibited_fields"])
+        .intersection(match_frame.columns))
+    if disclosed:
+        raise UncertaintyError(
+            f"targeted-validation match list discloses design fields: {disclosed}")
+    if set(match_frame.columns) != set(
+            design["blinding"]["external_matching_allowed_fields"]):
+        raise UncertaintyError(
+            "targeted-validation match list fields differ from frozen blinding")
+
+    _require_columns(outcome_frame, ("status",), "targeted-validation outcomes")
+    unknown_statuses = sorted(
+        set(outcome_frame.status.astype(str)) - VALIDATION_OUTCOME_STATUSES)
+    if unknown_statuses:
+        raise UncertaintyError(
+            f"targeted-validation outcomes contain unknown statuses: {unknown_statuses}")
+    row_allowed = {
+        "sample_id", "status", "real_co2_kg", "ideal_co2_kg",
+        "hybrid_co2_kg", "match_candidate_count",
+        "match_mutual_nearest", "primary_runner_up_score",
+        "source_runner_up_score",
+        "departure_time_delta_s", "arrival_time_delta_s",
+        "origin_distance_km", "destination_distance_km",
+        "proxy_coverage_fraction", "source_unique_points",
+        "source_flown_distance_km", "source_gc_distance_km",
+        "source_max_segment_speed_kt", "proxy_quality_pass", "reason",
+    }
+    extra_rows = sorted(set(outcome_frame.columns) - row_allowed)
+    if extra_rows:
+        raise UncertaintyError(
+            f"targeted-validation outcome rows have unknown fields: {extra_rows}")
+    joined = sample_frame.merge(
+        outcome_frame, on="sample_id", how="left", validate="one_to_one")
+    measured = joined.status == "measured"
+    for row in joined.loc[~measured].itertuples(index=False):
+        if not isinstance(getattr(row, "reason", None), str) or not row.reason.strip():
+            raise UncertaintyError(
+                f"targeted non-measured outcome lacks a reason: {row.sample_id}")
+        for field in ("real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg"):
+            value = getattr(row, field, None)
+            if value is not None and not pd.isna(value):
+                raise UncertaintyError(
+                    f"targeted non-measured outcome contains {field}: {row.sample_id}")
+    if measured.any():
+        measured_fields = (
+            "real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg",
+            "match_candidate_count", "match_mutual_nearest",
+            "primary_runner_up_score", "source_runner_up_score",
+            "departure_time_delta_s",
+            "arrival_time_delta_s", "origin_distance_km",
+            "destination_distance_km", "proxy_coverage_fraction",
+            "source_unique_points", "source_flown_distance_km",
+            "source_gc_distance_km", "source_max_segment_speed_kt",
+            "proxy_quality_pass",
+        )
+        _require_columns(joined, measured_fields, "targeted measured outcomes")
+        values = joined.loc[measured, [
+            "real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg"]].apply(
+                pd.to_numeric, errors="coerce").to_numpy(float)
+        if (not np.isfinite(values).all() or (values < 0).any()
+                or (values[:, 1] <= 0).any()):
+            raise UncertaintyError(
+                "targeted measured outcomes contain invalid CO2 components")
+        candidates = pd.to_numeric(
+            joined.loc[measured, "match_candidate_count"], errors="coerce")
+        diagnostics = joined.loc[measured, [
+            "departure_time_delta_s", "arrival_time_delta_s",
+            "origin_distance_km", "destination_distance_km",
+            "proxy_coverage_fraction", "source_unique_points",
+            "source_flown_distance_km", "source_gc_distance_km",
+            "source_max_segment_speed_kt"]].apply(
+                pd.to_numeric, errors="coerce")
+        if (candidates.isna().any() or (candidates < 1).any()
+                or (candidates % 1 != 0).any()):
+            raise UncertaintyError(
+                "targeted measured outcomes have invalid match candidate counts")
+        if (not np.isfinite(diagnostics.to_numpy(float)).all()
+                or (diagnostics < 0).any().any()
+                or (diagnostics.proxy_coverage_fraction > 1).any()):
+            raise UncertaintyError(
+                "targeted measured outcomes contain invalid diagnostics")
+        matching = design["matching"]
+        if ((diagnostics.departure_time_delta_s
+             > matching["candidate_max_departure_delta_s"]).any()
+                or (diagnostics.arrival_time_delta_s
+                    > matching["candidate_max_arrival_delta_s"]).any()
+                or (diagnostics.origin_distance_km
+                    > matching["candidate_max_origin_distance_km"]).any()
+                or (diagnostics.destination_distance_km
+                    > matching["candidate_max_destination_distance_km"]).any()):
+            raise UncertaintyError(
+                "targeted measured outcome exceeds frozen matching limits")
+        score = (
+            diagnostics.departure_time_delta_s / 900.0
+            + diagnostics.arrival_time_delta_s / 900.0
+            + diagnostics.origin_distance_km / 25.0
+            + diagnostics.destination_distance_km / 25.0)
+        if (score > matching["maximum_score"]).any():
+            raise UncertaintyError(
+                "targeted measured outcome exceeds frozen matching score")
+        mutual = joined.loc[measured, "match_mutual_nearest"].tolist()
+        if not all(isinstance(value, (bool, np.bool_)) and bool(value)
+                   for value in mutual):
+            raise UncertaintyError(
+                "targeted measured outcomes must be mutual nearest matches")
+        primary_runner = pd.to_numeric(
+            joined.loc[measured, "primary_runner_up_score"], errors="coerce")
+        source_runner = pd.to_numeric(
+            joined.loc[measured, "source_runner_up_score"], errors="coerce")
+        singleton = candidates == 1
+        if ((~primary_runner.loc[singleton].isna()).any()
+                or (~source_runner.loc[singleton].isna()).any()):
+            raise UncertaintyError(
+                "targeted singleton matches cannot have runner-up scores")
+        multiple = ~singleton
+        if multiple.any():
+            primary_multiple = primary_runner.loc[multiple]
+            source_multiple = source_runner.loc[multiple]
+            multiple_score = score.loc[multiple]
+            if (primary_multiple.isna().any() or source_multiple.isna().any()
+                    or (primary_multiple <= 0).any()
+                    or (source_multiple <= 0).any()
+                    or (multiple_score > 0.75 * primary_multiple).any()
+                    or (multiple_score > 0.75 * source_multiple).any()):
+                raise UncertaintyError(
+                    "targeted non-singleton match fails frozen runner-up rule")
+        source_quality = design["source_quality"]
+        unique_points = diagnostics.source_unique_points
+        if ((unique_points % 1 != 0).any()
+                or (unique_points
+                    < source_quality["minimum_unique_points"]).any()
+                or (diagnostics.proxy_coverage_fraction
+                    < source_quality["coverage_min_fraction"]).any()
+                or (diagnostics.source_gc_distance_km
+                    < source_quality["great_circle_min_km"]).any()
+                or (diagnostics.source_flown_distance_km
+                    < source_quality["flown_min_fraction_of_source_gc"]
+                    * diagnostics.source_gc_distance_km).any()
+                or (diagnostics.source_max_segment_speed_kt
+                    > source_quality["maximum_segment_speed_kt"]).any()):
+            raise UncertaintyError(
+                "targeted measured outcome fails frozen source-quality thresholds")
+        quality = joined.loc[measured, "proxy_quality_pass"].tolist()
+        if not all(isinstance(value, (bool, np.bool_)) and bool(value)
+                   for value in quality):
+            raise UncertaintyError(
+                "targeted measured outcomes must pass frozen source quality")
+        joined.loc[measured, [
+            "real_co2_kg", "ideal_co2_kg", "hybrid_co2_kg"]] = values
+
+    response_by_mask = []
+    proxy_by_mask = {}
+    minimum = design["minimum_measured_rows"]
+    all_support = True
+    for mask in TARGETED_VALIDATION_MASKS:
+        group = joined.loc[joined.failure_mask.astype(str) == mask]
+        group_measured = group.status == "measured"
+        n_measured = int(group_measured.sum())
+        meets = n_measured >= int(minimum[mask])
+        all_support = all_support and meets
+        row = {
+            "failure_mask": mask,
+            "requested_rows": int(len(group)),
+            "measured_rows": n_measured,
+            "measured_row_share": float(group_measured.mean()),
+            "measured_targeted_weight_share": float(
+                group.loc[group_measured, "targeted_weight"].sum()
+                / group.targeted_weight.sum()),
+            "minimum_measured_rows": int(minimum[mask]),
+            "minimum_support_met": bool(meets),
+            "status_counts": {
+                str(status): int(count)
+                for status, count in group.status.value_counts().sort_index().items()
+            },
+        }
+        if n_measured:
+            measured_group = group.loc[group_measured]
+            proxy_values = measured_group[[
+                "real_co2_kg", "ideal_co2_kg",
+                "hybrid_co2_kg"]].to_numpy(float)
+            proxy_by_mask[mask] = {
+                "weighted_conditional_gap_pct": _targeted_gap_metrics(
+                    proxy_values,
+                    measured_group.targeted_weight.to_numpy(float)),
+                "unweighted_conditional_gap_pct": _targeted_gap_metrics(
+                    proxy_values, None),
+            }
+            row.update(proxy_by_mask[mask])
+        response_by_mask.append(row)
+
+    status = (
+        "complete_targeted_diagnostic" if all_support
+        else "blocked_insufficient_mask_support")
+    result = {
+        "schema_version": 1,
+        "kind": "co2gap-targeted-heldout-validation-result",
+        "publication_status": "aggregate_diagnostic",
+        "analysis_status": status,
+        "release_id": design["release_id"],
+        "targeted_design_sha256": design_hash,
+        "registration_sha256": sha256_file(registration_path),
+        "input_hashes": {
+            "sample": sha256_file(sample_path),
+            "match_list": sha256_file(match_path),
+            "outcomes": sha256_file(outcomes_path),
+        },
+        "source": source,
+        "source_relation_verified_by_code": False,
+        "response_by_failure_mask": response_by_mask,
+        "rejected_masks_pooled": False,
+        "primary_headline_bias_bounded": False,
+        "claims": design["claims"],
+        "limitations": [
+            "Every proxy is conditional on external matching and frozen source quality; targeted weights do not correct source nonresponse.",
+            "Minimum measured-row thresholds provide descriptive support, not unbiasedness or statistical coverage.",
+            "Receiver provenance is declared by the source and cannot be verified by this code.",
+            "The tranche excludes rare failure masks and all historical upstream ingestion exclusions.",
+            "No result from this targeted diagnostic corrects or bounds the frozen release headline."
+        ],
+        "privacy": (
+            "Aggregate result only; no sample id, flight key, time, endpoint or "
+            "provider track id is emitted."),
+    }
+    if all_support:
+        control = proxy_by_mask["0000"]
+        contrasts = []
+        for mask in TARGETED_VALIDATION_MASKS[1:]:
+            row = {"failure_mask": mask}
+            for basis in (
+                    "weighted_conditional_gap_pct",
+                    "unweighted_conditional_gap_pct"):
+                row[f"{basis}_minus_0000_percentage_points"] = {
+                    metric: proxy_by_mask[mask][basis][metric] - control[basis][metric]
+                    for metric in (
+                        "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct")
+                }
+            contrasts.append(row)
+        result["conditional_contrasts"] = contrasts
+        result["interpretation"] = (
+            "Held-out mask-specific conditional diagnostic. Weighted contrasts are "
+            "primary; unweighted contrasts diagnose composition. Neither is a "
+            "release-wide correction or bound.")
+    else:
+        result["blocked_reason"] = (
+            "At least one frozen failure mask has fewer measured outcomes than "
+            "its pre-source minimum. No mask contrast is released.")
     return result
 
 
@@ -2481,6 +3448,12 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument(
         "--selection-sensitivity-design", type=Path,
         default=ROOT / "selection-sensitivity-design.json")
+    check.add_argument(
+        "--targeted-validation-design", type=Path,
+        default=ROOT / "targeted-validation-design.json")
+    check.add_argument(
+        "--targeted-validation-registration", type=Path,
+        default=ROOT / "targeted-validation-registration.json")
 
     sample_parser = sub.add_parser("sample", help="write a weighted stratified sample manifest")
     sample_parser.add_argument("--release-manifest", type=Path, required=True)
@@ -2559,6 +3532,38 @@ def main(argv: list[str] | None = None) -> int:
         "--selection-audit", type=Path, required=True)
     selection_sensitivity_parser.add_argument("--out", type=Path, required=True)
 
+    targeted_sample_parser = sub.add_parser(
+        "targeted-validation-sample",
+        help="derive the private targeted tranche and blinded match list")
+    targeted_sample_parser.add_argument("--parent-sample", type=Path, required=True)
+    targeted_sample_parser.add_argument(
+        "--parent-match-list", type=Path, required=True)
+    targeted_sample_parser.add_argument(
+        "--design", type=Path,
+        default=ROOT / "targeted-validation-design.json")
+    targeted_sample_parser.add_argument("--out", type=Path, required=True)
+    targeted_sample_parser.add_argument("--match-out", type=Path, required=True)
+    targeted_sample_parser.add_argument(
+        "--registration-out", type=Path, required=True)
+    targeted_sample_parser.add_argument(
+        "--registered", type=Path,
+        default=ROOT / "targeted-validation-registration.json",
+        help="tracked aggregate registration that regenerated outputs must match")
+
+    targeted_parser = sub.add_parser(
+        "targeted-validation",
+        help="validate external targeted outcomes and emit mask diagnostics")
+    targeted_parser.add_argument("--sample", type=Path, required=True)
+    targeted_parser.add_argument("--match-list", type=Path, required=True)
+    targeted_parser.add_argument("--outcomes", type=Path, required=True)
+    targeted_parser.add_argument(
+        "--design", type=Path,
+        default=ROOT / "targeted-validation-design.json")
+    targeted_parser.add_argument(
+        "--registration", type=Path,
+        default=ROOT / "targeted-validation-registration.json")
+    targeted_parser.add_argument("--out", type=Path, required=True)
+
     sensitivity_parser = sub.add_parser(
         "sensitivity", help="run paired finite-difference scenarios")
     _common_release_arguments(sensitivity_parser)
@@ -2580,6 +3585,12 @@ def main(argv: list[str] | None = None) -> int:
         sensitivity_design = validate_selection_sensitivity_design(
             _load_json(args.selection_sensitivity_design),
             args.selection_sensitivity_design)
+        targeted_design_value = _load_json(args.targeted_validation_design)
+        targeted_design = validate_targeted_validation_design(
+            targeted_design_value, args.targeted_validation_design)
+        targeted_registration = validate_targeted_validation_registration(
+            _load_json(args.targeted_validation_registration),
+            targeted_design_value, args.targeted_validation_design)
         print(f"uncertainty register: {registry['estimands']} estimands, "
               f"{registry['sources']} sources")
         print(f"diagnostic scenarios: {scenarios['scenarios']}, "
@@ -2591,6 +3602,10 @@ def main(argv: list[str] | None = None) -> int:
             "selection sensitivity: "
             f"{sensitivity_design['stress_levels']} stress levels, "
             f"{sensitivity_design['mapped_masks']} rejected masks")
+        print(
+            "targeted held-out validation: "
+            f"{targeted_design['target_rows']:,} rows in "
+            f"{targeted_registration['masks']} masks registered")
         return 0
 
     if args.command == "sample":
@@ -2720,6 +3735,49 @@ def main(argv: list[str] | None = None) -> int:
             "selection sensitivity: centrale signed "
             f"{signed:+.3f} pp, adverse {lower:+.3f}..{upper:+.3f} pp; "
             f"not a bound -> {args.out}")
+        return 0
+
+    if args.command == "targeted-validation-sample":
+        sample_value, _, registration = write_targeted_validation_artifacts(
+            design_path=args.design,
+            parent_sample_path=args.parent_sample,
+            parent_match_path=args.parent_match_list,
+            output=args.out, match_output=args.match_out,
+            registration_output=args.registration_out)
+        registered = _load_json(args.registered)
+        validate_targeted_validation_registration(
+            registered, _load_json(args.design), args.design)
+        if registration != registered:
+            raise UncertaintyError(
+                "regenerated targeted-validation tranche differs from the "
+                "tracked aggregate registration")
+        counts = ", ".join(
+            f"{row['failure_mask']}={row['sample_rows']}"
+            for row in registration["by_failure_mask"])
+        print(
+            f"targeted validation: {sample_value['sample_rows']:,} private rows "
+            f"({counts}); blinded match list and aggregate registration written")
+        return 0
+
+    if args.command == "targeted-validation":
+        result = targeted_validation_result(
+            design_path=args.design,
+            registration_path=args.registration,
+            sample_path=args.sample, match_path=args.match_list,
+            outcomes_path=args.outcomes)
+        _atomic_json(args.out, result)
+        if result["analysis_status"] != "complete_targeted_diagnostic":
+            print(
+                "targeted validation: BLOCKED because at least one mask is "
+                f"below frozen support -> {args.out}")
+            return 2
+        totals = ", ".join(
+            f"{row['failure_mask']}="
+            f"{row['weighted_conditional_gap_pct_minus_0000_percentage_points']['gap_total_pct']:+.3f} pp"
+            for row in result["conditional_contrasts"])
+        print(
+            f"targeted validation: weighted conditional total contrasts "
+            f"{totals}; not a bound -> {args.out}")
         return 0
 
     verify = not args.skip_manifest_verification

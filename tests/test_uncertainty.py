@@ -25,7 +25,12 @@ from uncertainty import (UncertaintyError, _metrics, _require_nested_counts,  # 
                          selection_sensitivity, validate_registry,
                          validate_scenarios, validate_selection_design,
                          validate_selection_sensitivity_design,
+                         targeted_validation_result,
+                         validate_targeted_validation_design,
+                         validate_targeted_validation_registration,
                          verify_registered_selection_artifacts,
+                         verify_registered_targeted_artifacts,
+                         write_targeted_validation_artifacts,
                          write_selection_validation_artifacts)
 
 
@@ -36,6 +41,10 @@ class RegistryTests(unittest.TestCase):
         design = json.loads((ROOT / "selection-validation-design.json").read_text())
         sensitivity_design = json.loads(
             (ROOT / "selection-sensitivity-design.json").read_text())
+        targeted_design = json.loads(
+            (ROOT / "targeted-validation-design.json").read_text())
+        targeted_registration = json.loads(
+            (ROOT / "targeted-validation-registration.json").read_text())
         self.assertEqual(validate_registry(registry), {"estimands": 6, "sources": 16})
         self.assertEqual(validate_scenarios(scenarios)["nominal"], "nominal")
         self.assertEqual(
@@ -46,6 +55,15 @@ class RegistryTests(unittest.TestCase):
                 sensitivity_design,
                 ROOT / "selection-sensitivity-design.json"),
             {"stress_levels": 3, "mapped_masks": 9})
+        self.assertEqual(
+            validate_targeted_validation_design(
+                targeted_design, ROOT / "targeted-validation-design.json"),
+            {"target_rows": 2279, "masks": 4})
+        self.assertEqual(
+            validate_targeted_validation_registration(
+                targeted_registration, targeted_design,
+                ROOT / "targeted-validation-design.json"),
+            {"sample_rows": 2279, "masks": 4})
 
     def test_quantified_source_requires_a_range(self):
         registry = json.loads((ROOT / "uncertainty-register.json").read_text())

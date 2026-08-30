@@ -100,6 +100,7 @@
     "redistribution": "No raw provider record is committed or published unless the provider explicitly permits it."
   },
   "matching": {
+    "required_profile": "targeted_mutual_nearest_v1",
     "candidate_max_departure_delta_s": 2700,
     "candidate_max_arrival_delta_s": 2700,
     "candidate_max_origin_distance_km": 100.0,
@@ -112,6 +113,7 @@
     "manual_overrides": false
   },
   "source_quality": {
+    "required_profile": "targeted_source_quality_v1",
     "temporal_aggregation_seconds": 60,
     "aggregation": "After exact position-time deduplication, median numerical states inside fixed Unix-minute bins and majority on-ground value.",
     "minimum_unique_points": 11,
@@ -158,17 +160,19 @@
     "clarified_at": "2026-08-30",
     "original_design_commit": "6c8809e",
     "external_source_accessed": false,
-    "reason": "The first protocol commit named matching thresholds but omitted the already intended score formula, and named weighted/unweighted diagnostics without declaring which was primary.",
+    "reason": "The first protocol commit named matching thresholds but omitted the already intended score formula, named weighted/unweighted diagnostics without declaring which was primary, and let the outcome contract assert source quality without carrying the diagnostics needed to check it. A pre-source adversarial review also found that the runner-up rule allowed non-singleton matching while the first schema required a singleton.",
     "changes": [
       "Freeze the OpenSky-developed matching score and tie tolerance.",
       "Declare the targeted-design-weighted ratio-of-sums contrast primary and the unweighted contrast secondary.",
-      "After a private-input-only allocation check, replace proportional second-stage control allocation with the pre-source variance-minimising discrete rule: Kish effective size rises from 529.20 to 539.92 of 600 controls and maximum weight falls from 4931 to 4898."
+      "After a private-input-only allocation check, replace proportional second-stage control allocation with the pre-source variance-minimising discrete rule: Kish effective size rises from 529.20 to 539.92 of 600 controls and maximum weight falls from 4931 to 4898.",
+      "Require per-row source-quality diagnostics and enforce every numerical quality threshold instead of trusting proxy_quality_pass alone.",
+      "Represent singleton and non-singleton mutual-nearest matches consistently and enforce the frozen runner-up ratio for both primary and source sides."
     ],
-    "outcome_schema_changed": false
+    "outcome_schema_changed": true
   },
   "outcome_contract": {
     "path": "lab/targeted-validation-outcomes.schema.json",
-    "sha256": "84cac3108761cbc5067f981f4a0937dce835729de4539fec1e3d438f8ae30d29"
+    "sha256": "ba869eadc9a6d4f713f2cbbcd8128f0761d1f6e8dc42c8e08b5ffed7567e4e9e"
   },
   "claims": {
     "replaces_canonical_validation": false,

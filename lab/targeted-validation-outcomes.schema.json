@@ -31,6 +31,8 @@
         "quality_rule",
         "licence_or_permission_reference",
         "receiver_provenance_statement",
+        "matching_profile",
+        "source_quality_profile",
         "processing_profile",
         "source_relation",
         "primary_trajectory_used",
@@ -45,6 +47,8 @@
         "quality_rule": {"type": "string", "minLength": 1},
         "licence_or_permission_reference": {"type": "string", "minLength": 1},
         "receiver_provenance_statement": {"type": "string", "minLength": 1},
+        "matching_profile": {"const": "targeted_mutual_nearest_v1"},
+        "source_quality_profile": {"const": "targeted_source_quality_v1"},
         "processing_profile": {"const": "ground_speed_proxy_v1"},
         "source_relation": {
           "enum": [
@@ -74,6 +78,15 @@
           "ideal_co2_kg": {"type": ["number", "null"], "exclusiveMinimum": 0},
           "hybrid_co2_kg": {"type": ["number", "null"], "minimum": 0},
           "match_candidate_count": {"type": "integer", "minimum": 1},
+          "match_mutual_nearest": {"type": "boolean"},
+          "primary_runner_up_score": {
+            "type": ["number", "null"],
+            "exclusiveMinimum": 0
+          },
+          "source_runner_up_score": {
+            "type": ["number", "null"],
+            "exclusiveMinimum": 0
+          },
           "departure_time_delta_s": {"type": "number", "minimum": 0},
           "arrival_time_delta_s": {"type": "number", "minimum": 0},
           "origin_distance_km": {"type": "number", "minimum": 0},
@@ -83,6 +96,10 @@
             "minimum": 0,
             "maximum": 1
           },
+          "source_unique_points": {"type": "integer", "minimum": 1},
+          "source_flown_distance_km": {"type": "number", "minimum": 0},
+          "source_gc_distance_km": {"type": "number", "exclusiveMinimum": 0},
+          "source_max_segment_speed_kt": {"type": "number", "minimum": 0},
           "proxy_quality_pass": {"type": "boolean"},
           "reason": {"type": "string", "minLength": 1}
         },
@@ -95,17 +112,49 @@
                 "ideal_co2_kg",
                 "hybrid_co2_kg",
                 "match_candidate_count",
+                "match_mutual_nearest",
+                "primary_runner_up_score",
+                "source_runner_up_score",
                 "departure_time_delta_s",
                 "arrival_time_delta_s",
                 "origin_distance_km",
                 "destination_distance_km",
                 "proxy_coverage_fraction",
+                "source_unique_points",
+                "source_flown_distance_km",
+                "source_gc_distance_km",
+                "source_max_segment_speed_kt",
                 "proxy_quality_pass"
               ],
               "properties": {
-                "match_candidate_count": {"const": 1},
+                "match_mutual_nearest": {"const": true},
                 "proxy_quality_pass": {"const": true}
-              }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {"match_candidate_count": {"const": 1}}
+                  },
+                  "then": {
+                    "properties": {
+                      "primary_runner_up_score": {"type": "null"},
+                      "source_runner_up_score": {"type": "null"}
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "primary_runner_up_score": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "source_runner_up_score": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    }
+                  }
+                }
+              ]
             },
             "else": {
               "required": ["reason"],
