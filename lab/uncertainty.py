@@ -40,6 +40,8 @@ for _part in ("pipeline", "ingest", "lab"):
 sys.path.insert(0, str(ROOT))
 
 from release_manifest import ReleaseManifest, sha256_file  # noqa: E402
+from sampling_precision import (FROZEN, PairedSamplingPrecision,
+                                SamplingPrecisionError)  # noqa: E402
 
 
 REGISTRY_STATUSES = {
@@ -3304,17 +3306,62 @@ def _check_corrected_wind_reference(row: pd.Series, nominal: dict,
     return checks
 
 
+def _verified_precision_sample(sample, manifest, flights_dir, decomposition_dir):
+    """Reproduce the declared draw from the verified frame, not just its weights."""
+    if sample.get("source_manifest_verified") is not True:
+        raise UncertaintyError("sampling precision requires a verified sample manifest")
+    seed = sample.get("seed")
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+        raise UncertaintyError("sampling precision requires a nonnegative integer seed")
+    design = sample.get("sampling_design")
+    if design is None:
+        per_stratum = _sampling_integer(sample.get("per_stratum"), "per_stratum")
+        target = None
+    else:
+        if not isinstance(design, dict):
+            raise UncertaintyError("invalid precision sampling design")
+        per_stratum = _sampling_integer(design.get("minimum_per_stratum"), "minimum", 2)
+        target = _sampling_integer(design.get("target_sample_rows"), "target sample")
+        if design != {
+            "allocation": "minimum-plus-proportional-remaining-capacity",
+            "minimum_per_stratum": per_stratum, "target_sample_rows": target,
+            "rounding": "integer largest remainders, lexicographic stratum ties",
+            "within_stratum": "simple random sampling without replacement",
+            "uses_sensitivity_outcomes": False,
+        } or "per_stratum" in sample:
+            raise UncertaintyError("sampling precision requires the declared SRS design")
+    population = build_population(manifest, flights_dir, decomposition_dir)
+    draw = stratified_sample(population, per_stratum, seed, target_sample=target)
+    expected = [{
+        "day": str(row.day), "flight_id": int(row.flight_id),
+        "stratum": str(row.stratum), "population_n": int(row.population_n),
+        "sample_n": int(row.sample_n), "weight": float(row.weight),
+    } for row in draw.itertuples(index=False)]
+    if sample.get("rows") != expected or sample.get("population_rows") != len(population):
+        raise UncertaintyError("precision sample differs from regenerated frame/draw")
+
+
 def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                        manifest_path: Path, flights_dir: Path,
                        decomposition_dir: Path, ground_dir: Path,
                        era5_dir: Path, calibration: Path,
                        verify: bool, limit: int | None = None,
-                       reference_profile: str = "frozen-release") -> dict:
+                       reference_profile: str = "frozen-release",
+                       sampling_precision: bool = False,
+                       precision_audit_out: Path | None = None) -> dict:
     """Run paired finite differences; return aggregates and no per-flight rows."""
     from decompose import decompose_flight
     from emissions import estimate_fuel
     from wind.era5 import WindField, required_wind_days
 
+    if precision_audit_out is not None:
+        if not sampling_precision:
+            raise UncertaintyError("precision-audit-out requires sampling-precision")
+        _require_outside_repository(precision_audit_out, "private sampling moments")
+        if precision_audit_out.exists():
+            raise UncertaintyError("private sampling moments output already exists")
+    if sampling_precision and (not verify or limit is not None):
+        raise UncertaintyError("sampling precision requires verified full inputs and no limit")
     if reference_profile not in SENSITIVITY_REFERENCE_PROFILES:
         raise UncertaintyError(f"unknown sensitivity reference profile: {reference_profile}")
     implementation = {
@@ -3323,6 +3370,8 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
             "pipeline/emissions.py", "wind/era5.py",
         )
     }
+    if sampling_precision:
+        implementation["lab/sampling_precision.py"] = sha256_file(ROOT / "lab/sampling_precision.py")
     # OpenAP's smooth limiter overflows for some extreme ground steps.  The
     # integrator converts those non-finite step flows to zero; this is the same
     # guarded condition suppressed by the production phase-0 runner.
@@ -3358,6 +3407,10 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
     rows = list(sample.get("rows") or [])
     if not rows:
         raise UncertaintyError("sample manifest has no rows")
+    precision = None
+    if sampling_precision:
+        _verified_precision_sample(sample, manifest, flights_dir, decomposition_dir)
+        precision = PairedSamplingPrecision(sample, scenarios, config["nominal"])
     truncated = limit is not None and limit < len(rows)
     if limit is not None:
         if limit <= 0:
@@ -3552,6 +3605,10 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
             _accumulate_flight(frozen_acc, weight, frozen_real,
                               float(row.ideal_gc_co2_kg), float(row.hybrid_co2_kg),
                               nominal_values[3])
+            if precision is not None:
+                precision.add((day, fid),
+                              {sid: values[:3] for sid, values in flight_results.items()},
+                              (frozen_real, float(row.ideal_gc_co2_kg), float(row.hybrid_co2_kg)))
             for sid, values in flight_results.items():
                 _accumulate_flight(acc[sid], weight, *values)
         del wind
@@ -3574,7 +3631,7 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         "max_abs_ideal_kg": float(closure["max_abs_ideal_kg"]),
         "max_abs_hybrid_kg": float(closure["max_abs_hybrid_kg"]),
     }
-    return {
+    output = {
         "schema_version": 2,
         "kind": "co2gap-paired-sensitivity",
         "reference_profile": reference_profile,
@@ -3650,6 +3707,23 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
             "are diagnostic steps, not probability bounds or confidence intervals."
         ),
     }
+    if precision is not None:
+        totals = {
+            sid: [value[f"{name}_u"] for name in ("real", "ideal", "hybrid")]
+            for sid, value in {**acc, FROZEN: frozen_acc}.items()
+        }
+        precision_result, audit = precision.finish(totals)
+        precision_result["draw_regenerated_from_verified_frame"] = True
+        if precision_audit_out is not None:
+            audit["provenance"] = {
+                name: output[name] for name in (
+                    "sample_sha256", "release_manifest_sha256", "scenario_sha256",
+                    "reference_profile", "implementation_sha256", "nominal")
+            }
+            _atomic_json(precision_audit_out, audit)
+            precision_result["private_moments_sha256"] = sha256_file(precision_audit_out)
+        output["sampling_precision"] = precision_result
+    return output
 
 
 def _common_release_arguments(parser: argparse.ArgumentParser) -> None:
@@ -3831,6 +3905,10 @@ def main(argv: list[str] | None = None) -> int:
     sensitivity_parser.add_argument("--limit", type=int, default=None,
                                     help="smoke test only; invalidates population estimate")
     sensitivity_parser.add_argument("--out", type=Path, required=True)
+    sensitivity_parser.add_argument("--sampling-precision", action="store_true",
+                                    help="conditional sampling SEs; verified full draw only, not model uncertainty")
+    sensitivity_parser.add_argument("--precision-audit-out", type=Path,
+                                    help="optional PRIVATE within-cell moments outside the repository; requires sampling-precision")
 
     args = parser.parse_args(argv)
     if args.command == "validate":
@@ -4046,12 +4124,16 @@ def main(argv: list[str] | None = None) -> int:
             calibration=args.calibration, ground_definition=args.ground_definition,
             iterations=args.iterations, seed=args.seed, verify=verify)
     else:
+        if args.precision_audit_out is not None and args.precision_audit_out.resolve() == args.out.resolve():
+            raise UncertaintyError("private precision audit and aggregate output must differ")
         result = paired_sensitivity(
             sample_path=args.sample, scenarios_path=args.scenarios,
             manifest_path=args.release_manifest, flights_dir=args.flights_dir,
             decomposition_dir=args.decomposition_dir, ground_dir=args.ground_dir,
             era5_dir=args.era5_dir, calibration=args.calibration,
-            verify=verify, limit=args.limit, reference_profile=args.reference_profile)
+            verify=verify, limit=args.limit, reference_profile=args.reference_profile,
+            sampling_precision=args.sampling_precision,
+            precision_audit_out=args.precision_audit_out)
     _atomic_json(args.out, result)
     if args.command == "sensitivity":
         print(f"reference profile: {result['reference_profile']}; diagnostic only")
@@ -4063,7 +4145,7 @@ def cli(argv: list[str] | None = None) -> int:
     """Render expected contract failures without hiding unexpected defects."""
     try:
         return main(argv)
-    except UncertaintyError as exc:
+    except (UncertaintyError, SamplingPrecisionError) as exc:
         print(f"uncertainty: ERROR: {exc}", file=sys.stderr)
         return 1
 

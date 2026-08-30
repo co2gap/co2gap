@@ -160,7 +160,9 @@ For each flight and scenario the runner:
    `cruise_alt_ft` and applying the declared offset;
 5. removes the selected stored ground-fuel share;
 6. applies the same type calibration to real, ideal and hybrid;
-7. discards the per-flight result and retains only weighted aggregates.
+7. retains weighted aggregates and discards the per-flight result; in the
+   optional precision mode, paired values remain privately in memory until the
+   within-stratum moments are calculated, then are discarded.
 
 The altitude anchor is essential. The historical optimiser caches by a rounded
 50 km distance bucket but calculates the cached value at the first caller's
@@ -248,6 +250,45 @@ task, not a hidden claim of v1.
 
 `--limit N` exists only for a complete smoke run. Its output is marked as a
 truncated sample and its population estimate is explicitly invalid.
+
+### Conditional sampling precision
+
+The optional final check retains paired within-stratum information long enough
+to estimate sampling standard errors for each total/lateral/vertical level and
+scenario contrast. It uses finite-population corrections and the joint ratio
+derivatives, including the random ideal denominator. This is a first-order
+approximation conditional on the fixed observed population and model, **not**
+physical CO2 uncertainty, a confidence interval, or a validation of the model.
+
+```bash
+umask 077  # private moment files must be readable only by this account
+python lab/uncertainty.py sensitivity \
+  --reference-profile corrected-wind \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --ground-dir /path/to/data/ground_share_ecac \
+  --era5-dir /path/to/data/era5_ecac \
+  --calibration "$PWD/data/calibration_ecac.json" \
+  --sample /tmp/co2gap-balanced-sample-seed1.json \
+  --sampling-precision \
+  --precision-audit-out /tmp/co2gap-sampling-moments-seed1.json \
+  --out /tmp/co2gap-sampling-precision-seed1.json
+```
+
+Run the three existing balanced samples serially, with distinct output paths.
+Without `--sampling-precision`, the existing metrics and output contract are
+unchanged. With it, verification is mandatory, the declared draw is regenerated
+from the verified frame, all paired scenarios must succeed, and **any**
+`--limit` is refused. Non-census singleton cells cannot supply a sample variance.
+
+The optional audit file contains **private** within-cell moments, not merely
+safe overall aggregates: small cells can reveal individual outcomes. Keep it
+outside the repository and do not publish it. Existing audit files are refused,
+and the audit and aggregate paths must differ. The aggregate stores its hash.
+The method, stopping rule and measurements are in
+[SAMPLING-PRECISION.md](SAMPLING-PRECISION.md). Low precision is a reported
+limitation, not authorisation to retune this experiment or begin another cycle.
 
 ## 5. Selection audit
 

@@ -239,6 +239,10 @@ Publish only overall diagnostics, not small-cell or per-flight outcomes.
 This is preferable to changing the allocation again on the evidence of these
 same three draws. External validation still awaits the separate provider work.
 
+**Subsequent follow-up:** [SAMPLING-PRECISION.md](SAMPLING-PRECISION.md) records
+the separately authorised final precision check on these unchanged samples.
+The preceding paragraph remains the proposal made at this report's close.
+
 ### Release isolation check
 
 The pre-commit release-profile build in

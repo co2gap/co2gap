@@ -892,7 +892,8 @@ class CorrectedWindReferenceTests(unittest.TestCase):
     def run_fixture(self, *, profile="corrected-wind", wind_change=2.0,
                     unexplained_drift=0.0, missing_wind=False, limit=None,
                     fail_scenario=False, verify=False, bad_replay=False,
-                    missing_profile=False):
+                    missing_profile=False, sampling_precision=False,
+                    precision_audit_out=None):
         import decompose
         import emissions
         import excess_wind
@@ -937,7 +938,90 @@ class CorrectedWindReferenceTests(unittest.TestCase):
                 manifest_path=self.manifest_path, flights_dir=self.base / "flights",
                 decomposition_dir=self.base / "decomposition", ground_dir=self.base / "ground",
                 era5_dir=self.base / "era5", calibration=self.base / "calibration.json",
-                verify=verify, limit=limit, reference_profile=profile)
+                verify=verify, limit=limit, reference_profile=profile,
+                sampling_precision=sampling_precision,
+                precision_audit_out=precision_audit_out)
+
+    def prepare_precision_sample(self):
+        sample = json.loads(self.sample_path.read_text())
+        sample.update(sample_rows=2, population_rows=6, strata=1,
+                      source_manifest_verified=True, seed=1, per_stratum=2)
+        for row in sample["rows"]:
+            row.update(stratum="A320|300_500|090_099", sample_n=2, population_n=6)
+        self.sample_path.write_text(json.dumps(sample))
+
+    def test_precision_is_optional_preserves_metrics_and_writes_private_audit(self):
+        import uncertainty
+        self.prepare_precision_sample()
+        for profile in ("frozen-release", "corrected-wind"):
+            with self.subTest(profile=profile):
+                plain = self.run_fixture(profile=profile, wind_change=0.0, verify=True)
+                audit = self.base / f"{profile}-moments.json"
+                with patch.object(uncertainty, "_verified_precision_sample") as regeneration:
+                    result = self.run_fixture(profile=profile, wind_change=0.0, verify=True,
+                                              sampling_precision=True, precision_audit_out=audit)
+                regeneration.assert_called_once()
+                precision = result.pop("sampling_precision")
+                result["implementation_sha256"].pop("lab/sampling_precision.py")
+                self.assertEqual(result, plain)
+                self.assertEqual(precision["private_moments_sha256"], sha256_file(audit))
+                self.assertTrue(precision["draw_regenerated_from_verified_frame"])
+                moments = json.loads(audit.read_text())
+                self.assertEqual(moments["provenance"]["sample_sha256"], sha256_file(self.sample_path))
+                self.assertNotIn("flight_id", audit.read_text())
+                original = audit.read_bytes()
+                with self.assertRaisesRegex(UncertaintyError, "already exists"):
+                    self.run_fixture(sampling_precision=True, verify=True, precision_audit_out=audit)
+                self.assertEqual(audit.read_bytes(), original)
+
+    def test_precision_refuses_partial_unverified_or_unpaired_runs(self):
+        import uncertainty
+        from sampling_precision import SamplingPrecisionError
+        self.prepare_precision_sample()
+        for kwargs in ({"verify": False}, {"verify": True, "limit": 1},
+                       {"verify": True, "limit": 2}):
+            with self.assertRaisesRegex(UncertaintyError, "verified full inputs and no limit"):
+                self.run_fixture(sampling_precision=True, **kwargs)
+        with self.assertRaisesRegex(UncertaintyError, "requires sampling-precision"):
+            self.run_fixture(precision_audit_out=self.base / "not-written.json")
+        with self.assertRaisesRegex(UncertaintyError, "outside the repository"):
+            self.run_fixture(sampling_precision=True, verify=True,
+                             precision_audit_out=ROOT / "do-not-write.json")
+        self.tables["decomposition"].loc[1, "co2_kg_v0"] = 121
+        with patch.object(uncertainty, "_verified_precision_sample"):
+            with self.assertRaisesRegex(SamplingPrecisionError, "incomplete paired population"):
+                self.run_fixture(verify=True, sampling_precision=True, fail_scenario="one",
+                                 precision_audit_out=self.base / "not-written.json")
+        self.assertFalse((self.base / "not-written.json").exists())
+
+    def test_precision_regenerates_the_declared_draw_from_the_frame(self):
+        import uncertainty
+        population = SamplingTests.population()
+        for target in (None, 10):
+            draw = stratified_sample(population, 2, 17, target_sample=target)
+            sample = write_sample_manifest(
+                manifest=self.manifest, population=population, sample=draw,
+                per_stratum=2, seed=17, output=self.base / "generated.json",
+                verified=True, target_sample=target)
+            with patch.object(uncertainty, "build_population", return_value=population):
+                uncertainty._verified_precision_sample(sample, self.manifest, self.base, self.base)
+                changed = copy.deepcopy(sample)
+                changed["rows"][0]["weight"] += 1
+                with self.assertRaisesRegex(UncertaintyError, "differs from regenerated"):
+                    uncertainty._verified_precision_sample(changed, self.manifest, self.base, self.base)
+                changed = copy.deepcopy(sample)
+                changed["source_manifest_verified"] = False
+                with self.assertRaisesRegex(UncertaintyError, "verified sample manifest"):
+                    uncertainty._verified_precision_sample(changed, self.manifest, self.base, self.base)
+                changed = copy.deepcopy(sample)
+                changed["seed"] = True
+                with self.assertRaisesRegex(UncertaintyError, "integer seed"):
+                    uncertainty._verified_precision_sample(changed, self.manifest, self.base, self.base)
+                if target is not None:
+                    changed = copy.deepcopy(sample)
+                    changed["sampling_design"]["within_stratum"] = "unknown design"
+                    with self.assertRaisesRegex(UncertaintyError, "declared SRS design"):
+                        uncertainty._verified_precision_sample(changed, self.manifest, self.base, self.base)
 
     def test_profiles_separate_wind_change_from_scenario_effect(self):
         for profile in ("frozen-release", "corrected-wind"):

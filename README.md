@@ -257,6 +257,12 @@ unchanged. The [sampling plan](sensitivity-sampling-design.json) records the
 pre-run choices; [full commands](UNCERTAINTY.md#optional-balanced-allocation)
 write only private lab artifacts under `/tmp`.
 
+The [final internal sampling check](SAMPLING-PRECISION.md) adds optional paired
+standard errors for total, lateral and vertical sensitivities on those same
+samples. [Full command and privacy rules](UNCERTAINTY.md#conditional-sampling-precision)
+keep the within-cell moments private. These conditional sampling errors are not
+physical CO2 uncertainty or confidence intervals for the release headline.
+
 The release-gate denominator and attrition can be audited independently of the
 fuel sensitivities:
 
