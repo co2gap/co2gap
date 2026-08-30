@@ -1852,7 +1852,7 @@ some movement counts by up to a sixth. The next release re-resolves every
 endpoint so that the whole window is matched one way.</p>
 <p>I am not an aviation professional or a climate scientist; I run an ADS-B
 receiver and I care about this. <b>The method, the modelling and the code were
-built with AI assistance</b> (Claude); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical
+built with AI assistance</b>; the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical
 decisions it implements are documented on this page precisely so they can be
 checked rather than taken on trust.</p>
 <p><b>Right of reply.</b> If a figure looks wrong to you, or if you represent
@@ -2790,7 +2790,7 @@ output of an institution. That is why the limitations are stated as prominently
 as the results.<br><br>
 I am not an aviation professional or a climate scientist; I run an ADS-B
 receiver and I care about this. The method, the modelling and the code were
-built with AI assistance (Claude); the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical choices behind them
+built with AI assistance; the constraints are mine — what the figures cover, when they change, and what this project declines to claim. The analytical choices behind them
 are written down so that people who know the field can check them.<br><br>
 <b>Found a mistake, or named here and want to reply?</b>
 <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> — corrections and replies

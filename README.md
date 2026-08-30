@@ -312,7 +312,7 @@ I am not an aviation professional, an air traffic controller or a climate
 scientist. I keep an ADS-B receiver at home, and this started as a personal
 project because the subject matters to me.
 
-**The method, the modelling and the code were built with AI assistance (Claude);
+**The method, the modelling and the code were built with AI assistance;
 the constraints are mine** — what the figures cover, when they change, and what
 this project declines to claim. The method and the code are open precisely so
 that people who do know the field can check them — and if you find an error,
