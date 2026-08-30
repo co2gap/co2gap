@@ -128,14 +128,14 @@
   },
   "proxy_model": {
     "typecode_source": "primary durable table, joined only after matching and source-quality classification",
-    "observed_fuel": "OpenAP with source ground speed; no IAS is available in the snapshot",
+    "observed_fuel": "OpenAP over the source takeoff-to-landing interval with source ground speed; no IAS is available in the snapshot",
     "load_factor": 0.82,
     "reserve_kg": 2000.0,
     "wind": "the same immutable ERA5 grid and baseline code as the release",
     "calibration": "none",
-    "ground_correction": "none",
+    "ground_correction": "none on the source proxy because its preferred time boundary is takeoff-to-landing; the like-for-like primary control removes frozen a3000t70 ground fuel before comparison",
     "reported_components": [
-      "gate-to-gate real CO2 proxy",
+      "takeoff-to-landing real CO2 proxy",
       "ideal great-circle CO2",
       "hybrid source-track-distance CO2",
       "total, lateral and vertical ratio-of-sums gaps"
@@ -160,7 +160,13 @@
     "original_result_status": "inconclusive_guardian_failure_not_a_selection_result",
     "diagnostic_observation": "Raw maximum segment speed was <=1200 kt for 180/8726 matched tracks; median aggregation in 60-second Unix bins was <=1200 kt for 8532/8726. Sensitivity was inspected at 10, 20, 30 and 60 seconds before this amendment.",
     "change": "Insert the declared robust one-minute aggregation before all source-quality metrics and proxy modelling; keep every matching rule and every other quality threshold unchanged.",
-    "confirmatory_status": "This amendment was chosen after inspecting source-quality behaviour. Reanalysis is exploratory and may motivate a future independently frozen day or source; it cannot inherit the original preregistration label."
+    "confirmatory_status": "This amendment was chosen after inspecting source-quality behaviour. Reanalysis is exploratory and may motivate a future independently frozen day or source; it cannot inherit the original preregistration label.",
+    "comparison_clarification": {
+      "trigger": "The first amended control compared an OpenSky takeoff-to-landing proxy with primary co2_kg_v0 before removal of frozen ground fuel.",
+      "first_amended_result_sha256": "f97751b646187a1d0a7e17bc7e41915db34edd5ed3d83de374c9b4e650cbeafe",
+      "change": "The source pass-versus-reject estimand is unchanged. Only the validation control is relabelled and made like-for-like by comparing with primary co2_kg_v0 times one minus frozen share_a3000t70.",
+      "status": "methodological correction before publication; both earlier aggregate hashes remain recorded"
+    }
   },
   "decision_rule": {
     "primary_headline_bias_bounded": false,

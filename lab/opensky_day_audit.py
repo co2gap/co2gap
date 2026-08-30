@@ -159,6 +159,7 @@ def _failure_mask(flags: pd.DataFrame) -> pd.Series:
 
 def prepare_primary_artifacts(*, design_path: Path, manifest_path: Path,
                               flights_dir: Path, decomposition_dir: Path,
+                              ground_dir: Path,
                               match_output: Path, private_output: Path) -> tuple[dict, dict]:
     """Freeze a blinded matching frame and a separate post-match key."""
     import track_quality
@@ -175,16 +176,26 @@ def prepare_primary_artifacts(*, design_path: Path, manifest_path: Path,
     )))
     flights_path = Path(flights_dir) / day / "flights.parquet"
     decomposition_path = Path(decomposition_dir) / f"{day}.parquet"
+    ground_path = Path(ground_dir) / f"{day}.parquet"
     try:
         flights = pq.read_table(flights_path, columns=columns).to_pandas()
         decomposition = pq.read_table(
             decomposition_path,
             columns=["flight_id", "co2_kg_v0", "ideal_gc_co2_kg", "hybrid_co2_kg"],
         ).to_pandas()
+        ground = pq.read_table(
+            ground_path, columns=["flight_id", "share_a3000t70"]).to_pandas()
     except Exception as exc:
         raise UncertaintyError(f"cannot read OpenSky primary day: {exc}") from exc
-    if flights.flight_id.duplicated().any() or decomposition.flight_id.duplicated().any():
+    if (flights.flight_id.duplicated().any()
+            or decomposition.flight_id.duplicated().any()
+            or ground.flight_id.duplicated().any()):
         raise UncertaintyError("OpenSky primary day has duplicate flight ids")
+    if set(ground.flight_id.astype(int)) != set(flights.flight_id.astype(int)):
+        raise UncertaintyError("OpenSky primary day ground-share keys do not close")
+    shares = pd.to_numeric(ground.share_a3000t70, errors="coerce").to_numpy(float)
+    if not np.isfinite(shares).all() or (shares < 0).any() or (shares > 1).any():
+        raise UncertaintyError("OpenSky primary day contains invalid ground shares")
     flags = selection_flags(
         flights, coverage_min=track_quality.COV_MIN,
         gc_min_km=track_quality.GC_MIN_KM)
@@ -217,7 +228,8 @@ def prepare_primary_artifacts(*, design_path: Path, manifest_path: Path,
         raise UncertaintyError("primary matching frame contains non-finite values")
     joined = flights.merge(
         decomposition, on="flight_id", how="left", validate="one_to_one",
-        suffixes=("", "_decomposition"))
+        suffixes=("", "_decomposition")).merge(
+            ground, on="flight_id", how="left", validate="one_to_one")
     match_rows = flights[list(PRIMARY_MATCH_COLUMNS)].sort_values(
         "opaque_primary_id").to_dict("records")
     match_value = {
@@ -241,6 +253,8 @@ def prepare_primary_artifacts(*, design_path: Path, manifest_path: Path,
             "failure_mask": str(row.failure_mask),
             "gate_pass": bool(row.gate_pass),
             "primary_first_pass_co2_kg": float(row.co2_kg_v0),
+            "primary_airborne_co2_kg": float(
+                row.co2_kg_v0 * (1.0 - row.share_a3000t70)),
             "primary_ideal_co2_kg": (
                 float(row.ideal_gc_co2_kg) if pd.notna(row.ideal_gc_co2_kg) else None),
             "primary_hybrid_co2_kg": (
@@ -1004,6 +1018,7 @@ def run_audit(*, design_path: Path, manifest_path: Path, private_path: Path,
                 "ideal_co2_kg": float(result["ideal_gc_co2_kg"]),
                 "hybrid_co2_kg": float(result["hybrid_co2_kg"]),
                 "primary_real_co2_kg": _finite(row.primary_first_pass_co2_kg),
+                "primary_airborne_co2_kg": _finite(row.primary_airborne_co2_kg),
                 "primary_ideal_co2_kg": _finite(row.primary_ideal_co2_kg),
                 "primary_hybrid_co2_kg": _finite(row.primary_hybrid_co2_kg),
             })
@@ -1039,11 +1054,12 @@ def run_audit(*, design_path: Path, manifest_path: Path, private_path: Path,
     controls = [
         row for row in passing
         if all(row[name] is not None for name in (
-            "primary_real_co2_kg", "primary_ideal_co2_kg", "primary_hybrid_co2_kg"))
+            "primary_airborne_co2_kg", "primary_ideal_co2_kg",
+            "primary_hybrid_co2_kg"))
     ]
     primary_control = _ratio_metrics([
         {
-            "real_co2_kg": row["primary_real_co2_kg"],
+            "real_co2_kg": row["primary_airborne_co2_kg"],
             "ideal_co2_kg": row["primary_ideal_co2_kg"],
             "hybrid_co2_kg": row["primary_hybrid_co2_kg"],
         }
@@ -1054,8 +1070,8 @@ def run_audit(*, design_path: Path, manifest_path: Path, private_path: Path,
     if primary_control and proxy_control:
         control_comparison = {
             "flights": len(controls),
-            "primary_frozen_gate_to_gate": primary_control,
-            "opensky_ground_speed_proxy": proxy_control,
+            "primary_frozen_airborne_a3000t70": primary_control,
+            "opensky_takeoff_to_landing_ground_speed_proxy": proxy_control,
             "opensky_minus_primary_percentage_points": {
                 name: float(proxy_control[name] - primary_control[name])
                 for name in ("total_gap_pct", "lateral_gap_pct", "vertical_gap_pct")
@@ -1104,6 +1120,7 @@ def main(argv: list[str] | None = None) -> int:
     prepare = sub.add_parser("prepare", help="write blinded and private primary frames")
     prepare.add_argument("--flights-dir", type=Path, required=True)
     prepare.add_argument("--decomposition-dir", type=Path, required=True)
+    prepare.add_argument("--ground-dir", type=Path, required=True)
     prepare.add_argument("--match-out", type=Path, required=True)
     prepare.add_argument("--private-out", type=Path, required=True)
 
@@ -1145,6 +1162,7 @@ def main(argv: list[str] | None = None) -> int:
         match_value, private_value = prepare_primary_artifacts(
             design_path=args.design, manifest_path=args.release_manifest,
             flights_dir=args.flights_dir, decomposition_dir=args.decomposition_dir,
+            ground_dir=args.ground_dir,
             match_output=args.match_out, private_output=args.private_out)
         print(
             f"primary day: {len(match_value['rows']):,} blinded rows; "
