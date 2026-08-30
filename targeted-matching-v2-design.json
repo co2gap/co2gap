@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-targeted-matching-v2-design",
+  "publication_status": "aggregate_preregistration",
+  "analysis_status": "pilot_informed_protocol_frozen_before_requested_source_outcomes",
+  "registered_at": "2026-08-30",
+  "release_id": "2026-09-01",
+  "purpose": "Replace only the unsafe flight-identity component of targeted_mutual_nearest_v1. The sample, allocation, source-quality thresholds, proxy model, estimands and claims remain unchanged.",
+  "supersedes": {
+    "component": "matching_only",
+    "design_path": "targeted-validation-design.json",
+    "design_sha256": "f9355e44524774efb82fa94d810dbfda96e82766dbc3e381a7d115938fdb6e06",
+    "registration_path": "targeted-validation-registration.json",
+    "registration_sha256": "6b6acf90fbcb472c149259e1cc259ad2adaa95d18d25776d57f45e0616bcb9e5",
+    "v1_files_unchanged": true,
+    "v1_outcomes_must_not_be_relabelled_v2": true
+  },
+  "sample_contract": {
+    "sample_rows": 2279,
+    "private_sample_sha256": "46119ebc28db0c287175ae11d316a11924f653e6b371f3a6dcb290db5ee2ddfa",
+    "blinded_match_list_sha256": "8fedf21be0236784e37ec00048988614ff905729fadf0cb2a8459d3fbea9c02b",
+    "allocation_unchanged": true,
+    "minimum_support_unchanged": true
+  },
+  "chronology": {
+    "trigger": "A free ADS-B Exchange first-of-month pilot exposed a false positive under v1 before any Wingbits extract or OpenSky targeted historical extract was received.",
+    "pilot_rows_in_frozen_tranche": 102,
+    "pilot_rows_on_adversarial_day": 14,
+    "source_emissions_outcomes_computed": false,
+    "matching_received_gate_status": false,
+    "matching_received_primary_track_quality": false,
+    "post_pilot_status": "The v2 identity rules are explicitly pilot-informed; they are not represented as part of the earlier v1 preregistration.",
+    "future_use_boundary": "Freeze this file and its tests before inspecting any requested Wingbits or OpenSky targeted extract."
+  },
+  "blinding": {
+    "primary_matching_fields": [
+      "sample_id",
+      "day",
+      "typecode",
+      "dep_ts",
+      "arr_ts",
+      "o_lat",
+      "o_lon",
+      "d_lat",
+      "d_lon"
+    ],
+    "prohibited_primary_fields": [
+      "flight_id",
+      "failure_mask",
+      "gate_pass",
+      "stratum",
+      "distance_band",
+      "coverage_band",
+      "population_n",
+      "sample_n",
+      "weight",
+      "targeted_weight"
+    ],
+    "failure_mask_joined_after_matching_and_source_quality": true
+  },
+  "source_contract": {
+    "flight_columns": [
+      "source_id",
+      "icao24",
+      "typecode",
+      "dep_ts",
+      "arr_ts",
+      "o_lat",
+      "o_lon",
+      "d_lat",
+      "d_lon"
+    ],
+    "track_columns": [
+      "source_id",
+      "time",
+      "lat",
+      "lon"
+    ],
+    "track_scope": "Each source_id must carry source-only positions covering the provider flight and the candidate time padding. Reusing a daily aircraft trace is allowed only after assigning every point to the candidate source_id without primary gate or quality fields.",
+    "provider_flight_key_required": true,
+    "source_typecode_required": true
+  },
+  "matching": {
+    "required_profile": "targeted_identity_mutual_nearest_v2",
+    "candidate_max_departure_delta_s": 2700,
+    "candidate_max_arrival_delta_s": 2700,
+    "candidate_max_origin_distance_km": 100.0,
+    "candidate_max_destination_distance_km": 100.0,
+    "typecode_rule": "exact_normalized_icao_designator",
+    "unknown_typecode_policy": "reject",
+    "track_endpoint_time_window_s": 600,
+    "track_endpoint_max_distance_km": 50.0,
+    "track_endpoint_rule": "Within plus or minus 600 seconds of each primary endpoint time, the candidate source track must contain at least one position no more than 50 km from that primary endpoint. Both endpoints are mandatory.",
+    "score": "abs(dep_delta)/900 + abs(arr_delta)/900 + origin_km/25 + destination_km/25",
+    "maximum_score": 8.0,
+    "assignment": "one-to-one mutual nearest neighbour after type and source-track identity guards",
+    "runner_up_rule": "Accept a non-singleton identity-consistent candidate set only when best_score <= 0.75 * second_best_score on both primary and source sides.",
+    "runner_up_max_ratio": 0.75,
+    "tie_epsilon": 1e-09,
+    "manual_overrides": false,
+    "candidate_deletion_test_required": true
+  },
+  "implementation_contract": {
+    "module_path": "lab/targeted_match.py",
+    "module_sha256": "cde2f572f14229edefb97255ef9f7bea60bb63f658fee3744300b391bd7c1582",
+    "adversarial_test_path": "tests/test_targeted_matching_v2.py",
+    "adversarial_test_sha256": "bae19d0bdb48c3cb738aa839373e192c4e011bd766893d3d538d957376d88017"
+  },
+  "unchanged_components": {
+    "source_quality_profile": "targeted_source_quality_v1",
+    "processing_profile": "ground_speed_proxy_v1",
+    "minimum_measured_rows": {
+      "0000": 400,
+      "0100": 300,
+      "1000": 450,
+      "1100": 200
+    },
+    "pool_rejected_masks": false,
+    "missing_outcomes": "No imputation."
+  },
+  "decision_rule": {
+    "matched": "A candidate must pass anchor limits, exact type, both source-track endpoint guards, maximum score, mutual-nearest assignment and both runner-up margins.",
+    "not_found_over_false_match": "When no candidate passes every identity guard, return a non-measured status. Source-track quality may never rescue a failed identity.",
+    "missing_track": "An exact-type anchor candidate without assigned source points is track_missing, not track_inconsistent and never measured.",
+    "v1_status": "targeted_mutual_nearest_v1 is retained for reproducibility but must not be used for new external outcomes.",
+    "residual_limit": "Two same-type flights on the same route and nearly the same schedule can remain observationally indistinguishable without a shared stable identifier; v2 reduces but cannot prove zero identity error."
+  },
+  "claims": {
+    "is_original_v1_preregistration": false,
+    "is_post_pilot": true,
+    "changes_sample_or_weights": false,
+    "corrects_release_headline": false,
+    "bounds_release_headline": false,
+    "proves_receiver_independence": false,
+    "proves_zero_identity_error": false
+  }
+}

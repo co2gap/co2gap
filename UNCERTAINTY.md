@@ -484,6 +484,58 @@ test the contract it is meant to enforce. Until that adapter exists, the
 analyzer can reject inconsistent returned diagnostics but cannot independently
 prove that they were computed faithfully from the provider's raw states.
 
+## 11. Matching v2 after the ADS-B Exchange adversarial pilot
+
+The seven free first-of-month ADS-B Exchange days intersect only **102 of the
+2,279** frozen targeted rows: 23 `0000`, 35 `0100`, 28 `1000` and 16 `1100`.
+Even perfect outcomes cannot reach the registered minima of 400, 300, 450 and
+200, so this source cannot complete the targeted diagnostic. The sample was
+regenerated in `/tmp` before this count: all four registered SHA-256 values
+matched and the regenerated registration was byte-identical.
+
+The 1 March overlap was nevertheless an informative adversarial test. The v1
+anchor matcher returned 12 matches, one ambiguity and one missing row among 14
+targets. One accepted match was demonstrably another flight: the primary A320
+LGAV--LTFM beginning at 16:45 was assigned to an A20N LGAV--LTFJ beginning 29
+minutes earlier. At the primary departure time the source aircraft was already
+311 km from the origin. Its unrelated leg still passed the source-quality gate
+with 77 minute bins, coverage 0.931, flown/GC 1.285 and maximum segment speed
+407 kt. This separates two propositions that v1 had conflated: a track can be
+high quality while belonging to the wrong flight.
+
+V1 remains immutable for chronology and reproduction, but is retired for new
+outcomes. `targeted-matching-v2-design.json` is openly **post-pilot** and
+supersedes only its identity component. `lab/targeted_match.py` enforces, before
+any failure-mask join:
+
+* an exact normalised ICAO type designator; missing or different types fail;
+* a source-only position within 600 seconds and 50 km of **each** primary
+  endpoint time and coordinate;
+* the existing time/endpoint anchor limits and score;
+* one-to-one mutual-nearest assignment and both runner-up margins;
+* no manual override and a mandatory candidate-deletion regression.
+
+The source adapter must associate provider positions with a stable source
+flight key and cover the provider leg plus candidate padding. A missing source
+track is distinct from a present but inconsistent one. Neither state is
+measured, and the later quality gate cannot change that decision.
+
+On the same 14-row pilot, after including all 28 anchor candidates and every
+exact-type candidate trace, v2 returns **12 matched, one type mismatch and one
+no candidate**. The known false positive is the type mismatch. Removing a true
+candidate in the synthetic adversarial suite leaves its plausible same-type
+decoy as `track_inconsistent`, rather than promoting it. These are matcher
+tests, not emissions outcomes and not a new estimate.
+
+The repair has a deliberate limit. Two same-type flights on the same route and
+nearly the same schedule may remain indistinguishable without a stable
+identifier shared by the two sources. V2 reduces demonstrated identity error;
+it does not prove zero error. It was frozen before any requested Wingbits or
+OpenSky targeted extract, but after examining the ADS-B Exchange pilot, and
+must always be described that way. A provider-specific v2 outcome schema and
+raw-to-proxy adapter remain pending until a permitted extract format exists;
+v1 outcomes may not be relabelled v2.
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:

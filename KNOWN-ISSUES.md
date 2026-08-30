@@ -327,3 +327,26 @@ be written honestly before the provider exposes an extract format and usage
 permission. The aggregate analyzer checks the returned numerical diagnostics
 against the frozen thresholds, but without that raw adapter it cannot establish
 that those diagnostics were faithfully derived from the provider states.
+
+## Targeted matcher v1 false-positive; v2 pending outcome integration
+
+The ADS-B Exchange pilot found a concrete v1 false positive before any targeted
+emissions outcome was computed. A missing A320 LGAV--LTFM row was assigned to an
+A20N LGAV--LTFJ leg that left 29 minutes earlier. At the primary departure time
+that aircraft was 311 km away, but the broad anchor score accepted it and the
+source-quality gate then passed the unrelated trajectory. Quality therefore
+cannot be used as a substitute for identity.
+
+The v1 design and schema remain unchanged for chronology, but v1 is retired for
+new outcomes. The post-pilot `targeted-matching-v2-design.json` and
+`lab/targeted_match.py` add exact ICAO type and two-ended source-track presence
+before score and mutual-nearest assignment. The known false positive is rejected
+and the candidate-deletion regression does not promote its synthetic decoy.
+
+What remains open is operational rather than hidden: no provider-specific v2
+adapter or v2 outcome schema can be finalised until Wingbits or OpenSky supplies
+a permitted extract and exact fields. The free ADS-B Exchange overlap is only
+102/2,279 rows, cannot meet any registered mask minimum, has unverified receiver
+overlap with adsb.lol and is offered publicly only for evaluation/testing.
+Finally, v2 cannot prove identity when two same-type flights share essentially
+the same route and schedule without a stable identifier common to both sources.

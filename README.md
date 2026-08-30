@@ -105,6 +105,7 @@ wind/       era5.py          ERA5 download (CDS) + 4-D wind field
 lab/        calibrate.py     per-type correction factors
             anchor_refs.py   ICAO reference cruise fuel flows
             gate.py          wind-correction validation gate
+            targeted_match.py  blinded external-flight matcher v2
             release_data.py  authoritative ground-corrected release loader
             stability.py     month-over-month rank stability
             run_phase_split.py  vertical excess by phase of flight and position
@@ -378,6 +379,34 @@ thresholds from the returned diagnostics. A complete result remains conditional
 on external response and never corrects or bounds the release headline. Full
 interpretation and commands are in
 [`UNCERTAINTY.md`](UNCERTAINTY.md).
+
+The first-of-month ADS-B Exchange pilot later exposed a false positive in the
+frozen v1 matching component: a missing A320 flight was assigned to an A20N that
+had left the same origin 29 minutes earlier, and the unrelated track then passed
+every source-quality threshold. V1 remains tracked and reproducible, but it must
+not be used for new outcomes. The explicitly post-pilot
+`targeted-matching-v2-design.json` replaces matching only: exact normalised ICAO
+type, source-track presence near both primary endpoint times, the old anchor
+score, and mutual-nearest/runner-up guards must all pass. Sample, weights,
+quality thresholds, model, support and claims do not change.
+
+Provider adapters must emit three private neutral tables with exactly the
+columns frozen in the v2 design. Run the matcher outside the repository:
+
+```bash
+python lab/targeted_match.py \
+  --primary /private/path/targeted-validation-match-list.json \
+  --source-flights /private/path/source-flights.parquet \
+  --source-track /private/path/source-track.parquet \
+  --out /tmp/co2gap-targeted-matches-v2.json
+```
+
+The command hashes all inputs and emits one private status per requested id.
+`type_mismatch`, `track_missing` and `track_inconsistent` are non-measured
+outcomes: a high-quality source trajectory can never rescue a failed identity.
+The v2 outcome adapter and aggregate analyzer remain pending until Wingbits or
+OpenSky supplies a permitted targeted extract; v1 outcomes cannot be relabelled
+as v2.
 
 ## Reproducing
 
