@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-selection-sensitivity-design",
+  "publication_status": "diagnostic_sensitivity_design",
+  "analysis_status": "design_frozen_before_implementation",
+  "registered_at": "2026-08-30",
+  "release_id": "2026-09-01",
+  "population_boundary": "Durable complete, OpenAP-supported and successfully first-pass-modelled flights before the four release quality gates; upstream ingestion exclusions remain outside this design.",
+  "input_contracts": {
+    "release_manifest": {
+      "path": "release-manifest.json",
+      "sha256": "db69266d5a4d9ce66f1d1f9bc4533cb31e6fd1b6d8e4fbcc600c53e6a5266a0c"
+    },
+    "release_headlines": {
+      "path": "release-headlines.json",
+      "sha256": "9fb9c2a35dfb2d3cb03cff5ca5ec8e8962089123c58b46d13b1467bd11ed5eb6"
+    },
+    "selection_validation_design": {
+      "path": "selection-validation-design.json",
+      "sha256": "f439b765c50ff76ac8fed1f71e7d24ba03e4009b55d08d4a6818419128a5e954"
+    },
+    "opensky_day_audit_result": {
+      "path": "opensky-day-audit-result.json",
+      "sha256": "245a203767f2376691fa86acdccc785ad64c9f6c4a005735e95a5faea8161e68"
+    },
+    "selection_audit": {
+      "expected_sha256": "3e376d2302bc40709d202d8ead35fc5056c463c837d87634b7dab91b5061d561",
+      "required_kind": "co2gap-selection-audit",
+      "required_exact_keyset_match_to_decomposition": true,
+      "weight_field": "activity.first_pass_gate_to_gate_co2_tonnes",
+      "weight_interpretation": "Exposure proxy used only to weight sensitivity contrasts across failure masks; it is neither the rejected flights' ideal airborne CO2 nor an estimated missing outcome."
+    }
+  },
+  "reference": {
+    "failure_mask": "0000",
+    "headline_components": [
+      "gap_total_pct",
+      "gap_lateral_pct",
+      "gap_vertical_pct"
+    ],
+    "headline_source": "Exact unrounded frozen release values.",
+    "contrast_source": "For each usable OpenSky failure mask, proxy component minus the OpenSky 0000 proxy component. The 4.61-point primary-versus-OpenSky level offset is not transferred."
+  },
+  "failure_mask_proxy_mapping": [
+    {"failure_mask": "0001", "proxy_mask": null, "reason": "No usable OpenSky proxy and no larger same-mechanism mask; impose zero contrast."},
+    {"failure_mask": "0011", "proxy_mask": null, "reason": "No usable OpenSky proxy for flown-distance plus short-sector failure; impose zero contrast."},
+    {"failure_mask": "0100", "proxy_mask": "0100", "reason": "Observed OpenSky coverage-only contrast."},
+    {"failure_mask": "0101", "proxy_mask": "0100", "reason": "Use the observed coverage contrast; the additional short-sector mechanism has no usable proxy."},
+    {"failure_mask": "0111", "proxy_mask": "0100", "reason": "Use the observed coverage contrast; the additional flown-distance and short-sector mechanisms have no usable proxy."},
+    {"failure_mask": "1000", "proxy_mask": "1000", "reason": "Observed OpenSky unresolved-endpoint contrast."},
+    {"failure_mask": "1001", "proxy_mask": "1000", "reason": "Use the observed endpoint contrast; the additional short-sector mechanism has no usable proxy."},
+    {"failure_mask": "1100", "proxy_mask": "1100", "reason": "Observed OpenSky endpoint-plus-coverage contrast."},
+    {"failure_mask": "1101", "proxy_mask": "1100", "reason": "Use the observed endpoint-plus-coverage contrast; the additional short-sector mechanism has no usable proxy."}
+  ],
+  "stress_ladder": [
+    {
+      "id": "prudente",
+      "contrast_scale": 0.5,
+      "interpretation": "Half the magnitude of the observed one-day failure-mask contrasts."
+    },
+    {
+      "id": "centrale",
+      "contrast_scale": 1.0,
+      "interpretation": "The magnitude of the observed one-day failure-mask contrasts; not a best estimate."
+    },
+    {
+      "id": "severo",
+      "contrast_scale": 2.0,
+      "interpretation": "Twice the magnitude of the observed one-day failure-mask contrasts."
+    }
+  ],
+  "profiles": [
+    {
+      "id": "signed_transfer",
+      "rule": "Preserve the sign and component vector observed for each mapped OpenSky failure mask."
+    },
+    {
+      "id": "adverse_lower",
+      "rule": "Reverse each whole contrast vector when necessary so every mapped mask lowers the total gap by its declared magnitude."
+    },
+    {
+      "id": "adverse_upper",
+      "rule": "Reverse each whole contrast vector when necessary so every mapped mask raises the total gap by its declared magnitude."
+    }
+  ],
+  "propagation": {
+    "mask_assumed_gap": "frozen passed-flight headline component plus stress scale times the selected contrast component",
+    "full_population_gap": "first-pass-CO2-exposure-weighted mean of the frozen passed-flight headline and the assumed rejected-mask gaps",
+    "selection_shift": "full-population sensitivity gap minus the frozen passed-flight headline",
+    "priority_ranking": "descending absolute contribution to the centrale adverse envelope for gap_total_pct",
+    "component_identity": "total must equal lateral plus vertical before and after propagation, within floating-point tolerance"
+  },
+  "claims": {
+    "corrects_release_headline": false,
+    "bounds_release_headline": false,
+    "is_confidence_interval": false,
+    "is_probability_model": false,
+    "may_rank_external_validation_priorities": true,
+    "interpretation": "A transparent stress ladder conditional on the durable pre-gate population. It exposes cancellation and scale; it does not estimate missing outcomes or upstream selection."
+  },
+  "privacy": "Aggregate inputs and outputs only; no flight identifiers, times, endpoints or source track rows are read or emitted."
+}
