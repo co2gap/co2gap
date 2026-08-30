@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +15,7 @@ sys.path[:0] = [str(ROOT / "pipeline"), str(ROOT / "ingest"),
 from release_manifest import sha256_file  # noqa: E402
 from uncertainty import (  # noqa: E402
     UncertaintyError,
+    cli as uncertainty_cli,
     targeted_validation_result,
     verify_registered_targeted_artifacts,
     write_targeted_validation_artifacts,
@@ -365,6 +368,39 @@ class TargetedValidationTests(unittest.TestCase):
                     registration_path=registration_path,
                     sample_path=sample_path, match_path=match_path,
                     outcomes_path=outcomes_path)
+
+    def test_cli_renders_contract_failure_without_traceback(self):
+        with tempfile.TemporaryDirectory(
+                prefix="co2gap-targeted-validation-") as raw:
+            root = Path(raw)
+            design_path, parent_sample, parent_match = self.inputs(root)
+            sample_path = root / "sample.json"
+            match_path = root / "match.json"
+            registration_path = root / "registration.json"
+            write_targeted_validation_artifacts(
+                design_path=design_path,
+                parent_sample_path=parent_sample,
+                parent_match_path=parent_match,
+                output=sample_path, match_output=match_path,
+                registration_output=registration_path)
+            outcomes = self.outcomes(design_path, sample_path, match_path)
+            outcomes["sample_sha256"] = "0" * 64
+            outcomes_path = root / "outcomes.json"
+            outcomes_path.write_text(json.dumps(outcomes, sort_keys=True))
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                status = uncertainty_cli([
+                    "targeted-validation",
+                    "--design", str(design_path),
+                    "--registration", str(registration_path),
+                    "--sample", str(sample_path),
+                    "--match-list", str(match_path),
+                    "--outcomes", str(outcomes_path),
+                    "--out", str(root / "result.json"),
+                ])
+            self.assertEqual(status, 1)
+            self.assertIn("private artifact hashes do not close", stderr.getvalue())
+            self.assertNotIn("Traceback", stderr.getvalue())
 
 
 if __name__ == "__main__":

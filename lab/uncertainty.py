@@ -3799,5 +3799,14 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def cli(argv: list[str] | None = None) -> int:
+    """Render expected contract failures without hiding unexpected defects."""
+    try:
+        return main(argv)
+    except UncertaintyError as exc:
+        print(f"uncertainty: ERROR: {exc}", file=sys.stderr)
+        return 1
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(cli())
