@@ -13,7 +13,7 @@ relationship with this project, and no work has been paid for by anyone.** The
 project has no revenue, no funding and no sponsor. This paragraph is part of
 each release and is updated, not removed, if that ever changes.
 
-## The five rules
+## The six rules
 
 **1. The public figure is never a deliverable.**
 What could be sold is analysis *of* a published figure — the breakdown behind
@@ -54,7 +54,17 @@ publishes physical quantities — kilograms of CO₂, percentage distance from a
 stated optimum — with an explicit statement of where
 the ordering stops being meaningful. Anything that compresses an organisation
 into a single mark is outside what this method can support, and is not offered
-at any price.
+at any price. No ESG rating, class, star or opinion is produced under any name.
+
+**6. The gap is a distance, not a saving.**
+The percentage distance from the theoretical optimum is never presented as CO₂
+that could be saved, avoided or obtained. The optimum is a physical reference
+flown by no one, not a target; the field's own figures for *avoidable*
+inefficiency are smaller and are cited as theirs, not as ours. No customer report
+reframes the gap as an achievable reduction, and no third party is licensed to
+reuse these figures to support a claim of that kind. This is what EU Directive
+2024/825 on environmental claims requires of anyone publishing here from
+27 September 2026, and it is already how the site is written.
 
 ## Which structure this is
 
