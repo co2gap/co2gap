@@ -299,3 +299,16 @@ free external-day audit is feasible and that failure masks must not be pooled
 blindly; it does not yet provide an unbiased missing outcome. Possible overlap
 among community receivers, one-day scope, differential matching and the proxy
 offset keep the release-wide selection bias unbounded.
+
+The remaining scale is now exposed rather than left as prose. A frozen
+failure-mask sensitivity design transfers only the one-day OpenSky contrasts,
+never its -4.61-point level offset, and weights masks with first-pass CO2 as an
+exposure proxy. The signed central transfer is **-0.014 points**, but that net
+number hides **96.3% cancellation** between coverage-only and unresolved-
+endpoint contributions. Coherent adverse stresses move the total by **±0.184,
+±0.369 and ±0.737 points** at half, one and twice the observed contrast. These
+are not bounds: the source is one day, response is differential, several small
+masks require declared proxy mappings, and the historical upstream population
+is still absent. The calculation does identify where new evidence matters:
+coverage-only `0100` and unresolved-endpoint `1000` contribute **94.4%** of the
+central stress magnitude and should dominate the held-out external sample.

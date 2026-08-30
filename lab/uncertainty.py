@@ -76,6 +76,13 @@ VALIDATION_MATCH_COLUMNS = (
 VALIDATION_OUTCOME_STATUSES = {
     "measured", "not_found", "unusable", "source_error",
 }
+SELECTION_SENSITIVITY_COMPONENTS = (
+    "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct",
+)
+SELECTION_SENSITIVITY_STRESSES = {"prudente", "centrale", "severo"}
+SELECTION_SENSITIVITY_PROFILES = {
+    "signed_transfer", "adverse_lower", "adverse_upper",
+}
 NORMAL_95 = 1.959963984540054
 
 
@@ -287,6 +294,144 @@ def validate_selection_design(data: dict, release_manifest: Path) -> dict:
         "sample_rows": data["sample_rows"],
         "strata": data["strata"],
     }
+
+
+def _valid_sha256(value) -> bool:
+    return (isinstance(value, str) and len(value) == 64
+            and not (set(value) - set("0123456789abcdef")))
+
+
+def validate_selection_sensitivity_design(data: dict, design_path: Path) -> dict:
+    """Validate the frozen aggregate stress design and all tracked inputs."""
+    if (data.get("schema_version"), data.get("kind")) != (
+            1, "co2gap-selection-sensitivity-design"):
+        raise UncertaintyError("unknown selection-sensitivity design contract")
+    if data.get("publication_status") != "diagnostic_sensitivity_design":
+        raise UncertaintyError(
+            "selection-sensitivity design must remain diagnostic")
+    if data.get("analysis_status") != "design_frozen_before_implementation":
+        raise UncertaintyError(
+            "selection-sensitivity design was not frozen before implementation")
+
+    claims = data.get("claims")
+    if not isinstance(claims, dict):
+        raise UncertaintyError("selection-sensitivity design lacks claims")
+    for field in (
+            "corrects_release_headline", "bounds_release_headline",
+            "is_confidence_interval", "is_probability_model"):
+        if claims.get(field) is not False:
+            raise UncertaintyError(
+                f"selection-sensitivity design cannot claim {field}")
+    if claims.get("may_rank_external_validation_priorities") is not True:
+        raise UncertaintyError(
+            "selection-sensitivity design must declare its permitted use")
+
+    contracts = data.get("input_contracts")
+    if not isinstance(contracts, dict):
+        raise UncertaintyError("selection-sensitivity design lacks input contracts")
+    base = Path(design_path).resolve().parent
+    tracked_names = (
+        "release_manifest", "release_headlines",
+        "selection_validation_design", "opensky_day_audit_result",
+    )
+    tracked_paths = {}
+    for name in tracked_names:
+        contract = contracts.get(name)
+        if not isinstance(contract, dict):
+            raise UncertaintyError(
+                f"selection-sensitivity design lacks {name} contract")
+        relative = contract.get("path")
+        expected = contract.get("sha256")
+        if not isinstance(relative, str) or not relative.strip():
+            raise UncertaintyError(
+                f"selection-sensitivity design has invalid {name} path")
+        if not _valid_sha256(expected):
+            raise UncertaintyError(
+                f"selection-sensitivity design has invalid {name} hash")
+        path = base / relative
+        if not path.is_file() or sha256_file(path) != expected:
+            raise UncertaintyError(
+                f"selection-sensitivity tracked input differs: {name}")
+        tracked_paths[name] = path
+    release_id = data.get("release_id")
+    manifest = ReleaseManifest.load(tracked_paths["release_manifest"])
+    if release_id != manifest.release_id:
+        raise UncertaintyError(
+            "selection-sensitivity design names another release manifest")
+    for name in tracked_names[1:]:
+        if _load_json(tracked_paths[name]).get("release_id") != release_id:
+            raise UncertaintyError(
+                f"selection-sensitivity design mixes releases at {name}")
+    audit_contract = contracts.get("selection_audit")
+    if (not isinstance(audit_contract, dict)
+            or not _valid_sha256(audit_contract.get("expected_sha256"))):
+        raise UncertaintyError(
+            "selection-sensitivity design has invalid selection-audit hash")
+    if audit_contract.get("required_kind") != "co2gap-selection-audit":
+        raise UncertaintyError(
+            "selection-sensitivity design names another audit kind")
+    if audit_contract.get(
+            "required_exact_keyset_match_to_decomposition") is not True:
+        raise UncertaintyError(
+            "selection-sensitivity design must require an exact gate keyset")
+    if audit_contract.get("weight_field") != (
+            "activity.first_pass_gate_to_gate_co2_tonnes"):
+        raise UncertaintyError(
+            "selection-sensitivity design has an unknown exposure weight")
+
+    reference = data.get("reference")
+    if (not isinstance(reference, dict)
+            or reference.get("failure_mask") != "0000"
+            or reference.get("headline_components")
+            != list(SELECTION_SENSITIVITY_COMPONENTS)):
+        raise UncertaintyError(
+            "selection-sensitivity design has an invalid reference")
+
+    mappings = data.get("failure_mask_proxy_mapping")
+    if not isinstance(mappings, list) or not mappings:
+        raise UncertaintyError(
+            "selection-sensitivity design lacks failure-mask mappings")
+    masks = [row.get("failure_mask") for row in mappings
+             if isinstance(row, dict)]
+    if (len(masks) != len(mappings) or len(masks) != len(set(masks))
+            or "0000" in masks
+            or any(len(str(mask)) != 4 or set(str(mask)) - {"0", "1"}
+                   for mask in masks)):
+        raise UncertaintyError(
+            "selection-sensitivity failure-mask mappings are invalid")
+    for row in mappings:
+        proxy = row.get("proxy_mask")
+        if (proxy is not None
+                and (not isinstance(proxy, str) or len(proxy) != 4
+                     or set(proxy) - {"0", "1"})):
+            raise UncertaintyError(
+                "selection-sensitivity design has invalid proxy masks")
+        if not isinstance(row.get("reason"), str) or not row["reason"].strip():
+            raise UncertaintyError(
+                "selection-sensitivity mask mapping lacks a reason")
+
+    stresses = data.get("stress_ladder")
+    stress_ids = _unique_ids(stresses, "selection-sensitivity stress ladder")
+    if stress_ids != SELECTION_SENSITIVITY_STRESSES:
+        raise UncertaintyError(
+            "selection-sensitivity stress ladder must contain the frozen ids")
+    scales = []
+    for row in stresses:
+        scale = _finite_number(
+            row.get("contrast_scale"), f"{row['id']}.contrast_scale")
+        if scale <= 0:
+            raise UncertaintyError(
+                "selection-sensitivity contrast scales must be positive")
+        scales.append(scale)
+    if scales != sorted(scales) or len(scales) != len(set(scales)):
+        raise UncertaintyError(
+            "selection-sensitivity contrast scales must increase uniquely")
+    profile_ids = _unique_ids(data.get("profiles"),
+                              "selection-sensitivity profiles")
+    if profile_ids != SELECTION_SENSITIVITY_PROFILES:
+        raise UncertaintyError(
+            "selection-sensitivity design lacks the frozen profiles")
+    return {"stress_levels": len(stresses), "mapped_masks": len(mappings)}
 
 
 def verify_registered_selection_artifacts(
@@ -630,6 +775,334 @@ def selection_audit(*, manifest_path: Path, flights_dir: Path,
             "Airport comparisons cannot recover the airport of an unresolved endpoint.",
             "Historical upstream attrition cannot be reconstructed from the frozen source tables.",
         ],
+    }
+
+
+def _selection_sensitivity_vector(row: dict, label: str) -> dict[str, float]:
+    vector = {
+        name: _finite_number(row.get(name), f"{label}.{name}")
+        for name in SELECTION_SENSITIVITY_COMPONENTS
+    }
+    if not math.isclose(
+            vector["gap_total_pct"],
+            vector["gap_lateral_pct"] + vector["gap_vertical_pct"],
+            rel_tol=0, abs_tol=1e-9):
+        raise UncertaintyError(
+            f"{label} breaks total = lateral + vertical")
+    return vector
+
+
+def _opensky_proxy_vector(row: dict, label: str) -> dict[str, float]:
+    source_names = {
+        "gap_total_pct": "total_gap_pct",
+        "gap_lateral_pct": "lateral_gap_pct",
+        "gap_vertical_pct": "vertical_gap_pct",
+    }
+    return _selection_sensitivity_vector(
+        {target: row.get(source) for target, source in source_names.items()},
+        label)
+
+
+def _selection_sensitivity_input_path(
+        design: dict, design_path: Path, name: str) -> Path:
+    return Path(design_path).resolve().parent / design["input_contracts"][name]["path"]
+
+
+def selection_sensitivity(*, design_path: Path,
+                          selection_audit_path: Path) -> dict:
+    """Propagate declared mask contrasts without estimating rejected outcomes."""
+    design = _load_json(design_path)
+    validate_selection_sensitivity_design(design, design_path)
+    contracts = design["input_contracts"]
+    if sha256_file(selection_audit_path) != contracts[
+            "selection_audit"]["expected_sha256"]:
+        raise UncertaintyError(
+            "selection audit differs from the frozen sensitivity design")
+
+    manifest_path = _selection_sensitivity_input_path(
+        design, design_path, "release_manifest")
+    headline_path = _selection_sensitivity_input_path(
+        design, design_path, "release_headlines")
+    validation_path = _selection_sensitivity_input_path(
+        design, design_path, "selection_validation_design")
+    opensky_path = _selection_sensitivity_input_path(
+        design, design_path, "opensky_day_audit_result")
+    manifest = ReleaseManifest.load(manifest_path)
+    headlines = _load_json(headline_path)
+    validation = _load_json(validation_path)
+    opensky = _load_json(opensky_path)
+    audit = _load_json(selection_audit_path)
+    validate_selection_design(validation, manifest_path)
+
+    release_id = design.get("release_id")
+    for label, value in (
+            ("manifest", manifest.release_id),
+            ("release headlines", headlines.get("release_id")),
+            ("selection validation", validation.get("release_id")),
+            ("OpenSky result", opensky.get("release_id")),
+            ("selection audit", audit.get("release_id"))):
+        if value != release_id:
+            raise UncertaintyError(
+                f"selection-sensitivity {label} names another release")
+    if (audit.get("kind") != contracts["selection_audit"]["required_kind"]
+            or audit.get("source_manifest_verified") is not True
+            or audit.get("release_manifest_sha256") != sha256_file(manifest_path)
+            or audit.get("gate", {}).get(
+                "exact_keyset_match_to_decomposition") is not True):
+        raise UncertaintyError(
+            "selection-sensitivity requires a verified exact selection audit")
+    if (opensky.get("kind")
+            != "co2gap-opensky-day-selection-audit-result"
+            or opensky.get("publication_status") != "aggregate_diagnostic"
+            or opensky.get("primary_headline_bias_bounded") is not False):
+        raise UncertaintyError(
+            "selection-sensitivity requires a non-bounding OpenSky diagnostic")
+
+    headline_values = headlines.get("values")
+    if not isinstance(headline_values, dict):
+        raise UncertaintyError("release headlines lack values")
+    headline = _selection_sensitivity_vector(
+        headline_values, "release headlines")
+    validation_masks = {
+        str(row["failure_mask"]): row
+        for row in validation["by_failure_mask"]
+    }
+    if headline_values.get("flights") != validation_masks["0000"][
+            "population_rows"]:
+        raise UncertaintyError(
+            "release headline flights differ from gate-pass population")
+
+    audit_rows_raw = audit.get("failure_combinations")
+    if not isinstance(audit_rows_raw, list):
+        raise UncertaintyError("selection audit lacks failure combinations")
+    audit_rows = {
+        str(row.get("failure_mask")): row
+        for row in audit_rows_raw if isinstance(row, dict)
+    }
+    if (len(audit_rows) != len(audit_rows_raw)
+            or set(audit_rows) != set(validation_masks)):
+        raise UncertaintyError(
+            "selection audit failure masks differ from frozen population")
+    exposures = {}
+    for mask, registered in validation_masks.items():
+        activity = audit_rows[mask].get("activity")
+        if not isinstance(activity, dict):
+            raise UncertaintyError(
+                f"selection audit mask {mask} lacks activity")
+        if activity.get("flights") != registered["population_rows"]:
+            raise UncertaintyError(
+                f"selection audit mask {mask} population differs from design")
+        exposure = _finite_number(
+            activity.get("first_pass_gate_to_gate_co2_tonnes"),
+            f"selection audit mask {mask} exposure")
+        if exposure <= 0:
+            raise UncertaintyError(
+                f"selection audit mask {mask} exposure must be positive")
+        exposures[mask] = exposure
+    source = audit.get("coverage_statement", {}).get("source", {})
+    if source.get("flights") != validation.get("population_rows"):
+        raise UncertaintyError(
+            "selection audit source population does not close")
+    total_exposure = sum(exposures.values())
+    source_exposure = _finite_number(
+        source.get("first_pass_gate_to_gate_co2_tonnes"),
+        "selection audit source exposure")
+    if not math.isclose(
+            total_exposure, source_exposure, rel_tol=0, abs_tol=1e-6):
+        raise UncertaintyError(
+            "selection audit failure-mask exposures do not close")
+
+    opensky_rows_raw = opensky.get("by_failure_mask")
+    if not isinstance(opensky_rows_raw, list):
+        raise UncertaintyError("OpenSky result lacks failure masks")
+    opensky_rows = {
+        str(row.get("failure_mask")): row
+        for row in opensky_rows_raw if isinstance(row, dict)
+    }
+    if len(opensky_rows) != len(opensky_rows_raw) or "0000" not in opensky_rows:
+        raise UncertaintyError("OpenSky result has invalid failure masks")
+    reference_proxy = opensky_rows["0000"].get("proxy")
+    if not isinstance(reference_proxy, dict):
+        raise UncertaintyError("OpenSky reference mask lacks a proxy")
+    reference_vector = _opensky_proxy_vector(
+        reference_proxy, "OpenSky reference proxy")
+    proxy_vectors = {}
+    for mask, row in opensky_rows.items():
+        proxy = row.get("proxy")
+        if proxy is not None:
+            if not isinstance(proxy, dict):
+                raise UncertaintyError(
+                    f"OpenSky mask {mask} has invalid proxy")
+            proxy_vectors[mask] = _opensky_proxy_vector(
+                proxy, f"OpenSky mask {mask} proxy")
+
+    mappings = {
+        str(row["failure_mask"]): row
+        for row in design["failure_mask_proxy_mapping"]
+    }
+    if set(mappings) != set(validation_masks) - {"0000"}:
+        raise UncertaintyError(
+            "selection-sensitivity mappings do not cover the release masks")
+    contrasts = {}
+    for mask, mapping in mappings.items():
+        proxy_mask = mapping["proxy_mask"]
+        if proxy_mask is None:
+            contrasts[mask] = {
+                name: 0.0 for name in SELECTION_SENSITIVITY_COMPONENTS}
+            continue
+        if proxy_mask not in proxy_vectors:
+            raise UncertaintyError(
+                f"selection-sensitivity proxy mask {proxy_mask} has no outcome")
+        contrasts[mask] = {
+            name: proxy_vectors[proxy_mask][name] - reference_vector[name]
+            for name in SELECTION_SENSITIVITY_COMPONENTS
+        }
+        _selection_sensitivity_vector(
+            contrasts[mask], f"OpenSky contrast for mask {mask}")
+
+    def oriented(vector: dict[str, float], profile: str) -> dict[str, float]:
+        if profile == "signed_transfer":
+            factor = 1.0
+        elif vector["gap_total_pct"] == 0:
+            factor = 0.0
+        elif profile == "adverse_upper":
+            factor = 1.0 if vector["gap_total_pct"] > 0 else -1.0
+        elif profile == "adverse_lower":
+            factor = -1.0 if vector["gap_total_pct"] > 0 else 1.0
+        else:  # protected by the design validator
+            raise UncertaintyError(
+                f"unknown selection-sensitivity profile {profile}")
+        return {name: factor * vector[name]
+                for name in SELECTION_SENSITIVITY_COMPONENTS}
+
+    scenario_rows = []
+    mask_contributions = defaultdict(dict)
+    for stress in design["stress_ladder"]:
+        scale = float(stress["contrast_scale"])
+        profiles = {}
+        for profile in design["profiles"]:
+            profile_id = profile["id"]
+            shift = {name: 0.0 for name in SELECTION_SENSITIVITY_COMPONENTS}
+            contributions = []
+            for mask in sorted(mappings):
+                vector = oriented(contrasts[mask], profile_id)
+                share = exposures[mask] / total_exposure
+                contribution = {
+                    name: share * scale * vector[name]
+                    for name in SELECTION_SENSITIVITY_COMPONENTS
+                }
+                for name in SELECTION_SENSITIVITY_COMPONENTS:
+                    shift[name] += contribution[name]
+                contributions.append({
+                    "failure_mask": mask,
+                    "shift_percentage_points": contribution,
+                })
+                mask_contributions[(stress["id"], profile_id)][mask] = contribution
+            full = {
+                name: headline[name] + shift[name]
+                for name in SELECTION_SENSITIVITY_COMPONENTS
+            }
+            _selection_sensitivity_vector(
+                shift, f"{stress['id']} {profile_id} shift")
+            _selection_sensitivity_vector(
+                full, f"{stress['id']} {profile_id} full-population gap")
+            profiles[profile_id] = {
+                "full_population_sensitivity_gap_pct": full,
+                "shift_from_frozen_headline_percentage_points": shift,
+                "by_failure_mask": contributions,
+            }
+        scenario_rows.append({
+            "id": stress["id"],
+            "contrast_scale": scale,
+            "profiles": profiles,
+        })
+
+    central_signed = mask_contributions[("centrale", "signed_transfer")]
+    central_upper = mask_contributions[("centrale", "adverse_upper")]
+    gross_signed = sum(abs(row["gap_total_pct"])
+                       for row in central_signed.values())
+    net_signed = sum(row["gap_total_pct"] for row in central_signed.values())
+    envelope_total = sum(row["gap_total_pct"]
+                         for row in central_upper.values())
+    priorities = []
+    for mask in sorted(mappings):
+        magnitude = central_upper[mask]["gap_total_pct"]
+        priorities.append({
+            "failure_mask": mask,
+            "proxy_mask": mappings[mask]["proxy_mask"],
+            "population_rows": validation_masks[mask]["population_rows"],
+            "first_pass_exposure_tonnes": exposures[mask],
+            "share_of_full_first_pass_exposure": exposures[mask] / total_exposure,
+            "centrale_adverse_total_contribution_percentage_points": magnitude,
+            "share_of_centrale_adverse_total": (
+                magnitude / envelope_total if envelope_total else 0.0),
+        })
+    priorities.sort(
+        key=lambda row: (
+            -abs(row["centrale_adverse_total_contribution_percentage_points"]),
+            row["failure_mask"]),
+    )
+
+    return {
+        "schema_version": 1,
+        "kind": "co2gap-selection-sensitivity",
+        "publication_status": "aggregate_diagnostic",
+        "analysis_status": "complete_diagnostic",
+        "release_id": release_id,
+        "population_boundary": design["population_boundary"],
+        "design_sha256": sha256_file(design_path),
+        "input_hashes": {
+            "release_manifest": sha256_file(manifest_path),
+            "release_headlines": sha256_file(headline_path),
+            "selection_validation_design": sha256_file(validation_path),
+            "opensky_day_audit_result": sha256_file(opensky_path),
+            "selection_audit": sha256_file(selection_audit_path),
+        },
+        "population": {
+            "rows": validation["population_rows"],
+            "gate_pass_rows": validation_masks["0000"]["population_rows"],
+            "gate_rejected_rows": (
+                validation["population_rows"]
+                - validation_masks["0000"]["population_rows"]),
+            "first_pass_exposure_tonnes": total_exposure,
+            "gate_rejected_first_pass_exposure_share": (
+                1.0 - exposures["0000"] / total_exposure),
+        },
+        "frozen_gate_pass_headline_pct": headline,
+        "opensky_reference_proxy_pct": reference_vector,
+        "opensky_level_offset_transferred": False,
+        "mask_assumptions": [
+            {
+                "failure_mask": mask,
+                "proxy_mask": mappings[mask]["proxy_mask"],
+                "reason": mappings[mask]["reason"],
+                "opensky_contrast_percentage_points": contrasts[mask],
+            }
+            for mask in sorted(mappings)
+        ],
+        "stress_ladder": scenario_rows,
+        "cancellation_diagnostic": {
+            "centrale_signed_total_shift_percentage_points": net_signed,
+            "centrale_signed_gross_absolute_contributions_percentage_points": gross_signed,
+            "centrale_signed_cancellation_fraction": (
+                1.0 - abs(net_signed) / gross_signed if gross_signed else 0.0),
+            "centrale_adverse_half_width_percentage_points": envelope_total,
+        },
+        "external_validation_priorities": priorities,
+        "claims": design["claims"],
+        "limitations": [
+            "The OpenSky contrasts are one-day, post-pilot, conditional diagnostics with differential source response.",
+            "First-pass gate-to-gate CO2 is only an exposure weight, not the missing airborne ideal denominator.",
+            "Zero contrast for unsupported masks is an explicit scenario assumption, not evidence of no effect.",
+            "The adverse profiles are deterministic stress directions, not probability or confidence limits.",
+            "Historical selection before the durable pre-gate population remains outside the calculation.",
+        ],
+        "interpretation": (
+            "Failure-mask sensitivity around the frozen passed-flight headline. "
+            "It diagnoses scale, cancellation and validation priorities; it does "
+            "not correct or bound the release headline."
+        ),
+        "privacy": design["privacy"],
     }
 
 
@@ -2005,6 +2478,9 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument(
         "--selection-design", type=Path,
         default=ROOT / "selection-validation-design.json")
+    check.add_argument(
+        "--selection-sensitivity-design", type=Path,
+        default=ROOT / "selection-sensitivity-design.json")
 
     sample_parser = sub.add_parser("sample", help="write a weighted stratified sample manifest")
     sample_parser.add_argument("--release-manifest", type=Path, required=True)
@@ -2073,6 +2549,16 @@ def main(argv: list[str] | None = None) -> int:
         "--selection-design", type=Path,
         default=ROOT / "selection-validation-design.json")
 
+    selection_sensitivity_parser = sub.add_parser(
+        "selection-sensitivity",
+        help="propagate declared gate-failure contrasts as aggregate stresses")
+    selection_sensitivity_parser.add_argument(
+        "--design", type=Path,
+        default=ROOT / "selection-sensitivity-design.json")
+    selection_sensitivity_parser.add_argument(
+        "--selection-audit", type=Path, required=True)
+    selection_sensitivity_parser.add_argument("--out", type=Path, required=True)
+
     sensitivity_parser = sub.add_parser(
         "sensitivity", help="run paired finite-difference scenarios")
     _common_release_arguments(sensitivity_parser)
@@ -2091,6 +2577,9 @@ def main(argv: list[str] | None = None) -> int:
         scenarios = validate_scenarios(_load_json(args.scenarios))
         design = validate_selection_design(
             _load_json(args.selection_design), ROOT / "release-manifest.json")
+        sensitivity_design = validate_selection_sensitivity_design(
+            _load_json(args.selection_sensitivity_design),
+            args.selection_sensitivity_design)
         print(f"uncertainty register: {registry['estimands']} estimands, "
               f"{registry['sources']} sources")
         print(f"diagnostic scenarios: {scenarios['scenarios']}, "
@@ -2098,6 +2587,10 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"selection validation: {design['sample_rows']:,} rows in "
             f"{design['strata']:,} strata pre-registered")
+        print(
+            "selection sensitivity: "
+            f"{sensitivity_design['stress_levels']} stress levels, "
+            f"{sensitivity_design['mapped_masks']} rejected masks")
         return 0
 
     if args.command == "sample":
@@ -2209,6 +2702,25 @@ def main(argv: list[str] | None = None) -> int:
                 f"(design-only 95% {interval[0]:+.3f}..{interval[1]:+.3f}) "
                 f"-> {args.out}")
             return 0
+
+    if args.command == "selection-sensitivity":
+        result = selection_sensitivity(
+            design_path=args.design,
+            selection_audit_path=args.selection_audit)
+        _atomic_json(args.out, result)
+        central = next(
+            row for row in result["stress_ladder"] if row["id"] == "centrale")
+        signed = central["profiles"]["signed_transfer"][
+            "shift_from_frozen_headline_percentage_points"]["gap_total_pct"]
+        lower = central["profiles"]["adverse_lower"][
+            "shift_from_frozen_headline_percentage_points"]["gap_total_pct"]
+        upper = central["profiles"]["adverse_upper"][
+            "shift_from_frozen_headline_percentage_points"]["gap_total_pct"]
+        print(
+            "selection sensitivity: centrale signed "
+            f"{signed:+.3f} pp, adverse {lower:+.3f}..{upper:+.3f} pp; "
+            f"not a bound -> {args.out}")
+        return 0
 
     verify = not args.skip_manifest_verification
     if args.command == "release-summary":

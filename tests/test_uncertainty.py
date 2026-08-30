@@ -21,8 +21,10 @@ from uncertainty import (UncertaintyError, _metrics, _require_nested_counts,  # 
                          _require_outside_repository, poststratified_selection,
                          selection_validation_result, stratified_sample,
                          stratified_selection_validation_sample,
-                         selection_audit, selection_flags, validate_registry,
+                         selection_audit, selection_flags,
+                         selection_sensitivity, validate_registry,
                          validate_scenarios, validate_selection_design,
+                         validate_selection_sensitivity_design,
                          verify_registered_selection_artifacts,
                          write_selection_validation_artifacts)
 
@@ -32,11 +34,18 @@ class RegistryTests(unittest.TestCase):
         registry = json.loads((ROOT / "uncertainty-register.json").read_text())
         scenarios = json.loads((ROOT / "uncertainty-scenarios.json").read_text())
         design = json.loads((ROOT / "selection-validation-design.json").read_text())
+        sensitivity_design = json.loads(
+            (ROOT / "selection-sensitivity-design.json").read_text())
         self.assertEqual(validate_registry(registry), {"estimands": 6, "sources": 16})
         self.assertEqual(validate_scenarios(scenarios)["nominal"], "nominal")
         self.assertEqual(
             validate_selection_design(design, ROOT / "release-manifest.json"),
             {"population_rows": 2115824, "sample_rows": 5000, "strata": 843})
+        self.assertEqual(
+            validate_selection_sensitivity_design(
+                sensitivity_design,
+                ROOT / "selection-sensitivity-design.json"),
+            {"stress_levels": 3, "mapped_masks": 9})
 
     def test_quantified_source_requires_a_range(self):
         registry = json.loads((ROOT / "uncertainty-register.json").read_text())
@@ -214,6 +223,116 @@ class SelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(UncertaintyError, "not nested"):
             _require_nested_counts(
                 {"loose": 10, "strict": 11}, [("loose", "strict")])
+
+
+class SelectionSensitivityTests(unittest.TestCase):
+    @staticmethod
+    def inputs(root: Path) -> tuple[Path, Path]:
+        names = (
+            "release-manifest.json", "release-headlines.json",
+            "selection-validation-design.json", "opensky-day-audit-result.json",
+        )
+        for name in names:
+            (root / name).write_bytes((ROOT / name).read_bytes())
+        validation = json.loads(
+            (root / "selection-validation-design.json").read_text())
+        combinations = []
+        for row in validation["by_failure_mask"]:
+            combinations.append({
+                "failure_mask": row["failure_mask"],
+                "failed_criteria": [],
+                "activity": {
+                    "flights": row["population_rows"],
+                    "first_pass_gate_to_gate_co2_tonnes": float(
+                        row["population_rows"]),
+                },
+            })
+        audit = {
+            "schema_version": 1,
+            "kind": "co2gap-selection-audit",
+            "release_id": "2026-09-01",
+            "release_manifest_sha256": sha256_file(
+                root / "release-manifest.json"),
+            "source_manifest_verified": True,
+            "gate": {"exact_keyset_match_to_decomposition": True},
+            "coverage_statement": {"source": {
+                "flights": validation["population_rows"],
+                "first_pass_gate_to_gate_co2_tonnes": float(
+                    validation["population_rows"]),
+            }},
+            "failure_combinations": combinations,
+        }
+        audit_path = root / "selection-audit.json"
+        audit_path.write_text(json.dumps(audit, sort_keys=True))
+        design = json.loads(
+            (ROOT / "selection-sensitivity-design.json").read_text())
+        design["input_contracts"]["selection_audit"][
+            "expected_sha256"] = sha256_file(audit_path)
+        design_path = root / "selection-sensitivity-design.json"
+        design_path.write_text(json.dumps(design, sort_keys=True))
+        return design_path, audit_path
+
+    def test_stress_ladder_is_additive_symmetric_and_ranks_masks(self):
+        with tempfile.TemporaryDirectory(
+                prefix="co2gap-selection-sensitivity-") as raw:
+            design_path, audit_path = self.inputs(Path(raw))
+            result = selection_sensitivity(
+                design_path=design_path, selection_audit_path=audit_path)
+            self.assertFalse(result["claims"]["bounds_release_headline"])
+            self.assertEqual(len(result["stress_ladder"]), 3)
+            central = next(
+                row for row in result["stress_ladder"]
+                if row["id"] == "centrale")
+            lower = central["profiles"]["adverse_lower"][
+                "shift_from_frozen_headline_percentage_points"]
+            upper = central["profiles"]["adverse_upper"][
+                "shift_from_frozen_headline_percentage_points"]
+            for component in (
+                    "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"):
+                self.assertAlmostEqual(lower[component], -upper[component])
+            self.assertAlmostEqual(
+                upper["gap_total_pct"],
+                upper["gap_lateral_pct"] + upper["gap_vertical_pct"])
+            self.assertEqual(
+                result["external_validation_priorities"][0]["failure_mask"],
+                "0100")
+
+    def test_guardians_reject_overclaim_count_drift_and_schema_drift(self):
+        with tempfile.TemporaryDirectory(
+                prefix="co2gap-selection-sensitivity-") as raw:
+            root = Path(raw)
+            design_path, audit_path = self.inputs(root)
+            design = json.loads(design_path.read_text())
+            design["claims"]["bounds_release_headline"] = True
+            design_path.write_text(json.dumps(design, sort_keys=True))
+            with self.assertRaisesRegex(UncertaintyError, "cannot claim"):
+                selection_sensitivity(
+                    design_path=design_path, selection_audit_path=audit_path)
+
+            design_path, audit_path = self.inputs(root)
+            audit = json.loads(audit_path.read_text())
+            audit["failure_combinations"][0]["activity"]["flights"] -= 1
+            audit_path.write_text(json.dumps(audit, sort_keys=True))
+            design = json.loads(design_path.read_text())
+            design["input_contracts"]["selection_audit"][
+                "expected_sha256"] = sha256_file(audit_path)
+            design_path.write_text(json.dumps(design, sort_keys=True))
+            with self.assertRaisesRegex(UncertaintyError, "population differs"):
+                selection_sensitivity(
+                    design_path=design_path, selection_audit_path=audit_path)
+
+            design_path, audit_path = self.inputs(root)
+            opensky_path = root / "opensky-day-audit-result.json"
+            opensky = json.loads(opensky_path.read_text())
+            opensky["by_failure_mask"][0]["proxy"]["total_gap_pct"] += 1.0
+            opensky_path.write_text(json.dumps(opensky, sort_keys=True))
+            design = json.loads(design_path.read_text())
+            design["input_contracts"]["opensky_day_audit_result"][
+                "sha256"] = sha256_file(opensky_path)
+            design_path.write_text(json.dumps(design, sort_keys=True))
+            with self.assertRaisesRegex(UncertaintyError, "breaks total"):
+                selection_sensitivity(
+                    design_path=design_path, selection_audit_path=audit_path)
 
 
 class SelectionValidationTests(unittest.TestCase):

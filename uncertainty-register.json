@@ -173,10 +173,10 @@
       "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
       "correlation_scope": "coverage area, route and flight length",
       "nominal": "thresholds in pipeline/track_quality.py",
-      "range": "exact conditional retention by flights, great-circle kilometres, flown kilometres and first-pass CO2",
-      "evidence": "release manifest; pipeline/track_quality.py; lab/uncertainty.py selection and selection-stress; selection-validation-design.json; opensky-day-audit-design.json and opensky-day-audit-result.json",
-      "propagation": "exact aggregate attrition; nested internal stress; one-day separate-source conditional diagnostic; independent-proxy estimator remains blocked until complete suitable external outcomes exist",
-      "notes": "The denominator begins after complete-flight reconstruction and successful modelling. Retention and the within-gate quality gradient are measured, and a 5,000-flight weighted validation sample is frozen outside git. A free OpenSky day shows differential match/quality response and a 4.61-point proxy offset on controls, so its -1.51-point conditional contrast cannot correct or bound the headline. Changing a gate changes the target population and must be reported separately from model uncertainty."
+      "range": "exact conditional retention plus declared failure-mask stress shifts of ±0.184, ±0.369 and ±0.737 percentage points; the stress shifts are not bounds",
+      "evidence": "release manifest; pipeline/track_quality.py; lab/uncertainty.py selection, selection-stress and selection-sensitivity; selection-validation-design.json; opensky-day-audit-design.json and opensky-day-audit-result.json; selection-sensitivity-design.json",
+      "propagation": "exact aggregate attrition; nested internal stress; one-day separate-source mask contrasts propagated at half, one and twice magnitude with first-pass CO2 exposure weights; independent-proxy estimator remains blocked until complete suitable external outcomes exist",
+      "notes": "The denominator begins after complete-flight reconstruction and successful modelling. Retention and the within-gate quality gradient are measured, and a 5,000-flight weighted validation sample is frozen outside git. A free OpenSky day shows differential match/quality response and a 4.61-point proxy offset on controls, so its conditional contrasts cannot correct or bound the headline. The central signed mask transfer is -0.014 points only because 96.3% of gross contributions cancel; coverage-only and unresolved-endpoint masks supply 94.4% of the central adverse magnitude and set the held-out validation priority. Changing a gate changes the target population and must be reported separately from model uncertainty."
     },
     {
       "id": "upstream_ingestion_selection",

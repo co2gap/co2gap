@@ -215,10 +215,11 @@ becoming a tool for tracking individual movements.
 
 ## Known issues
 
-Three defects found before the first release are written down in
+Known defects and open methodological risks are written down in
 [`KNOWN-ISSUES.md`](KNOWN-ISSUES.md), with what each one moves and what fixing
-it requires. Two are also stated on the site. None of them changes the published
-rankings; one of them cannot have inflated the headline, only lowered it.
+it requires. The entries distinguish measured release effects, future risks and
+uncertainty that remains unbounded; they must not be pooled into one claim about
+the published rankings or headline.
 
 ## Uncertainty programme
 
@@ -332,6 +333,24 @@ observed -1.51-point rejected-minus-passed contrast is therefore diagnostic,
 not a headline correction or bound. Full commands, the failed raw-state pilot
 and its explicitly post-pilot amendment are documented in
 [`UNCERTAINTY.md`](UNCERTAINTY.md).
+
+Those mask contrasts now drive a separately frozen sensitivity ladder, without
+imputing a rejected flight:
+
+```bash
+python lab/uncertainty.py selection-sensitivity \
+  --selection-audit /tmp/co2gap-selection-audit.json \
+  --out /tmp/co2gap-selection-sensitivity.json
+```
+
+Half, one and twice the observed mask contrast produce adverse total shifts of
+respectively **±0.184, ±0.369 and ±0.737 percentage points** around the frozen
+headline. The signed central transfer is only -0.014 points because 96.3% of
+opposite mask contributions cancel; it is not evidence of negligible bias.
+Coverage-only and unresolved-endpoint failures supply 94.4% of the central
+stress magnitude and are therefore the two priorities for a held-out external
+extract. `selection-sensitivity-design.json` and the output both forbid calling
+these stresses a correction, confidence interval or bound.
 
 ## Reproducing
 

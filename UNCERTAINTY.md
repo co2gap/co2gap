@@ -347,6 +347,57 @@ python lab/opensky_day_audit.py audit \
   --out /tmp/co2gap-opensky-audit-result.json
 ```
 
+## 9. Failure-mask selection sensitivity
+
+The OpenSky day does not estimate the missing release outcomes, but its
+failure-mask contrasts can be used as a transparent stress scale. The design
+was frozen in `selection-sensitivity-design.json` before the implementation.
+It transfers only each mask's difference from the OpenSky passing controls;
+the -4.61-point OpenSky-versus-primary level offset is never transferred.
+
+First rebuild the verified aggregate selection audit exactly as in section 5,
+then run:
+
+```bash
+python lab/uncertainty.py selection-sensitivity \
+  --selection-audit /tmp/co2gap-selection-audit.json \
+  --out /tmp/co2gap-selection-sensitivity.json
+```
+
+The calculation weights failure masks by their first-pass gate-to-gate CO2
+exposure, not by flight count. That is still only an exposure proxy: rejected
+flights have neither a trustworthy airborne ideal denominator nor a valid
+decomposition. Masks with an observed OpenSky proxy use their difference from
+the `0000` controls; compound masks inherit the closest observed mechanism;
+the small unsupported short-sector/flown-distance masks receive an explicit
+zero contrast. Every mapping and its reason is machine-readable in the design.
+
+Three declared amplitudes use half, once and twice the observed one-day mask
+contrast. At each amplitude the runner reports the signed OpenSky direction and
+two coherent adverse directions in which every whole lateral/vertical vector
+lowers or raises the total gap:
+
+| stress | signed total shift | adverse total shift |
+|---|---:|---:|
+| prudente (0.5x) | -0.007 pp | -0.184 .. +0.184 pp |
+| centrale (1x) | -0.014 pp | -0.369 .. +0.369 pp |
+| severo (2x) | -0.027 pp | -0.737 .. +0.737 pp |
+
+These are sensitivity shifts around the frozen 12.09185% passed-flight
+headline, not endpoints of an uncertainty interval. The central signed result
+is especially easy to misuse: **96.3% of the gross mask contributions cancel**.
+Coverage-only failures push in the opposite direction to unresolved-endpoint
+failures. A small net shift therefore does not demonstrate small selection
+uncertainty.
+
+The central adverse contribution ranks the next external validation work.
+Coverage-only mask `0100` supplies 47.9% of its total magnitude, unresolved
+endpoints `1000` another 46.5%, and their overlap `1100` 5.4%. Together the
+first two account for 94.4%, so a held-out Wingbits or second-source extract
+should prioritise those two groups rather than sample all rejected masks
+uniformly. This ranking is the permitted decision use of the diagnostic; the
+release headline remains unchanged and unbounded.
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:
