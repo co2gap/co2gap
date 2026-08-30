@@ -140,7 +140,7 @@
       "range": null,
       "evidence": "wind/era5.py and release manifest ERA5 contract",
       "propagation": "spatial/temporal interpolation alternatives, then ensemble or validation-based perturbation",
-      "notes": "The fixed July boundary correction is provenance, not an uncertainty interval."
+      "notes": "The historical ERA5 23:00 boundary correction is provenance, not an uncertainty interval. The explicit corrected-wind sensitivity profile verifies stored-wind fuel replay and separates nominal-minus-frozen from scenario-minus-nominal; it is not a replacement release."
     },
     {
       "id": "cruise_baseline",
@@ -152,7 +152,7 @@
       "range": null,
       "evidence": "KNOWN-ISSUES.md and lab/altitude_check.py",
       "propagation": "paired baseline altitude offsets and a future corrected structural model",
-      "notes": "The historical altitude cache is order-sensitive. Sensitivity scenarios anchor to stored cruise_alt_ft and require nominal baseline closure; they do not fix or re-optimise the release. This is structural uncertainty and must not be labelled a confidence interval."
+      "notes": "The historical altitude cache is order-sensitive. Both sensitivity profiles anchor to stored cruise_alt_ft. The default requires nominal baseline closure; corrected-wind instead requires frozen scalar-wind fuel replay plus wind-only reconstruction of the new nominal. Neither fixes or re-optimises the release. This is structural uncertainty and must not be labelled a confidence interval."
     },
     {
       "id": "ground_definition",

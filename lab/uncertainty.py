@@ -48,6 +48,13 @@ REGISTRY_STATUSES = {
 }
 REGISTRY_CATEGORIES = {"observation", "parameter", "model", "selection", "variability"}
 GROUND_DEFINITIONS = {"suolo", "a1000t40", "a1000t70", "a1000t100", "a3000t70"}
+SENSITIVITY_REFERENCE_PROFILES = {"frozen-release", "corrected-wind"}
+# This experimental profile changes wind handling only, not the nominal mass,
+# airspeed, altitude or ground convention. It is not a generic model override.
+CORRECTED_WIND_NOMINAL = {
+    "load_factor": 0.82, "reserve_kg": 2000.0, "real_tas_mode": "ias",
+    "cruise_alt_offset_ft": 0.0, "ground_definition": "a3000t70",
+}
 DISTANCE_EDGES = [-math.inf, 300, 500, 800, 1200, 2000, math.inf]
 DISTANCE_LABELS = ["lt300", "300_500", "500_800", "800_1200", "1200_2000", "ge2000"]
 COVERAGE_EDGES = [-math.inf, 0.90, 0.99, math.inf]
@@ -3154,6 +3161,15 @@ def _finish_accumulator(acc: dict, scenario_id: str) -> dict:
     }
 
 
+def _accumulate_flight(acc: dict, weight: float, real: float, ideal: float,
+                       hybrid: float, factor: float) -> None:
+    acc["sample_flights"] += 1
+    acc["weight"] += weight
+    for name, value in (("real", real), ("ideal", ideal), ("hybrid", hybrid)):
+        acc[f"{name}_u"] += weight * value
+        acc[f"{name}_c"] += weight * value * factor
+
+
 def _require_nominal_baseline(stored: float, recomputed: float, label: str) -> None:
     """Refuse a sensitivity whose reference differs beyond numerical roundoff."""
     if (not math.isfinite(stored) or not math.isfinite(recomputed)
@@ -3164,16 +3180,71 @@ def _require_nominal_baseline(stored: float, recomputed: float, label: str) -> N
             f"recomputed={recomputed}; sensitivity cannot use a changed reference")
 
 
+def _check_corrected_wind_reference(row: pd.Series, nominal: dict,
+                                    result: dict, label: str) -> dict:
+    """Replay stored scalar winds; permit only wind-driven nominal fuel changes.
+
+    This does not restore historical ERA5 extrapolation. The frozen mean winds
+    are already in the immutable parquet. Replaying the fuel/profile calculation
+    first checks provenance; replay at the newly sampled winds then verifies
+    that the new nominal has not changed anything downstream of those winds.
+    Neither replay provides independent validation of the physical model.
+    """
+    from emissions import estimate_fuel
+    from excess_wind import _build_profile
+
+    def fuel(distance: float, wind: float) -> float:
+        profile = _build_profile(str(row.typecode), distance,
+                                 float(row.cruise_alt_ft), wind)
+        if profile is None:
+            raise UncertaintyError(f"stored-wind replay cannot build profile: {label}")
+        estimate = estimate_fuel(
+            profile, load_factor=float(nominal["load_factor"]),
+            reserve_kg=float(nominal["reserve_kg"]), tas_mode="gs")
+        if not estimate.ok:
+            raise UncertaintyError(f"stored-wind replay fuel failed: {label}")
+        return float(estimate.co2_kg)
+
+    checks = {}
+    for name, distance_key, wind_key, co2_key in (
+            ("ideal", "gc_km", "mean_wpar_gc_ms", "ideal_gc_co2_kg"),
+            ("hybrid", "flown_km", "mean_wpar_track_ms", "hybrid_co2_kg")):
+        old_wind = _finite_number(row.get(wind_key), f"{label}/stored/{wind_key}")
+        new_wind = _finite_number(result.get(wind_key), f"{label}/corrected/{wind_key}")
+        stored = _finite_number(row.get(co2_key), f"{label}/stored/{co2_key}")
+        replay = fuel(float(row[distance_key]), old_wind)
+        _require_nominal_baseline(stored, replay, f"{label}/stored-wind-replay/{name}")
+        corrected_replay = (replay if new_wind == old_wind else
+                            fuel(float(row[distance_key]), new_wind))
+        _require_nominal_baseline(
+            corrected_replay, float(result[co2_key]),
+            f"{label}/corrected-wind-only/{name}")
+        checks[name] = {
+            "replay_abs_kg": abs(replay - stored),
+            "wind_abs_delta_ms": abs(new_wind - old_wind),
+        }
+    return checks
+
+
 def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                        manifest_path: Path, flights_dir: Path,
                        decomposition_dir: Path, ground_dir: Path,
                        era5_dir: Path, calibration: Path,
-                       verify: bool, limit: int | None = None) -> dict:
+                       verify: bool, limit: int | None = None,
+                       reference_profile: str = "frozen-release") -> dict:
     """Run paired finite differences; return aggregates and no per-flight rows."""
     from decompose import decompose_flight
     from emissions import estimate_fuel
     from wind.era5 import WindField, required_wind_days
 
+    if reference_profile not in SENSITIVITY_REFERENCE_PROFILES:
+        raise UncertaintyError(f"unknown sensitivity reference profile: {reference_profile}")
+    implementation = {
+        name: sha256_file(ROOT / name) for name in (
+            "lab/uncertainty.py", "pipeline/decompose.py", "pipeline/excess_wind.py",
+            "pipeline/emissions.py", "wind/era5.py",
+        )
+    }
     # OpenAP's smooth limiter overflows for some extreme ground steps.  The
     # integrator converts those non-finite step flows to zero; this is the same
     # guarded condition suppressed by the production phase-0 runner.
@@ -3199,6 +3270,13 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
     validate_scenarios(config)
     scenarios = {entry["id"]: entry for entry in config["scenarios"]}
     nominal = scenarios[config["nominal"]]
+    if reference_profile == "corrected-wind":
+        for name, value in CORRECTED_WIND_NOMINAL.items():
+            if nominal.get(name) != value:
+                raise UncertaintyError(f"corrected-wind nominal requires {name}={value}")
+        ground_definition = manifest.data.get("configuration", {}).get("ground", {}).get("definition")
+        if ground_definition != nominal["ground_definition"]:
+            raise UncertaintyError("corrected-wind nominal ground definition differs from release")
     rows = list(sample.get("rows") or [])
     if not rows:
         raise UncertaintyError("sample manifest has no rows")
@@ -3235,6 +3313,13 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         raise UncertaintyError(
             "release manifest lacks the ERA5 validation configuration") from exc
     acc = {sid: _new_accumulator() for sid in scenarios}
+    frozen_acc = _new_accumulator()
+    replay_checks = {
+        "checked_flights": 0,
+        "max_abs_ideal_kg": 0.0, "max_abs_hybrid_kg": 0.0,
+        "max_abs_ideal_wind_delta_ms": 0.0, "max_abs_hybrid_wind_delta_ms": 0.0,
+        "flights_with_ideal_wind_change": 0, "flights_with_hybrid_wind_change": 0,
+    }
     failure_reasons: dict[str, int] = defaultdict(int)
     closure = {
         "stored_ideal_u": 0.0, "recomputed_ideal_u": 0.0,
@@ -3246,6 +3331,8 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         "flight_id", "typecode", "gc_km", "flown_km", "dep_ts", "co2_kg_v0",
         "ideal_gc_co2_kg", "hybrid_co2_kg", "cruise_alt_ft",
     ]
+    if reference_profile == "corrected-wind":
+        decomp_columns += ["mean_wpar_gc_ms", "mean_wpar_track_ms"]
     ground_columns = ["flight_id", "fuel_recomputed_kg"] + [
         f"fuel_{name}_kg" for name in sorted(GROUND_DEFINITIONS)
     ]
@@ -3263,7 +3350,8 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         if not ground.index.is_unique:
             raise UncertaintyError(f"duplicate ground flight_id for {day}")
         points = pq.read_table(
-            flights_dir / day / "points.parquet", columns=point_columns).to_pandas()
+            flights_dir / day / "points.parquet", columns=point_columns,
+            filters=[("flight_id", "in", sorted(ids))]).to_pandas()
         points = points[points.flight_id.isin(ids)]
         groups = {int(fid): group for fid, group in points.groupby("flight_id", sort=False)}
         wind_paths = [era5_dir / f"{wind_day}.nc"
@@ -3275,7 +3363,7 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
 
         for fid, weight in wanted_by_day[day].items():
             if fid not in dec.index or fid not in ground.index or fid not in groups:
-                for scenario_acc in acc.values():
+                for scenario_acc in [*acc.values(), frozen_acc]:
                     scenario_acc["failed_flights"] += 1
                 failure_reasons["missing_input_key"] += 1
                 continue
@@ -3288,7 +3376,7 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                 tas_mode=str(nominal["real_tas_mode"]),
             )
             if not nominal_real.ok or nominal_real.co2_kg <= 0:
-                for scenario_acc in acc.values():
+                for scenario_acc in [*acc.values(), frozen_acc]:
                     scenario_acc["failed_flights"] += 1
                 failure_reasons["nominal_real_fuel"] += 1
                 continue
@@ -3298,6 +3386,7 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                 for name in ("lat", "lon", "alt_ft", "ias_kt", "vs_fpm")
             }
             flight_results = {}
+            nominal_decomposition = None
             failure = None
             for sid, scenario in scenarios.items():
                 real = estimate_fuel(
@@ -3323,6 +3412,8 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                 if result is None:
                     failure = f"{sid}:decomposition"
                     break
+                if sid == config["nominal"]:
+                    nominal_decomposition = result
                 denominator = float(grow.fuel_recomputed_kg)
                 ground_fuel = float(grow[f"fuel_{scenario['ground_definition']}_kg"])
                 if denominator <= 0 or not 0 <= ground_fuel <= denominator:
@@ -3332,7 +3423,8 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                 real_airborne = real_gate * (1.0 - ground_share)
                 ideal = float(result["ideal_gc_co2_kg"])
                 hybrid = float(result["hybrid_co2_kg"])
-                if min(real_airborne, ideal, hybrid) <= 0:
+                if not all(math.isfinite(value) and value > 0
+                           for value in (real_airborne, ideal, hybrid)):
                     failure = f"{sid}:non_positive_result"
                     break
                 factor = factors.get(str(row.typecode), 1.0)
@@ -3344,16 +3436,27 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
             # flight population.  Letting one failed scenario silently drop a
             # row would mix a model effect with a changing sample.
             if failure is not None:
-                for scenario_acc in acc.values():
+                for scenario_acc in [*acc.values(), frozen_acc]:
                     scenario_acc["failed_flights"] += 1
                 failure_reasons[failure] += 1
                 continue
 
             nominal_values = flight_results[config["nominal"]]
-            _require_nominal_baseline(
-                float(row.ideal_gc_co2_kg), nominal_values[1], f"{day}/{fid}/ideal")
-            _require_nominal_baseline(
-                float(row.hybrid_co2_kg), nominal_values[2], f"{day}/{fid}/hybrid")
+            if reference_profile == "frozen-release":
+                _require_nominal_baseline(
+                    float(row.ideal_gc_co2_kg), nominal_values[1], f"{day}/{fid}/ideal")
+                _require_nominal_baseline(
+                    float(row.hybrid_co2_kg), nominal_values[2], f"{day}/{fid}/hybrid")
+            else:
+                checks = _check_corrected_wind_reference(
+                    row, nominal, nominal_decomposition, f"{day}/{fid}")
+                replay_checks["checked_flights"] += 1
+                for name, check in checks.items():
+                    replay_checks[f"max_abs_{name}_kg"] = max(
+                        replay_checks[f"max_abs_{name}_kg"], check["replay_abs_kg"])
+                    replay_checks[f"max_abs_{name}_wind_delta_ms"] = max(
+                        replay_checks[f"max_abs_{name}_wind_delta_ms"], check["wind_abs_delta_ms"])
+                    replay_checks[f"flights_with_{name}_wind_change"] += int(check["wind_abs_delta_ms"] > 0)
             closure["stored_ideal_u"] += weight * float(row.ideal_gc_co2_kg)
             closure["recomputed_ideal_u"] += weight * nominal_values[1]
             closure["stored_hybrid_u"] += weight * float(row.hybrid_co2_kg)
@@ -3365,20 +3468,19 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                 closure["max_abs_hybrid_kg"],
                 abs(float(row.hybrid_co2_kg) - nominal_values[2]))
 
-            for sid, (real_airborne, ideal, hybrid, factor) in flight_results.items():
-                scenario_acc = acc[sid]
-                scenario_acc["sample_flights"] += 1
-                scenario_acc["weight"] += weight
-                scenario_acc["real_u"] += weight * real_airborne
-                scenario_acc["ideal_u"] += weight * ideal
-                scenario_acc["hybrid_u"] += weight * hybrid
-                scenario_acc["real_c"] += weight * real_airborne * factor
-                scenario_acc["ideal_c"] += weight * ideal * factor
-                scenario_acc["hybrid_c"] += weight * hybrid * factor
+            frozen_real = float(row.co2_kg_v0) * (
+                1.0 - float(grow[f"fuel_{nominal['ground_definition']}_kg"])
+                / float(grow.fuel_recomputed_kg))
+            _accumulate_flight(frozen_acc, weight, frozen_real,
+                              float(row.ideal_gc_co2_kg), float(row.hybrid_co2_kg),
+                              nominal_values[3])
+            for sid, values in flight_results.items():
+                _accumulate_flight(acc[sid], weight, *values)
         del wind
 
     results = {sid: _finish_accumulator(value, sid) for sid, value in acc.items()}
     nominal_result = results[config["nominal"]]
+    frozen_result = _finish_accumulator(frozen_acc, "frozen-same-sample")
     for sid, result in results.items():
         result["delta_from_nominal"] = {
             name: float(result[name] - nominal_result[name]) for name in METRIC_COLUMNS
@@ -3395,9 +3497,12 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         "max_abs_hybrid_kg": float(closure["max_abs_hybrid_kg"]),
     }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "kind": "co2gap-paired-sensitivity",
+        "reference_profile": reference_profile,
+        "implementation_sha256": implementation,
         "release_id": manifest.release_id,
+        "release_manifest_sha256": sha256_file(manifest.path),
         "sample_sha256": sha256_file(sample_path),
         "scenario_sha256": sha256_file(scenarios_path),
         "sample_rows_requested": len(rows),
@@ -3417,10 +3522,30 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         },
         "nominal": config["nominal"],
         "scenarios": results,
+        "frozen_same_sample_reference": frozen_result,
+        "nominal_minus_frozen_same_sample": {
+            name: float(nominal_result[name] - frozen_result[name]) for name in METRIC_COLUMNS
+        },
+        "stored_wind_replay": replay_checks if reference_profile == "corrected-wind" else None,
         "common_population_failures": dict(sorted(failure_reasons.items())),
         "nominal_baseline_reconstruction": closure_result,
         "method": {
             "paired_parameters": True,
+            "reference_policy": (
+                "Strict per-flight closure on frozen ideal/hybrid CO2."
+                if reference_profile == "frozen-release" else
+                "Experimental corrected-wind nominal: day plus following-day ERA5, "
+                "without time extrapolation. Stored-wind fuel replay must reproduce "
+                "frozen baselines, and current nominal fuel must reproduce the same "
+                "calculation with only the sampled mean winds changed. Altitude, "
+                "real-track anchor, ground shares and calibration stay historical. "
+                "Not a replacement release or independent model validation."
+            ),
+            "comparison_order": (
+                "First compare nominal_minus_frozen_same_sample (reference change), "
+                "then each scenario's delta_from_nominal (finite difference). "
+                "Only a separate full-population summary measures sampling error."
+            ),
             "baseline_altitude_anchor": (
                 "Every scenario starts from the cruise_alt_ft stored for that "
                 "release flight, then applies the declared offset. This avoids "
@@ -3593,6 +3718,10 @@ def main(argv: list[str] | None = None) -> int:
     sensitivity_parser.add_argument("--sample", type=Path, required=True)
     sensitivity_parser.add_argument("--scenarios", type=Path,
                                     default=ROOT / "uncertainty-scenarios.json")
+    sensitivity_parser.add_argument(
+        "--reference-profile", choices=sorted(SENSITIVITY_REFERENCE_PROFILES),
+        default="frozen-release",
+        help="frozen-release requires closure; corrected-wind is an explicit experimental nominal")
     sensitivity_parser.add_argument("--limit", type=int, default=None,
                                     help="smoke test only; invalidates population estimate")
     sensitivity_parser.add_argument("--out", type=Path, required=True)
@@ -3814,8 +3943,10 @@ def main(argv: list[str] | None = None) -> int:
             manifest_path=args.release_manifest, flights_dir=args.flights_dir,
             decomposition_dir=args.decomposition_dir, ground_dir=args.ground_dir,
             era5_dir=args.era5_dir, calibration=args.calibration,
-            verify=verify, limit=args.limit)
+            verify=verify, limit=args.limit, reference_profile=args.reference_profile)
     _atomic_json(args.out, result)
+    if args.command == "sensitivity":
+        print(f"reference profile: {result['reference_profile']}; diagnostic only")
     print(f"{result['kind']}: wrote aggregate result to {args.out}")
     return 0
 

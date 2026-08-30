@@ -125,19 +125,77 @@ that cache with the stored altitude; it does not correct or re-optimise the
 release. Offsets are exact diagnostic steps, not ceiling-clipped operational
 flight plans (there is a 1,000 ft positive floor).
 
-Before aggregation, each nominal ideal/hybrid fuel value must reproduce the
+Under the default `--reference-profile frozen-release`, each nominal ideal/hybrid fuel value must reproduce the
 stored value within numerical roundoff (`rel_tol=1e-10`, `abs_tol=1e-6 kg`). A
 mismatch is fatal, not a row exclusion or a warning: a changed reference would
 mix model drift with the requested sensitivity. The output still records the
 maximum per-flight and weighted reconstruction differences.
 
-The [sampling-stability audit](SENSITIVITY-AUDIT.md) has two accepted full
+The first [sampling-stability audit](SENSITIVITY-AUDIT.md) has two accepted full
 replications and one rejected reference: the third draw includes a flight
 affected by the already documented ERA5 23:00 correction. The strict runner
 rejects that difference rather than silently restoring historical extrapolation
-or dropping the row. Completing further accepted replications requires an
-explicit choice between historical-wind replay and a separately declared
-corrected-wind nominal; neither policy is added by this audit.
+or dropping the row. That historical result remains rejected under the frozen
+reference contract; it is not retroactively relabelled as an accepted run.
+
+### Explicit experimental corrected-wind nominal
+
+The separately authorised follow-up uses `--reference-profile corrected-wind`:
+
+```bash
+python lab/uncertainty.py sensitivity \
+  --reference-profile corrected-wind \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --ground-dir /path/to/data/ground_share_ecac \
+  --era5-dir /path/to/data/era5_ecac \
+  --calibration "$PWD/data/calibration_ecac.json" \
+  --sample /tmp/co2gap-uncertainty-sample.json \
+  --out /tmp/co2gap-corrected-wind-seed1.json
+```
+
+This profile recomputes wind with the departure day and following UTC day,
+without time extrapolation. It is **not** an automatic fallback from a failed
+frozen-reference run and not a fully revised model. Nominal load (0.82), reserve
+(2,000 kg), IAS-preferred observed speed, zero altitude offset and the release's
+`a3000t70` ground definition are checked explicitly. Stored altitude, native-track
+anchor and type calibration remain historical. Non-nominal scenarios remain
+the same declared finite differences.
+
+Two fuel/profile reconstruction checks are compulsory on each accepted flight:
+
+1. Replaying the stored mean GC and track winds must reproduce both frozen fuel
+   baselines within the unchanged numerical tolerance.
+2. Replaying the same calculation with the newly sampled mean winds must
+   reproduce the corrected nominal. An unexplained change downstream of the
+   wind still fails, even if the historical replay closes.
+
+The replay uses scalar wind values already in the frozen parquet; it does not
+restore the old extrapolating interpolator. This is a reconstruction check,
+not independent evidence that the wind or fuel model is physically accurate.
+
+Schema 2 output names the reference profile and hashes the implementation files.
+Read the comparisons in this order:
+
+* `frozen_same_sample_reference`: frozen metrics for exactly the same accepted
+  flights and weights, not the full release headline;
+* `nominal_minus_frozen_same_sample`: effect of the reference change;
+* each scenario's `delta_from_nominal`: effect around that run's own nominal.
+
+Ground subtraction in the same-sample reference uses the nominal scenario's
+stored ground share. In `corrected-wind`, its equality with the release
+definition is mandatory; the legacy default's closure check concerns the two
+ideal/hybrid fuel baselines, not an arbitrary user's choice of nominal ground
+definition.
+
+`stored_wind_replay` records the checked count, maximum reconstruction errors
+and wind changes. `nominal_baseline_reconstruction` continues to record the
+new nominal's discrepancy from frozen fuel; a nonzero discrepancy has different
+meaning in the two explicitly named profiles. Input checksums, paired-population
+exclusions and smoke-test flags remain active. Full replications run serially.
+See [CORRECTED-WIND-SENSITIVITY.md](CORRECTED-WIND-SENSITIVITY.md) for the follow-up
+measurements and limitations. No frozen artifact or public headline is replaced.
 
 The current runner holds each definition's ground share fixed while mass and
 reserve vary. Recomputing the share under every parameter draw is a named v2

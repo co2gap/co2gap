@@ -5,6 +5,11 @@ This is an experimental diagnostic, not a release revision, a confidence
 interval or preparation of the January release. All input data remain frozen;
 private samples and calculation outputs stay outside git.
 
+Follow-up: [CORRECTED-WIND-SENSITIVITY.md](CORRECTED-WIND-SENSITIVITY.md) records
+the subsequently authorised, explicitly separate corrected-wind reference.
+This document preserves the earlier experiment and its two-accepted/one-rejected
+outcome under the frozen-reference contract.
+
 ## What this audit checks
 
 The nine scenarios in `uncertainty-scenarios.json` comprise the nominal and

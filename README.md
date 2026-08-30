@@ -241,8 +241,14 @@ The full commands intentionally write their sample and aggregate results to
 The first [paired-sensitivity audit](SENSITIVITY-AUDIT.md) records two accepted
 replications and a third rejected because corrected ERA5 boundary handling
 changes its nominal reference. It documents the altitude-cache isolation,
-provisional scenario effects and the remaining reference-policy decision;
-none of these results is a probability interval.
+provisional scenario effects and the reference-policy decision it required.
+The [corrected-wind follow-up](CORRECTED-WIND-SENSITIVITY.md) introduces an
+explicit experimental nominal: `sensitivity --reference-profile corrected-wind`.
+It first checks frozen fuel reconstruction from stored winds, then reports the
+nominal change separately from scenario effects. The default `frozen-release`
+profile still rejects a changed reference. Full commands and output contracts
+are in [UNCERTAINTY.md](UNCERTAINTY.md#explicit-experimental-corrected-wind-nominal).
+Neither profile changes the release or produces a probability interval.
 
 The release-gate denominator and attrition can be audited independently of the
 fuel sensitivities:

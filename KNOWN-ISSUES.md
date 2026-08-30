@@ -370,8 +370,9 @@ altitude reproduced both stored baselines exactly with either one or two wind
 days. Aggregate cancellation is not a valid substitute for this closure test.
 
 The runner now reads each flight's stored `cruise_alt_ft`, uses it for every
-scenario and applies only the declared offset. A mismatch beyond numerical
-roundoff between either nominal baseline and its stored value is fatal before
+scenario and applies only the declared offset. In the default `frozen-release`
+profile, a mismatch beyond numerical roundoff between either nominal baseline
+and its stored value is fatal before
 aggregation. Synthetic regressions verify cache bypass, the same offset on both
 baselines, invalid-altitude rejection and rejection of deliberate nominal
 drift, including with Python assertions disabled.
@@ -385,7 +386,18 @@ replacement or full-release regeneration is undertaken in this work.
 Two full 2,549-flight sensitivity replications close exactly. A third includes
 the maximum 131.517 kg hybrid shift from the historical ERA5 boundary correction
 in section 4 and is therefore rejected under the strict reference rule. The
-final runner was tested on that real case: exit 1, no output JSON. Accepting a
-further replication needs an explicit historical-replay or corrected-nominal
-policy, not a larger tolerance. The measured results and this open decision are
-recorded in [SENSITIVITY-AUDIT.md](SENSITIVITY-AUDIT.md).
+final runner was tested on that real case: exit 1, no output JSON. The measured
+results and the decision then left open are recorded in
+[SENSITIVITY-AUDIT.md](SENSITIVITY-AUDIT.md).
+
+**Authorised lab follow-up:** `--reference-profile corrected-wind` now names a
+separate experimental nominal; it does not weaken the default tolerance. For
+each accepted flight, stored-wind fuel replay must reproduce the frozen
+baselines, and a second replay must explain the new nominal solely through
+its newly sampled mean winds. Missing/non-finite wind values, changed nominal
+parameters and unexplained fuel drift still fail. Frozen same-sample metrics,
+reference change and scenario effects are returned separately in schema 2.
+This permits a wind-handling experiment without silently accepting arbitrary
+model drift. It does not close the optimiser's structural issue or validate the
+model externally. Measurements are in
+[CORRECTED-WIND-SENSITIVITY.md](CORRECTED-WIND-SENSITIVITY.md).

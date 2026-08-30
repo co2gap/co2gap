@@ -729,5 +729,211 @@ class BaselineHookTests(unittest.TestCase):
                                         for call in decomposition.call_args_list))
 
 
+class CorrectedWindReferenceTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.base = Path(self.temp.name)
+        self.manifest_path = self.base / "manifest.json"
+        self.manifest_path.write_text("{}")
+        self.sample_path = self.base / "sample.json"
+        self.sample_path.write_text(json.dumps({
+            "schema_version": 1, "kind": "co2gap-uncertainty-sample",
+            "release_id": "test", "release_manifest_sha256": sha256_file(self.manifest_path),
+            "rows": [{"day": "2026-01-01", "flight_id": fid, "weight": 3.0}
+                     for fid in (1, 2)],
+        }))
+        self.config = json.loads((ROOT / "uncertainty-scenarios.json").read_text())
+        self.scenarios_path = self.base / "scenarios.json"
+        self.scenarios_path.write_text(json.dumps(self.config))
+        self.manifest = SimpleNamespace(
+            release_id="test", path=self.manifest_path, days=["2026-01-01"],
+            data={"configuration": {
+                "ground": {"definition": "a3000t70"},
+                "era5": {"pressure_levels_hpa": [250], "area_nwse": [72, -32, 27, 45],
+                         "grid_degrees": [0.25, 0.25], "variables": ["u", "v"]},
+            }},
+            verify_set=Mock(), verify_file=Mock(),
+        )
+        import uncertainty
+        self.tables = {
+            "decomposition": pd.DataFrame([{
+                "flight_id": fid, "typecode": "A320", "gc_km": 300.0,
+                "flown_km": 330.0, "dep_ts": 0, "co2_kg_v0": 120.0,
+                "ideal_gc_co2_kg": 100.0, "hybrid_co2_kg": 110.0,
+                "cruise_alt_ft": 22000.0,
+                "mean_wpar_gc_ms": 0.0, "mean_wpar_track_ms": 0.0,
+            } for fid in (1, 2)]),
+            "ground": pd.DataFrame([{
+                "flight_id": fid, "fuel_recomputed_kg": 100.0,
+                **{f"fuel_{name}_kg": 0.0 for name in uncertainty.GROUND_DEFINITIONS},
+            } for fid in (1, 2)]),
+            "points": pd.DataFrame([{
+                "flight_id": fid, "t": t, "lat": 40.0, "lon": 9.0,
+                "alt_ft": 20000.0, "gs_kt": 400.0, "ias_kt": 250.0, "vs_fpm": 0.0,
+            } for fid in (1, 2) for t in (0, 60)]),
+        }
+
+    def run_fixture(self, *, profile="corrected-wind", wind_change=2.0,
+                    unexplained_drift=0.0, missing_wind=False, limit=None,
+                    fail_scenario=False, verify=False, bad_replay=False,
+                    missing_profile=False):
+        import decompose
+        import emissions
+        import excess_wind
+        import uncertainty
+        import wind.era5
+
+        def read_table(path, **kwargs):
+            if path.name == "points.parquet":
+                self.assertEqual(kwargs["filters"], [("flight_id", "in", [1] if limit == 1 else [1, 2])])
+                table = self.tables["points"]
+            else:
+                table = self.tables[path.parent.name]
+            return SimpleNamespace(to_pandas=lambda: table.copy())
+
+        def estimate(flight, **kwargs):
+            value = flight.distance / 3.0 + flight.wind if hasattr(flight, "wind") else 120.0
+            return SimpleNamespace(ok=not bad_replay or not hasattr(flight, "wind"), co2_kg=value)
+
+        def decompose_stub(*args, **kwargs):
+            if (fail_scenario and kwargs["load_factor"] == 0.72
+                    and (fail_scenario is True or args[1] > 120.0)):
+                return None
+            result = {
+                "ideal_gc_co2_kg": 100.0 + wind_change + unexplained_drift,
+                "hybrid_co2_kg": 110.0 + 10.0 * (kwargs["load_factor"] - 0.82),
+                "mean_wpar_gc_ms": wind_change, "mean_wpar_track_ms": 0.0,
+            }
+            if missing_wind:
+                result.pop("mean_wpar_gc_ms")
+            return result
+
+        with patch.object(uncertainty.ReleaseManifest, "load", return_value=self.manifest), \
+             patch.object(uncertainty.pq, "read_table", side_effect=read_table), \
+             patch.object(uncertainty, "_load_calibration", return_value={"A320": 1.5}), \
+             patch.object(uncertainty, "_flight_from_points", return_value=object()), \
+             patch.object(wind.era5, "WindField", return_value=object()), \
+             patch.object(emissions, "estimate_fuel", side_effect=estimate), \
+             patch.object(excess_wind, "_build_profile", side_effect=lambda tc, dist, alt, w: None if missing_profile else SimpleNamespace(distance=dist, wind=w)), \
+             patch.object(decompose, "decompose_flight", side_effect=decompose_stub):
+            return paired_sensitivity(
+                sample_path=self.sample_path, scenarios_path=self.scenarios_path,
+                manifest_path=self.manifest_path, flights_dir=self.base / "flights",
+                decomposition_dir=self.base / "decomposition", ground_dir=self.base / "ground",
+                era5_dir=self.base / "era5", calibration=self.base / "calibration.json",
+                verify=verify, limit=limit, reference_profile=profile)
+
+    def test_profiles_separate_wind_change_from_scenario_effect(self):
+        for profile in ("frozen-release", "corrected-wind"):
+            for wind_change in (0.0, 2.0):
+                with self.subTest(profile=profile, wind_change=wind_change):
+                    if profile == "frozen-release" and wind_change:
+                        with self.assertRaisesRegex(UncertaintyError, "nominal baseline mismatch"):
+                            self.run_fixture(profile=profile, wind_change=wind_change)
+                        continue
+                    result = self.run_fixture(profile=profile, wind_change=wind_change)
+                    self.assertEqual(result["schema_version"], 2)
+                    self.assertEqual(result["reference_profile"], profile)
+                    self.assertTrue(result["population_expansion_complete"])
+                    frozen = result["frozen_same_sample_reference"]
+                    nominal = result["scenarios"]["nominal"]
+                    self.assertEqual(frozen["expanded_population_weight"], 6.0)
+                    self.assertEqual(nominal["expanded_population_weight"], 6.0)
+                    self.assertEqual(frozen["gap_total_pct"], 20.0)
+                    self.assertAlmostEqual(result["nominal_minus_frozen_same_sample"]["gap_total_pct"],
+                                           (120.0 / (100.0 + wind_change) - 1) * 100 - 20)
+                    self.assertEqual(nominal["delta_from_nominal"]["gap_total_pct"], 0.0)
+                    self.assertAlmostEqual(result["scenarios"]["load_minus_0.10"]["delta_from_nominal"]["gap_lateral_pct"],
+                                           -100.0 / (100.0 + wind_change))
+                    for values in result["scenarios"].values():
+                        self.assertAlmostEqual(values["additivity_residual_pct"], 0.0)
+                    if profile == "corrected-wind":
+                        self.assertEqual(result["stored_wind_replay"]["checked_flights"], 2)
+                        self.assertEqual(result["stored_wind_replay"]["max_abs_ideal_kg"], 0.0)
+                    else:
+                        self.assertIsNone(result["stored_wind_replay"])
+
+    def test_corrected_profile_rejects_unexplained_downstream_drift(self):
+        with self.assertRaisesRegex(UncertaintyError, "corrected-wind-only/ideal"):
+            self.run_fixture(unexplained_drift=0.01)
+
+    def test_corrected_profile_rejects_changed_frozen_fuel(self):
+        self.tables["decomposition"].loc[0, "hybrid_co2_kg"] += 0.01
+        with self.assertRaisesRegex(UncertaintyError, "stored-wind-replay/hybrid"):
+            self.run_fixture()
+
+    def test_corrected_profile_requires_finite_stored_and_current_winds(self):
+        with self.assertRaisesRegex(UncertaintyError, "corrected/mean_wpar_gc_ms"):
+            self.run_fixture(missing_wind=True)
+        for value in (None, float("nan"), float("inf")):
+            with self.subTest(value=value):
+                self.tables["decomposition"].loc[0, "mean_wpar_gc_ms"] = value
+                with self.assertRaisesRegex(UncertaintyError, "stored/mean_wpar_gc_ms"):
+                    self.run_fixture()
+
+    def test_corrected_profile_rejects_failed_replay(self):
+        with self.assertRaisesRegex(UncertaintyError, "stored-wind replay fuel failed"):
+            self.run_fixture(bad_replay=True)
+        with self.assertRaisesRegex(UncertaintyError, "stored-wind replay cannot build profile"):
+            self.run_fixture(missing_profile=True)
+
+    def test_nonfinite_scenario_cannot_enter_an_aggregate(self):
+        with self.assertRaisesRegex(UncertaintyError, "no valid denominator"):
+            self.run_fixture(unexplained_drift=float("nan"))
+
+    def test_corrected_profile_cannot_change_other_nominal_conventions(self):
+        for key, value in (("load_factor", 0.72), ("reserve_kg", 1000.0),
+                           ("real_tas_mode", "gs"), ("cruise_alt_offset_ft", 1000.0),
+                           ("ground_definition", "a1000t70")):
+            with self.subTest(key=key):
+                config = copy.deepcopy(self.config)
+                config["scenarios"][0][key] = value
+                self.scenarios_path.write_text(json.dumps(config))
+                with self.assertRaisesRegex(UncertaintyError, "corrected-wind nominal requires"):
+                    self.run_fixture()
+        self.scenarios_path.write_text(json.dumps(self.config))
+        self.manifest.data["configuration"]["ground"]["definition"] = "a1000t70"
+        with self.assertRaisesRegex(UncertaintyError, "ground definition differs"):
+            self.run_fixture()
+
+    def test_corrected_profile_preserves_smoke_and_failure_population_flags(self):
+        result = self.run_fixture(limit=1)
+        self.assertTrue(result["sample_truncated_for_smoke_test"])
+        self.assertFalse(result["population_expansion_complete"])
+        self.assertEqual(result["stored_wind_replay"]["checked_flights"], 1)
+        self.tables["ground"] = self.tables["ground"].iloc[:1]
+        result = self.run_fixture()
+        self.assertFalse(result["population_expansion_complete"])
+        self.assertEqual(result["common_population_failures"], {"missing_input_key": 1})
+        for entry in [result["frozen_same_sample_reference"], *result["scenarios"].values()]:
+            self.assertEqual(entry["sample_flights"], 1)
+            self.assertEqual(entry["failed_flights"], 1)
+        with self.assertRaisesRegex(UncertaintyError, "no valid denominator"):
+            self.run_fixture(fail_scenario=True)
+
+    def test_corrected_profile_keeps_input_verification(self):
+        result = self.run_fixture(verify=True)
+        self.assertTrue(result["source_manifest_verified"])
+        self.assertEqual(self.manifest.verify_set.call_count, 4)
+        self.manifest.verify_file.assert_called_once()
+        self.manifest.verify_set.side_effect = UncertaintyError("changed source")
+        with self.assertRaisesRegex(UncertaintyError, "changed source"):
+            self.run_fixture(verify=True)
+        with self.assertRaisesRegex(UncertaintyError, "unknown sensitivity reference profile"):
+            self.run_fixture(profile="automatic-fallback")
+
+    def test_one_scenario_failure_removes_the_same_flight_from_both_references(self):
+        self.tables["decomposition"].loc[1, "co2_kg_v0"] = 121.0
+        result = self.run_fixture(fail_scenario="one")
+        self.assertEqual(result["common_population_failures"], {"load_minus_0.10:decomposition": 1})
+        self.assertFalse(result["population_expansion_complete"])
+        self.assertEqual(result["stored_wind_replay"]["checked_flights"], 1)
+        for entry in [result["frozen_same_sample_reference"], *result["scenarios"].values()]:
+            self.assertEqual(entry["sample_flights"], 1)
+            self.assertEqual(entry["failed_flights"], 1)
+            self.assertEqual(entry["expanded_population_weight"], 3.0)
+
+
 if __name__ == "__main__":
     unittest.main()
