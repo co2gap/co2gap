@@ -104,9 +104,11 @@
     "candidate_max_arrival_delta_s": 2700,
     "candidate_max_origin_distance_km": 100.0,
     "candidate_max_destination_distance_km": 100.0,
+    "score": "abs(dep_delta)/900 + abs(arr_delta)/900 + origin_km/25 + destination_km/25",
     "maximum_score": 8.0,
     "assignment": "one-to-one mutual nearest neighbour",
     "runner_up_rule": "Accept a non-singleton candidate set only when best_score <= 0.75 * second_best_score on both primary and source sides.",
+    "tie_epsilon": 1e-09,
     "manual_overrides": false
   },
   "source_quality": {
@@ -137,11 +139,11 @@
     "1100": 200
   },
   "estimands": {
-    "primary": "For each targeted rejected mask separately, its independent-source ratio-of-sums total-gap proxy minus the 0000 control proxy, conditional on a unique match and frozen source-quality pass.",
+    "primary": "For each targeted rejected mask separately, its targeted-design-weighted independent-source ratio-of-sums total-gap proxy minus the weighted 0000 control proxy, conditional on a unique match and frozen source-quality pass.",
     "secondary": [
       "The corresponding lateral and vertical contrasts.",
       "Matching, source-quality and measured-outcome response by requested mask.",
-      "Weighted and unweighted composition diagnostics inside the targeted tranche."
+      "The same contrasts without targeted-design weights as composition diagnostics."
     ],
     "pool_rejected_masks": false,
     "missing_outcomes": "No imputation. Thresholds control minimum descriptive support only; every contrast remains conditional on source response.",
@@ -151,6 +153,17 @@
     "complete_targeted_diagnostic": "Every requested sample id has one declared status, every measured row passes the frozen matching and source-quality contract, and every mask meets its minimum measured-row threshold.",
     "blocked": "Any mask below threshold, artifact hash mismatch, gate information disclosed to matching, source protocol changed after access, or missing source declaration.",
     "receiver_independence": "A separate-source result with unverified receiver overlap remains exploratory; receiver independence may strengthen provenance but does not turn this targeted diagnostic into a release-wide bound."
+  },
+  "pre_source_clarification": {
+    "clarified_at": "2026-08-30",
+    "original_design_commit": "6c8809e",
+    "external_source_accessed": false,
+    "reason": "The first protocol commit named matching thresholds but omitted the already intended score formula, and named weighted/unweighted diagnostics without declaring which was primary.",
+    "changes": [
+      "Freeze the OpenSky-developed matching score and tie tolerance.",
+      "Declare the targeted-design-weighted ratio-of-sums contrast primary and the unweighted contrast secondary."
+    ],
+    "outcome_schema_changed": false
   },
   "outcome_contract": {
     "path": "lab/targeted-validation-outcomes.schema.json",
