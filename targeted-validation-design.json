@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-targeted-heldout-validation-design",
+  "publication_status": "aggregate_preregistration",
+  "analysis_status": "protocol_frozen_before_external_source_access",
+  "registered_at": "2026-08-30",
+  "release_id": "2026-09-01",
+  "purpose": "Obtain a provider-neutral held-out diagnostic for the three failure masks responsible for nearly all of the declared selection stress, without changing or replacing the canonical 5,000-flight validation design.",
+  "population_boundary": "The frozen 5,000-flight canonical sample of durable complete, supported and successfully first-pass-modelled pre-gate flights; upstream ingestion exclusions remain outside this design.",
+  "parent_contract": {
+    "design_path": "selection-validation-design.json",
+    "design_sha256": "f439b765c50ff76ac8fed1f71e7d24ba03e4009b55d08d4a6818419128a5e954",
+    "private_sample_sha256": "c8dd48e4486676c001c9df5c23ab527329ce48a02fc9fb62bc0f34a86e92112e",
+    "blinded_match_list_sha256": "0b8244faea95b2d0059545c66fef76de515607513ff5bcf43313011920d62ae3",
+    "canonical_sample_rows": 5000,
+    "canonical_design_unchanged": true
+  },
+  "target_allocation": [
+    {
+      "failure_mask": "0000",
+      "target_rows": 600,
+      "selection": "At least one canonical control from every 0000 stratum, then capacity-limited proportional allocation by stratum population; within stratum select the lowest SHA-256 ranks under the frozen namespace."
+    },
+    {
+      "failure_mask": "0100",
+      "target_rows": 533,
+      "selection": "Every canonical 0100 sample row."
+    },
+    {
+      "failure_mask": "1000",
+      "target_rows": 761,
+      "selection": "Every canonical 1000 sample row."
+    },
+    {
+      "failure_mask": "1100",
+      "target_rows": 385,
+      "selection": "Every canonical 1100 sample row."
+    }
+  ],
+  "target_rows": 2279,
+  "control_selection": {
+    "namespace": "co2gap-targeted-heldout-v1",
+    "rank": "SHA-256(namespace + NUL + sample_id), ascending",
+    "allocation": "one per canonical 0000 stratum, then proportional to stratum population subject to the number of canonical rows available",
+    "second_stage_weight": "canonical stratum population divided by targeted rows selected in that stratum",
+    "randomness_claimed": false,
+    "reason": "Deterministic, outcome-blind coverage of every canonical passing stratum; weights are retained for composition diagnostics, not for a release-wide correction."
+  },
+  "blinding": {
+    "external_matching_allowed_fields": [
+      "sample_id",
+      "day",
+      "typecode",
+      "dep_ts",
+      "arr_ts",
+      "o_lat",
+      "o_lon",
+      "d_lat",
+      "d_lon"
+    ],
+    "external_matching_prohibited_fields": [
+      "flight_id",
+      "failure_mask",
+      "gate_pass",
+      "stratum",
+      "distance_band",
+      "coverage_band",
+      "population_n",
+      "sample_n",
+      "weight",
+      "targeted_weight"
+    ],
+    "failure_mask_joined_after_matching_and_source_quality": true,
+    "matching_received_gate_status": false,
+    "matching_received_primary_track_quality": false
+  },
+  "requested_external_extract": {
+    "required_per_state_fields": [
+      "provider flight or track key",
+      "observation time",
+      "latitude",
+      "longitude",
+      "barometric or geometric altitude",
+      "ground speed",
+      "vertical rate",
+      "on-ground flag when available"
+    ],
+    "strongly_preferred_fields": [
+      "both barometric and geometric altitude",
+      "indicated or true airspeed",
+      "receiver or provenance class sufficient to assess overlap with adsb.lol"
+    ],
+    "required_metadata": [
+      "source name and immutable extract version",
+      "extraction method and time boundary",
+      "field units",
+      "licence or written permission for research use",
+      "statement of receiver independence or explicit declaration that overlap is unverified"
+    ],
+    "redistribution": "No raw provider record is committed or published unless the provider explicitly permits it."
+  },
+  "matching": {
+    "candidate_max_departure_delta_s": 2700,
+    "candidate_max_arrival_delta_s": 2700,
+    "candidate_max_origin_distance_km": 100.0,
+    "candidate_max_destination_distance_km": 100.0,
+    "maximum_score": 8.0,
+    "assignment": "one-to-one mutual nearest neighbour",
+    "runner_up_rule": "Accept a non-singleton candidate set only when best_score <= 0.75 * second_best_score on both primary and source sides.",
+    "manual_overrides": false
+  },
+  "source_quality": {
+    "temporal_aggregation_seconds": 60,
+    "aggregation": "After exact position-time deduplication, median numerical states inside fixed Unix-minute bins and majority on-ground value.",
+    "minimum_unique_points": 11,
+    "gap_threshold_s": 120.0,
+    "coverage_min_fraction": 0.85,
+    "flown_min_fraction_of_source_gc": 0.9,
+    "great_circle_min_km": 150.0,
+    "maximum_segment_speed_kt": 1200.0,
+    "quality_evaluated_before_failure_mask_join": true,
+    "post_source_amendment_allowed": false
+  },
+  "proxy_model": {
+    "required_profile": "ground_speed_proxy_v1",
+    "observed_fuel": "OpenAP 2.6.0 over the independent source trajectory using source ground speed.",
+    "load_factor": 0.82,
+    "reserve_kg": 2000.0,
+    "wind": "The frozen release ERA5 field and baseline code.",
+    "calibration": "none",
+    "optional_secondary": "An IAS/TAS-enhanced proxy may be reported separately when the source supplies it; it may not replace or retune the required ground-speed profile."
+  },
+  "minimum_measured_rows": {
+    "0000": 400,
+    "0100": 300,
+    "1000": 450,
+    "1100": 200
+  },
+  "estimands": {
+    "primary": "For each targeted rejected mask separately, its independent-source ratio-of-sums total-gap proxy minus the 0000 control proxy, conditional on a unique match and frozen source-quality pass.",
+    "secondary": [
+      "The corresponding lateral and vertical contrasts.",
+      "Matching, source-quality and measured-outcome response by requested mask.",
+      "Weighted and unweighted composition diagnostics inside the targeted tranche."
+    ],
+    "pool_rejected_masks": false,
+    "missing_outcomes": "No imputation. Thresholds control minimum descriptive support only; every contrast remains conditional on source response.",
+    "inference": "Held-out targeted diagnostic. No p-value, confidence interval, release-wide correction or selection-bias bound."
+  },
+  "decision_rule": {
+    "complete_targeted_diagnostic": "Every requested sample id has one declared status, every measured row passes the frozen matching and source-quality contract, and every mask meets its minimum measured-row threshold.",
+    "blocked": "Any mask below threshold, artifact hash mismatch, gate information disclosed to matching, source protocol changed after access, or missing source declaration.",
+    "receiver_independence": "A separate-source result with unverified receiver overlap remains exploratory; receiver independence may strengthen provenance but does not turn this targeted diagnostic into a release-wide bound."
+  },
+  "outcome_contract": {
+    "path": "lab/targeted-validation-outcomes.schema.json",
+    "sha256": "84cac3108761cbc5067f981f4a0937dce835729de4539fec1e3d438f8ae30d29"
+  },
+  "claims": {
+    "replaces_canonical_validation": false,
+    "corrects_release_headline": false,
+    "bounds_release_headline": false,
+    "is_confidence_interval": false,
+    "is_probability_model": false,
+    "may_prioritise_future_external_sampling": true
+  },
+  "privacy": "The public design contains aggregate allocation only. Private sample and match manifests remain outside git; only their SHA-256 digests and aggregate partitions may be registered."
+}

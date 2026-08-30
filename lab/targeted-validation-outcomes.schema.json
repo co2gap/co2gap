@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://co2gap.org/schema/targeted-validation-outcomes-v1.json",
+  "title": "co2gap targeted held-out validation outcomes",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "publication_status",
+    "targeted_design_sha256",
+    "sample_sha256",
+    "match_list_sha256",
+    "source",
+    "rows"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "co2gap-targeted-heldout-outcomes"},
+    "publication_status": {"const": "private_per_flight"},
+    "targeted_design_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sample_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "match_list_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "method_reference",
+        "quality_rule",
+        "licence_or_permission_reference",
+        "receiver_provenance_statement",
+        "processing_profile",
+        "source_relation",
+        "primary_trajectory_used",
+        "matching_received_gate_status",
+        "matching_received_primary_track_quality",
+        "protocol_frozen_before_source_access"
+      ],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "method_reference": {"type": "string", "minLength": 1},
+        "quality_rule": {"type": "string", "minLength": 1},
+        "licence_or_permission_reference": {"type": "string", "minLength": 1},
+        "receiver_provenance_statement": {"type": "string", "minLength": 1},
+        "processing_profile": {"const": "ground_speed_proxy_v1"},
+        "source_relation": {
+          "enum": [
+            "receiver_independent",
+            "separate_source_receiver_overlap_unverified"
+          ]
+        },
+        "primary_trajectory_used": {"const": false},
+        "matching_received_gate_status": {"const": false},
+        "matching_received_primary_track_quality": {"const": false},
+        "protocol_frozen_before_source_access": {"const": true}
+      }
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sample_id", "status"],
+        "properties": {
+          "sample_id": {"type": "string", "pattern": "^[0-9a-f]{24}$"},
+          "status": {
+            "enum": ["measured", "not_found", "unusable", "source_error"]
+          },
+          "real_co2_kg": {"type": ["number", "null"], "minimum": 0},
+          "ideal_co2_kg": {"type": ["number", "null"], "exclusiveMinimum": 0},
+          "hybrid_co2_kg": {"type": ["number", "null"], "minimum": 0},
+          "match_candidate_count": {"type": "integer", "minimum": 1},
+          "departure_time_delta_s": {"type": "number", "minimum": 0},
+          "arrival_time_delta_s": {"type": "number", "minimum": 0},
+          "origin_distance_km": {"type": "number", "minimum": 0},
+          "destination_distance_km": {"type": "number", "minimum": 0},
+          "proxy_coverage_fraction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "proxy_quality_pass": {"type": "boolean"},
+          "reason": {"type": "string", "minLength": 1}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"status": {"const": "measured"}}},
+            "then": {
+              "required": [
+                "real_co2_kg",
+                "ideal_co2_kg",
+                "hybrid_co2_kg",
+                "match_candidate_count",
+                "departure_time_delta_s",
+                "arrival_time_delta_s",
+                "origin_distance_km",
+                "destination_distance_km",
+                "proxy_coverage_fraction",
+                "proxy_quality_pass"
+              ],
+              "properties": {
+                "match_candidate_count": {"const": 1},
+                "proxy_quality_pass": {"const": true}
+              }
+            },
+            "else": {
+              "required": ["reason"],
+              "properties": {
+                "real_co2_kg": {"type": "null"},
+                "ideal_co2_kg": {"type": "null"},
+                "hybrid_co2_kg": {"type": "null"}
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
