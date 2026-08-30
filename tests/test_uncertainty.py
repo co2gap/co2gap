@@ -20,6 +20,8 @@ from decompose import _sensitivity_cruise_alt_ft  # noqa: E402
 from release_manifest import ReleaseManifest, sha256_file  # noqa: E402
 from uncertainty import (UncertaintyError, _metrics, _require_nested_counts,  # noqa: E402
                          _require_nominal_baseline,
+                         balanced_sensitivity_allocation, _sample_allocation_options,
+                         write_sample_manifest,
                          block_resample_days,
                          paired_sensitivity,
                          _require_outside_repository, poststratified_selection,
@@ -137,6 +139,119 @@ class SamplingTests(unittest.TestCase):
         with self.assertRaisesRegex(UncertaintyError, "outside the repository"):
             _require_outside_repository(ROOT / "sample.json", "sample")
         _require_outside_repository(Path("/tmp/co2gap-sample.json"), "sample")
+
+
+class BalancedSensitivitySamplingTests(unittest.TestCase):
+    def test_exact_integer_quotas_ties_and_census(self):
+        sizes = pd.Series({"small": 1, "a": 10, "b": 10, "c": 30})
+        result = balanced_sensitivity_allocation(sizes, minimum=2, target=16)
+        # Floor=7; remaining 9 apportioned over capacities 0,8,8,28.
+        self.assertEqual(result.to_dict(), {"a": 4, "b": 3, "c": 8, "small": 1})
+        pd.testing.assert_series_equal(result, balanced_sensitivity_allocation(
+            sizes.iloc[::-1], minimum=2, target=16))
+        self.assertEqual(balanced_sensitivity_allocation(
+            sizes, minimum=2, target=7).to_dict(), {"a": 2, "b": 2, "c": 2, "small": 1})
+        pd.testing.assert_series_equal(balanced_sensitivity_allocation(
+            sizes, minimum=2, target=51), sizes.sort_index())
+        self.assertEqual(balanced_sensitivity_allocation(
+            pd.Series({"only": 1}), minimum=2, target=1).iloc[0], 1)
+
+    def test_random_allocations_close_without_overfilling_or_losing_strata(self):
+        rng = np.random.default_rng(193)
+        for _ in range(100):
+            sizes = pd.Series(rng.integers(1, 80, size=12), index=[f"s{i}" for i in range(12)])
+            minimum = int(rng.integers(2, 6))
+            floor = sizes.clip(upper=minimum)
+            target = int(rng.integers(int(floor.sum()), int(sizes.sum()) + 1))
+            result = balanced_sensitivity_allocation(sizes, minimum=minimum, target=target)
+            self.assertEqual(int(result.sum()), target)
+            self.assertTrue((result >= floor.reindex(result.index)).all())
+            self.assertTrue((result <= sizes.reindex(result.index)).all())
+
+    def test_invalid_counts_and_impossible_targets_fail(self):
+        good = pd.Series({"a": 10, "b": 20})
+        for minimum, target in ((1, 10), (2.5, 10), (True, 10), (2, 3),
+                                 (2, 31), (2, 0), (2, 8.5), (2, True)):
+            with self.subTest(minimum=minimum, target=target):
+                with self.assertRaises(UncertaintyError):
+                    balanced_sensitivity_allocation(good, minimum=minimum, target=target)
+        for sizes in (pd.Series(dtype=int), pd.Series([3, 4], index=["a", "a"]),
+                      pd.Series({"a": 0}), pd.Series({"a": 3.2}), pd.Series({"a": True})):
+            with self.assertRaises(UncertaintyError):
+                balanced_sensitivity_allocation(sizes, minimum=2, target=4)
+
+    def test_draw_reproducible_after_row_shuffle_and_preserves_every_cell(self):
+        population = SamplingTests.population()
+        first = stratified_sample(population, per_stratum=2, seed=19, target_sample=10)
+        shuffled = stratified_sample(population.sample(frac=1, random_state=2),
+                                     per_stratum=2, seed=19, target_sample=10)
+        pd.testing.assert_frame_equal(first, shuffled)
+        self.assertEqual(len(first), 10)
+        self.assertEqual(first.stratum.nunique(), 3)
+        self.assertAlmostEqual(first.weight.sum(), len(population))
+        self.assertFalse(first.duplicated(["day", "flight_id"]).any())
+        self.assertTrue((first.sample_n >= 2).all())
+        for _, group in first.groupby("stratum"):
+            self.assertEqual(group.sample_n.unique().tolist(), [len(group)])
+            self.assertAlmostEqual(group.weight.sum(), float(group.population_n.iloc[0]))
+
+    def test_invalid_numeric_strata_cannot_silently_become_a_nan_cell(self):
+        for column in ("gc_km", "coverage_frac"):
+            for value in ("bad", float("nan"), float("inf"), -float("inf")):
+                population = SamplingTests.population().astype({column: object})
+                population.loc[0, column] = value
+                with self.subTest(column=column, value=value):
+                    with self.assertRaisesRegex(UncertaintyError, "non-numeric or non-finite"):
+                        stratified_sample(population, per_stratum=2, seed=1, target_sample=10)
+            nullable = SamplingTests.population().astype({column: "Float64"})
+            nullable.loc[0, column] = pd.NA
+            with self.assertRaisesRegex(UncertaintyError, "non-numeric or non-finite"):
+                stratified_sample(nullable, per_stratum=2, seed=1, target_sample=10)
+
+    def test_option_combinations_are_explicit(self):
+        def options(**kwargs):
+            return SimpleNamespace(**dict(
+                dict(allocation="equal", per_stratum=None, min_per_stratum=None,
+                     target_sample=None), **kwargs))
+        self.assertEqual(_sample_allocation_options(options()), (5, None))
+        self.assertEqual(_sample_allocation_options(options(per_stratum=7)), (7, None))
+        self.assertEqual(_sample_allocation_options(options(allocation="balanced", target_sample=20)), (2, 20))
+        self.assertEqual(_sample_allocation_options(options(allocation="balanced", target_sample=20, min_per_stratum=3)), (3, 20))
+        for args in (options(target_sample=20), options(min_per_stratum=2),
+                     options(allocation="balanced"), options(allocation="balanced", per_stratum=5, target_sample=20),
+                     options(allocation="balanced", target_sample=20, min_per_stratum=1),
+                     options(allocation="balanced", target_sample=-1), options(allocation="unknown")):
+            with self.assertRaises(UncertaintyError):
+                _sample_allocation_options(args)
+
+    def test_manifest_names_the_new_allocation_and_does_not_call_minimum_a_cap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            manifest_path = base / "release.json"
+            manifest_path.write_text("{}")
+            manifest = SimpleNamespace(path=manifest_path, release_id="test")
+            population = SamplingTests.population()
+            sample = stratified_sample(population, per_stratum=2, seed=17, target_sample=10)
+            result = write_sample_manifest(manifest=manifest, population=population,
+                                           sample=sample, per_stratum=2, seed=17,
+                                           output=base / "sample.json", verified=False,
+                                           target_sample=10)
+            self.assertNotIn("per_stratum", result)
+            self.assertEqual(result["sampling_design"]["minimum_per_stratum"], 2)
+            self.assertEqual(result["sampling_design"]["target_sample_rows"], 10)
+            self.assertFalse(result["sampling_design"]["uses_sensitivity_outcomes"])
+            with self.assertRaisesRegex(UncertaintyError, "row count differs"):
+                write_sample_manifest(manifest=manifest, population=population,
+                                      sample=sample, per_stratum=2, seed=17,
+                                      output=base / "bad.json", verified=False,
+                                      target_sample=11)
+            self.assertFalse((base / "bad.json").exists())
+            equal = stratified_sample(population, per_stratum=2, seed=17)
+            old = write_sample_manifest(manifest=manifest, population=population,
+                                       sample=equal, per_stratum=2, seed=17,
+                                       output=base / "old.json", verified=False)
+            self.assertIn("per_stratum", old)
+            self.assertNotIn("sampling_design", old)
 
 
 class SelectionTests(unittest.TestCase):
@@ -922,6 +1037,33 @@ class CorrectedWindReferenceTests(unittest.TestCase):
             self.run_fixture(verify=True)
         with self.assertRaisesRegex(UncertaintyError, "unknown sensitivity reference profile"):
             self.run_fixture(profile="automatic-fallback")
+
+    def test_allocation_metadata_survives_both_profiles_without_changing_metrics(self):
+        sample = json.loads(self.sample_path.read_text())
+        design = {
+            "allocation": "minimum-plus-proportional-remaining-capacity",
+            "minimum_per_stratum": 2,
+            "target_sample_rows": 2,
+            "rounding": "integer largest remainders, lexicographic stratum ties",
+            "within_stratum": "simple random sampling without replacement",
+            "uses_sensitivity_outcomes": False,
+        }
+        for profile in ("frozen-release", "corrected-wind"):
+            with self.subTest(profile=profile):
+                sample.pop("sampling_design", None)
+                sample["per_stratum"] = 2
+                self.sample_path.write_text(json.dumps(sample))
+                equal = self.run_fixture(profile=profile, wind_change=0.0)
+                self.assertEqual(equal["sample_design"]["allocation"], {
+                    "allocation": "historical-equal-cap", "per_stratum": 2,
+                })
+                sample.pop("per_stratum")
+                sample["sampling_design"] = design
+                self.sample_path.write_text(json.dumps(sample))
+                balanced = self.run_fixture(profile=profile, wind_change=0.0)
+                self.assertEqual(balanced["sample_design"]["allocation"], design)
+                self.assertEqual(balanced["scenarios"], equal["scenarios"])
+                self.assertEqual(balanced["sample_design"]["weight_sum"], 6.0)
 
     def test_one_scenario_failure_removes_the_same_flight_from_both_references(self):
         self.tables["decomposition"].loc[1, "co2_kg_v0"] = 121.0

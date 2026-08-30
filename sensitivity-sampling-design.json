@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-sensitivity-sampling-plan",
+  "status": "exploratory_post_pilot",
+  "decision": "Recorded before the new balanced sensitivity runs, after seeing the equal-cap pilot. Not confirmatory preregistration.",
+  "release_manifest_sha256": "db69266d5a4d9ce66f1d1f9bc4533cb31e6fd1b6d8e4fbcc600c53e6a5266a0c",
+  "scenario_sha256": "ab7e5e678959b0178d0620c8d228c9ae85f3b6f641929e65b23d5c706e9ea3f9",
+  "reference_profile": "corrected-wind",
+  "allocation": "minimum-plus-proportional-remaining-capacity",
+  "dimensions": ["typecode", "distance_band", "coverage_band"],
+  "minimum_per_stratum": 2,
+  "target_sample_rows": 2549,
+  "seeds": [20260901, 20260902, 20260903],
+  "population_rows": 1833127,
+  "strata": 534,
+  "rounding": "integer largest remainders, lexicographic stratum ties",
+  "within_stratum": "simple random sampling without replacement",
+  "uses_sensitivity_outcomes_for_allocation": false,
+  "comparison": {
+    "predecessor_commit": "d38f75d",
+    "equal_cap_per_stratum": 5,
+    "same_sample_size": true,
+    "primary_scenarios": ["real_ground_speed", "cruise_minus_1000ft", "cruise_plus_1000ft"],
+    "run_all_declared_scenarios": true,
+    "reference_change_reported_separately": true,
+    "rule": "Report all three draws, including unchanged or worse stability. Do not redraw seeds, remove flights or tune allocation after seeing these outcomes."
+  },
+  "interpretation": "Lower maximum weights or higher Kish ESS describe allocation, not proven outcome-specific precision. Three-draw ranges are descriptive, not physical-model uncertainty intervals.",
+  "scope": "Laboratory sensitivity only. Do not change held-out validation, production data, frozen release, public site or January release preparation."
+}

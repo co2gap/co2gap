@@ -91,6 +91,51 @@ are the primary screening result. The output records the maximum weight and
 Kish effective sample size so an apparently large row count cannot hide a
 concentrated design.
 
+### Optional balanced allocation
+
+The historical command remains an **equal cap** per stratum and reproduces its
+old sample manifest byte-for-byte. The optional balanced mode keeps the same
+stratum definitions and draws without replacement inside every cell, but changes
+how many observations each cell receives:
+
+```bash
+python lab/uncertainty.py sample \
+  --release-manifest "$PWD/release-manifest.json" \
+  --flights-dir /path/to/data/flights_ecac \
+  --decomposition-dir /path/to/data/decomposition_ecac \
+  --allocation balanced \
+  --min-per-stratum 2 \
+  --target-sample 2549 \
+  --seed 20260901 \
+  --out /tmp/co2gap-balanced-sample-seed1.json
+```
+
+First assign `min(2, N_h)` flights per cell; allocate the remaining budget in
+proportion to `N_h - min(2, N_h)`. Integer largest remainders close the budget,
+with lexicographic cell names breaking ties. Weights remain `N_h / n_h`.
+The target must lie between the sum of the minima and the full population;
+neither infeasible targets nor contradictory options are silently adjusted.
+Balanced mode requires `--target-sample`, accepts `--min-per-stratum` (default
+2), and rejects `--per-stratum`; equal mode does the reverse and defaults to
+five per cell. Small cells remain represented, but a former census of three
+to five flights can become a sample: retaining cells does not retain all old
+sampled flights.
+
+Balanced manifests explicitly name `sampling_design`, the minimum and total
+budget, instead of mislabelling the minimum as a per-cell cap. The sensitivity
+output carries that design alongside its weight diagnostics. This is not an
+outcome-optimised allocation: lower maximum weight/higher Kish ESS alone does
+not prove improved precision for a fuel ratio or scenario difference.
+
+The experiment's choices are recorded in
+[`sensitivity-sampling-design.json`](sensitivity-sampling-design.json) before
+the new sensitivity runs: same 2,549-flight budget, three existing seeds, all
+nine unchanged scenarios and the explicit corrected-wind nominal. It is a
+post-pilot exploration, not confirmatory preregistration. The plan describes
+this experiment, not a new release gate; individual `sample` commands may be
+used for other explicitly declared lab designs. Results and cross-checks are
+in [BALANCED-SENSITIVITY.md](BALANCED-SENSITIVITY.md).
+
 ## 4. Paired sensitivity
 
 ```bash

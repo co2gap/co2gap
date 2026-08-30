@@ -5,6 +5,9 @@ This is a laboratory follow-up to [SENSITIVITY-AUDIT.md](SENSITIVITY-AUDIT.md),
 not a revision of the September release or preparation of the January release.
 The earlier third run remains rejected under its frozen-reference contract.
 
+Subsequent allocation experiment: [BALANCED-SENSITIVITY.md](BALANCED-SENSITIVITY.md).
+This report preserves the equal-cap runs and their original results.
+
 ## 1. What changed, and what did not
 
 The default `frozen-release` profile still requires each nominal ideal and

@@ -726,10 +726,64 @@ def _require_columns(frame: pd.DataFrame, columns: Iterable[str], label: str) ->
         raise UncertaintyError(f"{label} lacks required columns: {missing}")
 
 
-def stratified_sample(population: pd.DataFrame, per_stratum: int, seed: int) -> pd.DataFrame:
-    """Return a deterministic equal-allocation sample with expansion weights."""
-    if per_stratum <= 0:
-        raise UncertaintyError("per_stratum must be positive")
+def _sampling_integer(value: int, label: str, minimum: int = 1) -> int:
+    if (isinstance(value, (bool, np.bool_))
+            or not isinstance(value, (int, np.integer)) or value < minimum):
+        raise UncertaintyError(f"{label} must be an integer at least {minimum}")
+    return int(value)
+
+
+def balanced_sensitivity_allocation(sizes: pd.Series, *, minimum: int,
+                                    target: int) -> pd.Series:
+    """Minimum plus proportional remaining capacity, integer largest remainders.
+
+    Allocation uses cell counts only, never sensitivity outcomes. At least two
+    observations are kept in each non-census cell. Singleton cells are censuses.
+    This helper does not alter the separate held-out validation allocator.
+    """
+    minimum = _sampling_integer(minimum, "minimum per stratum", 2)
+    target = _sampling_integer(target, "target sample")
+    if sizes.empty or not sizes.index.is_unique:
+        raise UncertaintyError("allocation requires nonempty, unique strata")
+    sizes = sizes.sort_index()
+    counts = {name: _sampling_integer(n, f"population of {name}")
+              for name, n in sizes.items()}
+    allocation = {name: min(minimum, n) for name, n in counts.items()}
+    floor_total = sum(allocation.values())
+    if not floor_total <= target <= sum(counts.values()):
+        raise UncertaintyError(
+            f"target sample {target} must be between stratum minimum {floor_total} "
+            f"and population {sum(counts.values())}")
+    remaining = target - floor_total
+    if remaining:
+        capacity = {name: n - allocation[name] for name, n in counts.items()}
+        capacity_total = sum(capacity.values())
+        # Python integer division avoids floating-point tie/remainder drift.
+        quotients = {name: divmod(remaining * n, capacity_total)
+                     for name, n in capacity.items()}
+        for name, (whole, _) in quotients.items():
+            allocation[name] += whole
+        left = target - sum(allocation.values())
+        order = sorted(
+            (name for name in counts if allocation[name] < counts[name]),
+            key=lambda name: (-quotients[name][1], str(name)))
+        for name in order[:left]:
+            allocation[name] += 1
+    if (sum(allocation.values()) != target
+            or any(not min(minimum, counts[name]) <= n <= counts[name]
+                   for name, n in allocation.items())):
+        raise UncertaintyError("balanced sensitivity allocation does not close")
+    return pd.Series(allocation, dtype="int64")
+
+
+def stratified_sample(population: pd.DataFrame, per_stratum: int, seed: int,
+                      *, target_sample: int | None = None) -> pd.DataFrame:
+    """Deterministic within-cell SRS; equal cap or minimum-plus-proportional.
+
+    With target_sample, per_stratum denotes the minimum (at least two), not a
+    cap. Without it, the historical equal-cap draw is preserved exactly.
+    """
+    per_stratum = _sampling_integer(per_stratum, "per_stratum")
     _require_columns(
         population, ("day", "flight_id", "typecode", "gc_km", "coverage_frac"),
         "sample population")
@@ -739,23 +793,32 @@ def stratified_sample(population: pd.DataFrame, per_stratum: int, seed: int) -> 
         raise UncertaintyError("sample population has duplicate (day, flight_id) keys")
     pop["day"] = pop.day.astype(str)
     pop["flight_id"] = pop.flight_id.astype(int)
+    distance = pd.to_numeric(pop.gc_km, errors="coerce")
+    coverage = pd.to_numeric(pop.coverage_frac, errors="coerce")
+    if (distance.isna().any() or coverage.isna().any()
+            or not np.isfinite(distance).all() or not np.isfinite(coverage).all()):
+        raise UncertaintyError("sample population contains non-numeric or non-finite distance or coverage")
     pop["distance_band"] = pd.cut(
-        pd.to_numeric(pop.gc_km, errors="coerce"), DISTANCE_EDGES,
+        distance, DISTANCE_EDGES,
         labels=DISTANCE_LABELS).astype(str)
     pop["coverage_band"] = pd.cut(
-        pd.to_numeric(pop.coverage_frac, errors="coerce"), COVERAGE_EDGES,
+        coverage, COVERAGE_EDGES,
         labels=COVERAGE_LABELS).astype(str)
-    if pop[["gc_km", "coverage_frac"]].isna().any().any():
-        raise UncertaintyError("sample population contains non-numeric distance or coverage")
     pop["stratum"] = (
         pop.typecode.fillna("UNKNOWN").astype(str) + "|" + pop.distance_band
         + "|" + pop.coverage_band)
+    allocation = None
+    if target_sample is not None:
+        allocation = balanced_sensitivity_allocation(
+            pop.groupby("stratum", sort=True).size(), minimum=per_stratum,
+            target=target_sample)
     rng = np.random.default_rng(seed)
     selected = []
     for stratum, group in pop.groupby("stratum", sort=True):
         ordered = group.sort_values(["day", "flight_id"])
         n_population = len(ordered)
-        n_sample = min(per_stratum, n_population)
+        n_sample = (min(per_stratum, n_population) if allocation is None
+                    else int(allocation[stratum]))
         positions = np.sort(rng.choice(n_population, size=n_sample, replace=False))
         chosen = ordered.iloc[positions].copy()
         chosen["population_n"] = n_population
@@ -1382,7 +1445,8 @@ def selection_sensitivity(*, design_path: Path,
 
 def write_sample_manifest(*, manifest: ReleaseManifest, population: pd.DataFrame,
                           sample: pd.DataFrame, per_stratum: int, seed: int,
-                          output: Path, verified: bool) -> dict:
+                          output: Path, verified: bool,
+                          target_sample: int | None = None) -> dict:
     _require_outside_repository(output, "uncertainty sample manifest")
     rows = []
     for row in sample.itertuples(index=False):
@@ -1413,6 +1477,20 @@ def write_sample_manifest(*, manifest: ReleaseManifest, population: pd.DataFrame
         ),
         "rows": rows,
     }
+    if target_sample is not None:
+        minimum = _sampling_integer(per_stratum, "minimum per stratum", 2)
+        target = _sampling_integer(target_sample, "target sample")
+        if len(sample) != target:
+            raise UncertaintyError("balanced sample row count differs from declared target")
+        value.pop("per_stratum")
+        value["sampling_design"] = {
+            "allocation": "minimum-plus-proportional-remaining-capacity",
+            "minimum_per_stratum": minimum,
+            "target_sample_rows": target,
+            "rounding": "integer largest remainders, lexicographic stratum ties",
+            "within_stratum": "simple random sampling without replacement",
+            "uses_sensitivity_outcomes": False,
+        }
     _atomic_json(output, value)
     return value
 
@@ -3511,6 +3589,10 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         "population_expansion_complete": not truncated and not any_failures,
         "population_estimate_is_exact": False,
         "sample_design": {
+            "allocation": sample.get("sampling_design", {
+                "allocation": "historical-equal-cap",
+                "per_stratum": sample.get("per_stratum"),
+            }),
             "weight_sum": float(requested_weights.sum()),
             "max_weight": float(requested_weights.max()),
             "kish_effective_sample_size": effective_sample_size,
@@ -3581,6 +3663,24 @@ def _common_release_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _sample_allocation_options(args) -> tuple[int, int | None]:
+    """Refuse contradictory options before reading any release inputs."""
+    if args.allocation == "equal":
+        if args.target_sample is not None or args.min_per_stratum is not None:
+            raise UncertaintyError("equal allocation cannot use target-sample or min-per-stratum")
+        cap = 5 if args.per_stratum is None else args.per_stratum
+        return _sampling_integer(cap, "per_stratum"), None
+    if args.allocation != "balanced":
+        raise UncertaintyError(f"unknown sample allocation: {args.allocation}")
+    if args.per_stratum is not None:
+        raise UncertaintyError("balanced allocation uses min-per-stratum, not per-stratum")
+    if args.target_sample is None:
+        raise UncertaintyError("balanced allocation requires target-sample")
+    minimum = 2 if args.min_per_stratum is None else args.min_per_stratum
+    return (_sampling_integer(minimum, "minimum per stratum", 2),
+            _sampling_integer(args.target_sample, "target sample"))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -3605,7 +3705,13 @@ def main(argv: list[str] | None = None) -> int:
     sample_parser.add_argument("--release-manifest", type=Path, required=True)
     sample_parser.add_argument("--flights-dir", type=Path, required=True)
     sample_parser.add_argument("--decomposition-dir", type=Path, required=True)
-    sample_parser.add_argument("--per-stratum", type=int, default=5)
+    sample_parser.add_argument("--allocation", choices=["equal", "balanced"], default="equal")
+    sample_parser.add_argument("--per-stratum", type=int, default=None,
+                               help="equal allocation only: cap per stratum (default 5)")
+    sample_parser.add_argument("--min-per-stratum", type=int, default=None,
+                               help="balanced only: minimum per stratum (default 2)")
+    sample_parser.add_argument("--target-sample", type=int, default=None,
+                               help="balanced only: exact total sample size, no silent clipping")
     sample_parser.add_argument("--seed", type=int, default=20260901)
     sample_parser.add_argument("--out", type=Path, required=True)
     sample_parser.add_argument("--skip-manifest-verification", action="store_true")
@@ -3759,17 +3865,19 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "sample":
+        per_stratum, target_sample = _sample_allocation_options(args)
         _require_outside_repository(args.out, "uncertainty sample manifest")
         manifest = ReleaseManifest.load(args.release_manifest)
         if not args.skip_manifest_verification:
             manifest.verify_set("flights", args.flights_dir)
             manifest.verify_set("decomposition", args.decomposition_dir, artifact=True)
         population = build_population(manifest, args.flights_dir, args.decomposition_dir)
-        sample = stratified_sample(population, args.per_stratum, args.seed)
+        sample = stratified_sample(population, per_stratum, args.seed,
+                                   target_sample=target_sample)
         value = write_sample_manifest(
             manifest=manifest, population=population, sample=sample,
-            per_stratum=args.per_stratum, seed=args.seed, output=args.out,
-            verified=not args.skip_manifest_verification)
+            per_stratum=per_stratum, seed=args.seed, output=args.out,
+            verified=not args.skip_manifest_verification, target_sample=target_sample)
         print(f"sample: {value['sample_rows']:,} rows in {value['strata']} strata "
               f"expand to {value['weight_sum']:,.0f} release flights -> {args.out}")
         return 0

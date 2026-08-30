@@ -250,6 +250,13 @@ profile still rejects a changed reference. Full commands and output contracts
 are in [UNCERTAINTY.md](UNCERTAINTY.md#explicit-experimental-corrected-wind-nominal).
 Neither profile changes the release or produces a probability interval.
 
+The [balanced-sample follow-up](BALANCED-SENSITIVITY.md) tests a minimum-plus-
+proportional allocation at the same total sample size. It preserves the old
+equal-cap sampler as the default and leaves the external held-out protocols
+unchanged. The [sampling plan](sensitivity-sampling-design.json) records the
+pre-run choices; [full commands](UNCERTAINTY.md#optional-balanced-allocation)
+write only private lab artifacts under `/tmp`.
+
 The release-gate denominator and attrition can be audited independently of the
 fuel sensitivities:
 
