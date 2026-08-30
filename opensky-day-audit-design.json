@@ -1,8 +1,9 @@
 {
   "schema_version": 1,
+  "design_version": 2,
   "kind": "co2gap-opensky-day-selection-audit-design",
-  "publication_status": "aggregate_preregistration",
-  "analysis_status": "matching_and_outcomes_not_yet_read",
+  "publication_status": "aggregate_preregistration_with_post_pilot_amendment",
+  "analysis_status": "post_pilot_amended_exploratory_reanalysis_pending",
   "registered_at": "2026-08-30",
   "release_id": "2026-09-01",
   "release_manifest_sha256": "db69266d5a4d9ce66f1d1f9bc4533cb31e6fd1b6d8e4fbcc600c53e6a5266a0c",
@@ -95,6 +96,11 @@
     ],
     "point_time": "lastPosUpdate",
     "deduplication": "for each icao24 and lastPosUpdate retain the row with the latest snapshot time",
+    "temporal_aggregation": {
+      "seconds": 60,
+      "method": "after exact-position-time deduplication, take the median of point time, coordinates, reported velocity, altitude and vertical rate inside each Unix-minute bin; onGround is the majority value",
+      "purpose": "make one state-vector observation per physical minute and prevent a sub-second coordinate contaminant from defining segment speed or flown distance"
+    },
     "matched_window_padding_s": 300,
     "units": {
       "velocity_input": "m/s",
@@ -109,7 +115,7 @@
     "minimum_unique_points": 11,
     "gap_threshold_s": 120.0,
     "coverage_min_fraction": 0.85,
-    "coverage_definition": "one minus the sum of entire consecutive gaps longer than 120 seconds divided by first-to-last point duration",
+    "coverage_definition": "after registered one-minute aggregation, one minus the sum of entire consecutive gaps longer than 120 seconds divided by first-to-last point duration",
     "flown_min_fraction_of_source_gc": 0.9,
     "great_circle_min_km": 150.0,
     "maximum_segment_speed_kt": 1200.0,
@@ -143,7 +149,18 @@
       "comparison of OpenSky proxy and frozen primary decomposition on primary-gate controls"
     ],
     "missing_outcomes": "No correction or imputation; report nonresponse by failure mask and treat the outcome contrast as conditional on external match and source quality.",
-    "inference": "day census diagnostic; no sampling confidence interval and no extrapolation to the 197-day release"
+    "inference": "post-pilot exploratory day-census diagnostic; no confirmatory p-value or interval, no sampling confidence interval and no extrapolation to the 197-day release"
+  },
+  "post_pilot_amendment": {
+    "amended_at": "2026-08-30",
+    "original_design_commit": "75dfae4",
+    "original_design_sha256": "4a0b63338f9ec5ea74bbf5ed28e5d5c842dd16ce39fcc8211e80130f32a6d529",
+    "trigger": "The frozen raw consecutive-position speed guard left only 172 model outcomes because sub-second OpenSky state snapshots contain sporadic coordinate contaminants while reported velocity remains physically coherent.",
+    "original_result_sha256": "58889d376404f354f64f6417fd27b7a6ac93324abd94247e0b7131a93d0ffeb2",
+    "original_result_status": "inconclusive_guardian_failure_not_a_selection_result",
+    "diagnostic_observation": "Raw maximum segment speed was <=1200 kt for 180/8726 matched tracks; median aggregation in 60-second Unix bins was <=1200 kt for 8532/8726. Sensitivity was inspected at 10, 20, 30 and 60 seconds before this amendment.",
+    "change": "Insert the declared robust one-minute aggregation before all source-quality metrics and proxy modelling; keep every matching rule and every other quality threshold unchanged.",
+    "confirmatory_status": "This amendment was chosen after inspecting source-quality behaviour. Reanalysis is exploratory and may motivate a future independently frozen day or source; it cannot inherit the original preregistration label."
   },
   "decision_rule": {
     "primary_headline_bias_bounded": false,
