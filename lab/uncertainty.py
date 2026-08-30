@@ -3154,6 +3154,16 @@ def _finish_accumulator(acc: dict, scenario_id: str) -> dict:
     }
 
 
+def _require_nominal_baseline(stored: float, recomputed: float, label: str) -> None:
+    """Refuse a sensitivity whose reference differs beyond numerical roundoff."""
+    if (not math.isfinite(stored) or not math.isfinite(recomputed)
+            or stored <= 0 or recomputed <= 0
+            or not math.isclose(stored, recomputed, rel_tol=1e-10, abs_tol=1e-6)):
+        raise UncertaintyError(
+            f"nominal baseline mismatch for {label}: stored={stored}, "
+            f"recomputed={recomputed}; sensitivity cannot use a changed reference")
+
+
 def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                        manifest_path: Path, flights_dir: Path,
                        decomposition_dir: Path, ground_dir: Path,
@@ -3234,7 +3244,7 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
     point_columns = ["flight_id", "t", "lat", "lon", "alt_ft", "gs_kt", "ias_kt", "vs_fpm"]
     decomp_columns = [
         "flight_id", "typecode", "gc_km", "flown_km", "dep_ts", "co2_kg_v0",
-        "ideal_gc_co2_kg", "hybrid_co2_kg",
+        "ideal_gc_co2_kg", "hybrid_co2_kg", "cruise_alt_ft",
     ]
     ground_columns = ["flight_id", "fuel_recomputed_kg"] + [
         f"fuel_{name}_kg" for name in sorted(GROUND_DEFINITIONS)
@@ -3308,6 +3318,7 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                     alt_ft=arrays["alt_ft"], ias_kt=arrays["ias_kt"],
                     vs_fpm=arrays["vs_fpm"],
                     cruise_alt_offset_ft=float(scenario["cruise_alt_offset_ft"]),
+                    cruise_alt_override_ft=float(row.cruise_alt_ft),
                 )
                 if result is None:
                     failure = f"{sid}:decomposition"
@@ -3339,6 +3350,10 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                 continue
 
             nominal_values = flight_results[config["nominal"]]
+            _require_nominal_baseline(
+                float(row.ideal_gc_co2_kg), nominal_values[1], f"{day}/{fid}/ideal")
+            _require_nominal_baseline(
+                float(row.hybrid_co2_kg), nominal_values[2], f"{day}/{fid}/hybrid")
             closure["stored_ideal_u"] += weight * float(row.ideal_gc_co2_kg)
             closure["recomputed_ideal_u"] += weight * nominal_values[1]
             closure["stored_hybrid_u"] += weight * float(row.hybrid_co2_kg)
@@ -3406,6 +3421,12 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         "nominal_baseline_reconstruction": closure_result,
         "method": {
             "paired_parameters": True,
+            "baseline_altitude_anchor": (
+                "Every scenario starts from the cruise_alt_ft stored for that "
+                "release flight, then applies the declared offset. This avoids "
+                "re-running the order-sensitive historical altitude cache on "
+                "a differently ordered sample."
+            ),
             "stored_track_anchor": (
                 "Each scenario's recomputed observed CO2 is multiplied by the "
                 "per-flight frozen/recomputed-nominal ratio, so the nominal real "

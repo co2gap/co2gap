@@ -111,10 +111,33 @@ For each flight and scenario the runner:
 2. recomputes observed fuel with the scenario's mass/airspeed parameters;
 3. anchors nominal stored-track fuel to the frozen native-track CO2;
 4. recomputes ideal and hybrid baselines with the same load, reserve and
-   baseline-altitude scenario;
+   baseline-altitude scenario, starting from the flight's stored release
+   `cruise_alt_ft` and applying the declared offset;
 5. removes the selected stored ground-fuel share;
 6. applies the same type calibration to real, ideal and hybrid;
 7. discards the per-flight result and retains only weighted aggregates.
+
+The altitude anchor is essential. The historical optimiser caches by a rounded
+50 km distance bucket but calculates the cached value at the first caller's
+exact distance. Rerunning it on a subset can therefore change the nominal
+reference merely by changing flight order. The sensitivity runner bypasses
+that cache with the stored altitude; it does not correct or re-optimise the
+release. Offsets are exact diagnostic steps, not ceiling-clipped operational
+flight plans (there is a 1,000 ft positive floor).
+
+Before aggregation, each nominal ideal/hybrid fuel value must reproduce the
+stored value within numerical roundoff (`rel_tol=1e-10`, `abs_tol=1e-6 kg`). A
+mismatch is fatal, not a row exclusion or a warning: a changed reference would
+mix model drift with the requested sensitivity. The output still records the
+maximum per-flight and weighted reconstruction differences.
+
+The [sampling-stability audit](SENSITIVITY-AUDIT.md) has two accepted full
+replications and one rejected reference: the third draw includes a flight
+affected by the already documented ERA5 23:00 correction. The strict runner
+rejects that difference rather than silently restoring historical extrapolation
+or dropping the row. Completing further accepted replications requires an
+explicit choice between historical-wind replay and a separately declared
+corrected-wind nominal; neither policy is added by this audit.
 
 The current runner holds each definition's ground share fixed while mass and
 reserve vary. Recomputing the share under every parameter draw is a named v2

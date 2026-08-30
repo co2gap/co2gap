@@ -273,21 +273,25 @@ def _cruise_state(alt_ft, ias_kt, vs_fpm):
     return a, _ias_to_tas_ms(float(np.median(ias)), a) / KTS_TO_MS
 
 
-def _bounded_cruise_alt_ft(ac, base_alt_ft, offset_ft=0.0):
-    """Apply a lab sensitivity offset without crossing the model ceiling."""
-    proposed = max(1000.0, float(base_alt_ft) + float(offset_ft))
-    ceiling_m = ac.get("ceiling")
-    if ceiling_m is None or not math.isfinite(float(ceiling_m)):
-        return proposed
-    upper_ft = (float(ceiling_m) - 500.0) / 0.3048
-    return min(proposed, upper_ft)
+def _sensitivity_cruise_alt_ft(base_alt_ft, offset_ft=0.0):
+    """Apply the declared finite-difference step around the frozen baseline.
+
+    Clipping at an aircraft ceiling changes the declared step and can make the
+    plus/minus scenarios asymmetric for an undeclared reason.  It would also
+    alter a stored nominal altitude if the candidate model's ceiling changed.
+    Preserve that nominal calculation and apply the requested diagnostic step,
+    with only a positive floor.  This is a local model sensitivity, not a claim
+    that the perturbed altitude is operationally feasible.
+    """
+    return max(1000.0, float(base_alt_ft) + float(offset_ft))
 
 
 def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
                      lat, lon, dep_ts, windfield,
                      load_factor=0.82, reserve_kg=2000.0,
                      alt_ft=None, ias_kt=None, vs_fpm=None,
-                     cruise_alt_offset_ft=0.0) -> dict | None:
+                     cruise_alt_offset_ft=0.0,
+                     cruise_alt_override_ft=None) -> dict | None:
     """
     Split one flight's excess into lateral and vertical/speed components.
 
@@ -302,12 +306,15 @@ def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
     # one altitude for BOTH baselines: isolate distance as the only variable
     # The offset is zero in production.  It is an explicit uncertainty hook,
     # rather than a monkey-patch in the lab runner, so a baseline-altitude
-    # sensitivity still exercises the exact production decomposition.  Bound
-    # it by the aircraft model's ceiling: a sensitivity scenario may challenge
-    # the chosen level, but it must not manufacture an impossible aircraft.
-    base_cruise_alt = optimal_cruise_alt_ft(typecode, gc_km)
-    cruise_alt = _bounded_cruise_alt_ft(ac, base_cruise_alt,
-                                        cruise_alt_offset_ft)
+    # sensitivity still exercises the exact production decomposition.
+    if cruise_alt_override_ft is None:
+        base_cruise_alt = optimal_cruise_alt_ft(typecode, gc_km)
+    else:
+        base_cruise_alt = float(cruise_alt_override_ft)
+        if not math.isfinite(base_cruise_alt) or base_cruise_alt < 1000.0:
+            raise ValueError("cruise_alt_override_ft must be finite and at least 1000 ft")
+    cruise_alt = _sensitivity_cruise_alt_ft(base_cruise_alt,
+                                          cruise_alt_offset_ft)
     cruise_tas_kt = _cruise_tas_kt(ac, cruise_alt)
 
     # --- baseline A: great circle, optimal profile, GC wind ----------------

@@ -6,6 +6,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
@@ -14,10 +16,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "pipeline"), str(ROOT / "ingest"),
                 str(ROOT / "lab"), str(ROOT)]
 
-from decompose import _bounded_cruise_alt_ft  # noqa: E402
+from decompose import _sensitivity_cruise_alt_ft  # noqa: E402
 from release_manifest import ReleaseManifest, sha256_file  # noqa: E402
 from uncertainty import (UncertaintyError, _metrics, _require_nested_counts,  # noqa: E402
+                         _require_nominal_baseline,
                          block_resample_days,
+                         paired_sensitivity,
                          _require_outside_repository, poststratified_selection,
                          selection_validation_result, stratified_sample,
                          stratified_selection_validation_sample,
@@ -568,15 +572,161 @@ class MetricTests(unittest.TestCase):
 
 
 class BaselineHookTests(unittest.TestCase):
-    def test_zero_offset_is_identity_and_offsets_are_ceiling_bounded(self):
-        aircraft = {"ceiling": 12000.0}
+    def test_zero_offset_is_identity_and_steps_are_exact(self):
         base = 35000.0
-        self.assertEqual(_bounded_cruise_alt_ft(aircraft, base, 0.0), base)
-        self.assertEqual(_bounded_cruise_alt_ft(aircraft, base, -1000.0), 34000.0)
-        ceiling_margin_ft = (12000.0 - 500.0) / 0.3048
-        self.assertAlmostEqual(
-            _bounded_cruise_alt_ft(aircraft, base, 10000.0), ceiling_margin_ft)
-        self.assertEqual(_bounded_cruise_alt_ft({}, base, 0.0), base)
+        self.assertEqual(_sensitivity_cruise_alt_ft(base, 0.0), base)
+        self.assertEqual(_sensitivity_cruise_alt_ft(base, -1000.0), 34000.0)
+        self.assertEqual(_sensitivity_cruise_alt_ft(base, 1000.0), 36000.0)
+
+    def test_steps_do_not_silently_correct_an_infeasible_nominal_baseline(self):
+        # Even a stored baseline outside a candidate model's ceiling must not
+        # turn either direction into an undeclared baseline correction.
+        base = 42000.0
+        self.assertEqual(_sensitivity_cruise_alt_ft(base, 0.0), 42000.0)
+        self.assertEqual(_sensitivity_cruise_alt_ft(base, -1000.0), 41000.0)
+        self.assertEqual(_sensitivity_cruise_alt_ft(base, 1000.0), 43000.0)
+
+    def test_sensitivity_altitude_has_a_positive_floor(self):
+        self.assertEqual(_sensitivity_cruise_alt_ft(1500.0, -1000.0), 1000.0)
+
+    def test_invalid_stored_altitude_override_fails_loudly(self):
+        import decompose
+
+        original_model = decompose.openap_model
+        original_ac = decompose._get_ac
+        try:
+            decompose.openap_model = lambda _typecode: "a320"
+            decompose._get_ac = lambda _model: {}
+            for invalid in (float("nan"), float("inf"), 0.0, 999.0):
+                with self.subTest(invalid=invalid):
+                    with self.assertRaisesRegex(ValueError, "finite and at least 1000"):
+                        decompose.decompose_flight(
+                            "A320", 1.0, 300.0, 320.0,
+                            np.array([40.0, 41.0]), np.array([9.0, 10.0]),
+                            0, None, cruise_alt_override_ft=invalid,
+                        )
+        finally:
+            decompose.openap_model = original_model
+            decompose._get_ac = original_ac
+
+    def test_stored_altitude_bypasses_optimizer_and_moves_both_baselines(self):
+        import decompose
+
+        for offset in (-1000.0, 0.0, 1000.0):
+            with self.subTest(offset=offset):
+                optimizer = Mock(side_effect=AssertionError("cache must not be read"))
+                profile = Mock(return_value=object())
+                with patch.multiple(
+                    decompose,
+                    openap_model=Mock(return_value="a320"),
+                    _get_ac=Mock(return_value={}),
+                    optimal_cruise_alt_ft=optimizer,
+                    _cruise_tas_kt=Mock(return_value=440.0),
+                    mean_along_track_wind_ms=Mock(return_value=0.0),
+                    mean_wind_along_track=Mock(return_value=0.0),
+                    _build_profile=profile,
+                    estimate_fuel=Mock(return_value=SimpleNamespace(ok=True, co2_kg=100.0)),
+                    _cruise_state=Mock(return_value=(None, None)),
+                    enroute_dist_ratio=Mock(return_value=(1.0, 200.0)),
+                ):
+                    result = decompose.decompose_flight(
+                        "A320", 120.0, 300.0, 320.0,
+                        np.array([40.0, 41.0]), np.array([9.0, 10.0]), 0, None,
+                        cruise_alt_override_ft=22000.0, cruise_alt_offset_ft=offset,
+                    )
+                optimizer.assert_not_called()
+                self.assertEqual(result["cruise_alt_ft"], 22000.0 + offset)
+                self.assertEqual(profile.call_count, 2)
+                self.assertEqual(
+                    [call.args[2] for call in profile.call_args_list],
+                    [22000.0 + offset, 22000.0 + offset])
+
+    def test_nominal_closure_accepts_roundoff_but_rejects_drift_and_nonfinite(self):
+        _require_nominal_baseline(100.0, 100.0, "exact")
+        _require_nominal_baseline(100.0, 100.0 + 1e-8, "roundoff")
+        for stored, recomputed in ((100.0, 100.001), (100.0, float("nan")),
+                                    (float("inf"), 100.0), (0.0, 0.0)):
+            with self.subTest(stored=stored, recomputed=recomputed):
+                with self.assertRaisesRegex(UncertaintyError, "nominal baseline mismatch"):
+                    _require_nominal_baseline(stored, recomputed, "regression")
+
+    def test_runner_uses_stored_altitude_and_refuses_a_changed_reference(self):
+        import decompose
+        import emissions
+        import uncertainty
+        import wind.era5
+
+        scenarios = ROOT / "uncertainty-scenarios.json"
+        config = json.loads(scenarios.read_text())
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            manifest_path = base / "manifest.json"
+            manifest_path.write_text("{}")
+            sample_path = base / "sample.json"
+            sample_path.write_text(json.dumps({
+                "schema_version": 1, "kind": "co2gap-uncertainty-sample",
+                "release_id": "test", "release_manifest_sha256": sha256_file(manifest_path),
+                "rows": [{"day": "2026-01-01", "flight_id": 1, "weight": 1.0}],
+            }))
+            manifest = SimpleNamespace(
+                release_id="test", path=manifest_path, days=["2026-01-01"],
+                data={"configuration": {"era5": {
+                    "pressure_levels_hpa": [250], "area_nwse": [72, -32, 27, 45],
+                    "grid_degrees": [0.25, 0.25], "variables": ["u", "v"],
+                }}},
+            )
+            tables = {
+                "decomposition": pd.DataFrame([{
+                    "flight_id": 1, "typecode": "A320", "gc_km": 300.0,
+                    "flown_km": 320.0, "dep_ts": 0, "co2_kg_v0": 120.0,
+                    "ideal_gc_co2_kg": 100.0, "hybrid_co2_kg": 110.0,
+                    "cruise_alt_ft": 22000.0,
+                }]),
+                "ground": pd.DataFrame([{
+                    "flight_id": 1, "fuel_recomputed_kg": 100.0,
+                    **{f"fuel_{name}_kg": 0.0 for name in uncertainty.GROUND_DEFINITIONS},
+                }]),
+                "points": pd.DataFrame([{
+                    "flight_id": 1, "t": t, "lat": 40.0, "lon": 9.0,
+                    "alt_ft": 20000.0, "gs_kt": 400.0, "ias_kt": 250.0,
+                    "vs_fpm": 0.0,
+                } for t in (0, 60)]),
+            }
+
+            def read_table(path, **kwargs):
+                table = (tables["points"] if path.name == "points.parquet"
+                         else tables[path.parent.name])
+                return SimpleNamespace(to_pandas=lambda: table.copy())
+
+            for drift in (0.0, 0.01):
+                with self.subTest(drift=drift):
+                    decomposition = Mock(return_value={
+                        "ideal_gc_co2_kg": 100.0 + drift, "hybrid_co2_kg": 110.0,
+                    })
+                    with patch.object(uncertainty.ReleaseManifest, "load", return_value=manifest), \
+                         patch.object(uncertainty.pq, "read_table", side_effect=read_table), \
+                         patch.object(uncertainty, "_load_calibration", return_value={}), \
+                         patch.object(uncertainty, "_flight_from_points", return_value=object()), \
+                         patch.object(wind.era5, "WindField", return_value=object()), \
+                         patch.object(emissions, "estimate_fuel", return_value=SimpleNamespace(ok=True, co2_kg=120.0)), \
+                         patch.object(decompose, "decompose_flight", decomposition):
+                        kwargs = dict(
+                            sample_path=sample_path, scenarios_path=scenarios,
+                            manifest_path=manifest_path, flights_dir=base / "flights",
+                            decomposition_dir=base / "decomposition", ground_dir=base / "ground",
+                            era5_dir=base / "era5", calibration=base / "calibration.json",
+                            verify=False,
+                        )
+                        if drift:
+                            with self.assertRaisesRegex(UncertaintyError, "nominal baseline mismatch"):
+                                paired_sensitivity(**kwargs)
+                        else:
+                            result = paired_sensitivity(**kwargs)
+                            self.assertTrue(result["population_expansion_complete"])
+                            self.assertEqual(result["nominal_baseline_reconstruction"]["max_abs_ideal_kg"], 0.0)
+                    self.assertEqual(decomposition.call_count, len(config["scenarios"]))
+                    self.assertTrue(all(call.kwargs["cruise_alt_override_ft"] == 22000.0
+                                        for call in decomposition.call_args_list))
 
 
 if __name__ == "__main__":

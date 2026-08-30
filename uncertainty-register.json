@@ -148,11 +148,11 @@
       "status": "scenario_only",
       "affects": ["co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
       "correlation_scope": "aircraft type and distance band",
-      "nominal": "optimal_cruise_alt_ft in pipeline/excess_wind.py",
+      "nominal": "frozen per-flight cruise_alt_ft originally selected by optimal_cruise_alt_ft",
       "range": null,
       "evidence": "KNOWN-ISSUES.md and lab/altitude_check.py",
       "propagation": "paired baseline altitude offsets and a future corrected structural model",
-      "notes": "This is structural uncertainty and must not be labelled a confidence interval."
+      "notes": "The historical altitude cache is order-sensitive. Sensitivity scenarios anchor to stored cruise_alt_ft and require nominal baseline closure; they do not fix or re-optimise the release. This is structural uncertainty and must not be labelled a confidence interval."
     },
     {
       "id": "ground_definition",

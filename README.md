@@ -238,6 +238,12 @@ python lab/uncertainty.py validate
 The full commands intentionally write their sample and aggregate results to
 `/tmp`. They do not alter a frozen release or the public site.
 
+The first [paired-sensitivity audit](SENSITIVITY-AUDIT.md) records two accepted
+replications and a third rejected because corrected ERA5 boundary handling
+changes its nominal reference. It documents the altitude-cache isolation,
+provisional scenario effects and the remaining reference-policy decision;
+none of these results is a probability interval.
+
 The release-gate denominator and attrition can be audited independently of the
 fuel sensitivities:
 

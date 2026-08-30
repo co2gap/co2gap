@@ -350,3 +350,42 @@ a permitted extract and exact fields. The free ADS-B Exchange overlap is only
 overlap with adsb.lol and is offered publicly only for evaluation/testing.
 Finally, v2 cannot prove identity when two same-type flights share essentially
 the same route and schedule without a stable identifier common to both sources.
+
+## Frozen cruise-altitude cache and sensitivity reconstruction
+
+**Open in the historical optimiser; isolated in the uncertainty runner.**
+`pipeline/excess_wind.py optimal_cruise_alt_ft` uses `(typecode, rounded 50 km
+bucket)` as its cache key, but computes the cached altitude at the exact distance
+of the first flight entering that bucket. Changing the order of days or flights
+can therefore change a flight's baseline altitude. This was already identified
+in the separate scie/NOx work on 23 August; it is not a new defect introduced by
+the uncertainty programme.
+
+The first sensitivity implementation did not preserve that history. On one
+2,549-flight sample, recomputing the nominal produced per-flight differences up
+to **919.082 kg CO2 ideal** and **2,272.287 kg CO2 hybrid**, despite zero scenario
+offset. A focused reconstruction isolated the cause: the stored altitude was
+22,000 ft while an isolated optimiser call chose 24,000 ft. Restoring the stored
+altitude reproduced both stored baselines exactly with either one or two wind
+days. Aggregate cancellation is not a valid substitute for this closure test.
+
+The runner now reads each flight's stored `cruise_alt_ft`, uses it for every
+scenario and applies only the declared offset. A mismatch beyond numerical
+roundoff between either nominal baseline and its stored value is fatal before
+aggregation. Synthetic regressions verify cache bypass, the same offset on both
+baselines, invalid-altitude rejection and rejection of deliberate nominal
+drift, including with Python assertions disabled.
+
+The production optimiser, frozen parquet, public figures and site prose are not
+changed. This correction makes the experiment conditional on the historical
+baseline; it does **not** remove that baseline's structural limitations or
+establish the headline effect of a deterministic replacement optimiser. No
+replacement or full-release regeneration is undertaken in this work.
+
+Two full 2,549-flight sensitivity replications close exactly. A third includes
+the maximum 131.517 kg hybrid shift from the historical ERA5 boundary correction
+in section 4 and is therefore rejected under the strict reference rule. The
+final runner was tested on that real case: exit 1, no output JSON. Accepting a
+further replication needs an explicit historical-replay or corrected-nominal
+policy, not a larger tolerance. The measured results and this open decision are
+recorded in [SENSITIVITY-AUDIT.md](SENSITIVITY-AUDIT.md).
