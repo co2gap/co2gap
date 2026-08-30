@@ -19,7 +19,7 @@
     {
       "failure_mask": "0000",
       "target_rows": 600,
-      "selection": "At least one canonical control from every 0000 stratum, then capacity-limited proportional allocation by stratum population; within stratum select the lowest SHA-256 ranks under the frozen namespace."
+      "selection": "At least one canonical control from every 0000 stratum, then capacity-limited allocation that greedily maximises the reduction in the sum of squared second-stage weights; within stratum select the lowest SHA-256 ranks under the frozen namespace."
     },
     {
       "failure_mask": "0100",
@@ -41,7 +41,7 @@
   "control_selection": {
     "namespace": "co2gap-targeted-heldout-v1",
     "rank": "SHA-256(namespace + NUL + sample_id), ascending",
-    "allocation": "one per canonical 0000 stratum, then proportional to stratum population subject to the number of canonical rows available",
+    "allocation": "one per canonical 0000 stratum, then assign each remaining row to the available stratum with largest N_h^2 / (m_h * (m_h + 1)); this greedily minimises the sum of squared final weights and maximises Kish effective size",
     "second_stage_weight": "canonical stratum population divided by targeted rows selected in that stratum",
     "randomness_claimed": false,
     "reason": "Deterministic, outcome-blind coverage of every canonical passing stratum; weights are retained for composition diagnostics, not for a release-wide correction."
@@ -161,7 +161,8 @@
     "reason": "The first protocol commit named matching thresholds but omitted the already intended score formula, and named weighted/unweighted diagnostics without declaring which was primary.",
     "changes": [
       "Freeze the OpenSky-developed matching score and tie tolerance.",
-      "Declare the targeted-design-weighted ratio-of-sums contrast primary and the unweighted contrast secondary."
+      "Declare the targeted-design-weighted ratio-of-sums contrast primary and the unweighted contrast secondary.",
+      "After a private-input-only allocation check, replace proportional second-stage control allocation with the pre-source variance-minimising discrete rule: Kish effective size rises from 529.20 to 539.92 of 600 controls and maximum weight falls from 4931 to 4898."
     ],
     "outcome_schema_changed": false
   },
