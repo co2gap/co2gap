@@ -240,11 +240,32 @@ def coverage_note(days) -> str:
 # page without new data must not look like a new release.
 RELEASE = "2026-09-01"
 METHOD_VERSION = "1.0"
-# Il DOI del concetto Zenodo, che risolve sempre all'ultima versione. Resta None
-# finche' il primo archivio non esiste: la pagina si adatta e NON promette un
-# identificativo che non c'e'. La metodologia dice che ogni release e' archiviata
-# con un DOI, ed e' l'unica frase del sito che dipende da qualcosa fuori da qui.
-ZENODO_DOI = "10.5281/zenodo.22215588"
+# ZENODO CONIA DUE DOI, E CONFONDERLI ROMPE LA PROMESSA DELLA TABELLA RELEASE.
+#
+#   CONCEPT  risolve SEMPRE all'ultima versione. E' il progetto, non una release.
+#   VERSION  risolve per sempre a QUESTO deposito e non si muove mai.
+#
+# Fino al 1/09/2026 il sito citava ovunque il concept. Nessun lettore ne era
+# ingannato — esisteva una sola versione e i due DOI portavano allo stesso
+# record — ma dal 31/01/2027 quel DOI avrebbe portato alle cifre del 2027 sotto
+# una riga che dice "Release 2026-09-01". La tabella delle release esiste per
+# rispondere a QUALE VERSIONE HA PRODOTTO UNA CIFRA: rispondere col concept e'
+# esattamente la promessa che non mantiene.
+#
+# Il danno non sarebbe nato a gennaio ma il giorno del lancio, perche' le
+# citazioni rotte sono quelle che si copiano adesso.
+#
+# Regola: VERSION nella tabella, nella citazione, nel BibTeX e nel feed.
+# CONCEPT solo dove si intende "il progetto, tutte le versioni" — il badge del
+# README e la riga "all versions" del blocco di citazione.
+# A ogni release futura il VERSION cambia e va nella riga nuova di RELEASES;
+# il CONCEPT non cambia mai.
+ZENODO_CONCEPT_DOI = "10.5281/zenodo.22215588"
+ZENODO_DOI = "10.5281/zenodo.22215589"
+# Il tag git da cui l'archivio e' stato tagliato. E' la TERZA stringa di versione
+# in circolazione — release 2026-09-01, metodologia 1.0, software v1.0.0 — e
+# nominano cose diverse. Non vanno unificate, va detto che sono tre.
+SOFTWARE_TAG = "v1.0.0"
 # Va scritto NUDO — "10.5281/zenodo.1234567" — perche' le tre interpolazioni piu'
 # sotto lo infilano dentro un href che porta gia' il prefisso. Zenodo pero' lo
 # mostra anche come URL intero, ed e' quella la forma che finisce negli appunti:
@@ -254,10 +275,18 @@ ZENODO_DOI = "10.5281/zenodo.22215588"
 # fa sparire non e' nella fotografia. Misurato il 25/08 in una prova a secco:
 # senza questa riga l'unico errore realistico del giorno del lancio passa
 # inosservato dentro la finestra di un'ora.
-if ZENODO_DOI is not None and not re.fullmatch(r"10\.\d{4,9}/\S+", ZENODO_DOI):
+for _nome, _doi in (("ZENODO_DOI", ZENODO_DOI),
+                    ("ZENODO_CONCEPT_DOI", ZENODO_CONCEPT_DOI)):
+    if _doi is not None and not re.fullmatch(r"10\.\d{4,9}/\S+", _doi):
+        raise SystemExit(
+            f"{_nome}={_doi!r} non e' un DOI: serve la forma nuda "
+            "10.xxxx/suffisso, senza 'https://doi.org/' e senza 'doi:'")
+# I due non possono essere lo stesso numero: se lo sono, qualcuno ha reincollato
+# il concept al posto del version e la tabella tornerebbe a mentire in silenzio.
+if ZENODO_DOI is not None and ZENODO_DOI == ZENODO_CONCEPT_DOI:
     raise SystemExit(
-        f"ZENODO_DOI={ZENODO_DOI!r} non e' un DOI: serve la forma nuda "
-        "10.xxxx/suffisso, senza 'https://doi.org/' e senza 'doi:'")
+        "ZENODO_DOI e ZENODO_CONCEPT_DOI sono identici: il primo deve essere il "
+        "DOI DI QUESTA VERSIONE, il secondo quello del concetto.")
 # Cosa e' cambiato fra una versione e l'altra. Esiste perche' la release del
 # 31/01/2027 muove DUE cose insieme — la finestra passa da 197 giorni a 12 mesi,
 # e se si corregge optimal_cruise_alt_ft anche la baseline — e senza un posto in
@@ -950,6 +979,21 @@ def citation(days) -> str:
                 "Until then, cite the release name and the URL: they identify the "
                 "version just as precisely.</p>")
     bib_doi = f"\n  doi          = {{{ZENODO_DOI}}}," if ZENODO_DOI else ""
+    # Perche' questa nota esiste: il DOI qui sopra e' quello DI QUESTA VERSIONE,
+    # e chi copia la citazione deve sapere che non si muovera' mai. Senza la riga
+    # "all versions" il lettore che vuole citare il progetto in generale non ha
+    # dove guardare, e ripiegherebbe sul primo numero che vede — che e' l'errore
+    # che questa modifica corregge. Le tre stringhe di versione vanno nominate
+    # nello stesso posto, perche' e' li' che un lettore le confronta.
+    versions_note = ("" if not ZENODO_DOI else
+        f'<p class=hint>That DOI identifies <b>this release</b> and never moves: '
+        f'it will still resolve to the {RELEASE} figures after later releases '
+        f'exist. To cite the project across all versions, use '
+        f'<a href="https://doi.org/{ZENODO_CONCEPT_DOI}">{ZENODO_CONCEPT_DOI}</a>, '
+        f'which always resolves to the most recent one. Three version strings name '
+        f'three different things: release {RELEASE} is the window of data, '
+        f'methodology v{METHOD_VERSION} is the method, and {SOFTWARE_TAG} is the '
+        f'software tag the archive was cut from.</p>')
     return f"""<div class=note>
 <p><b>How to cite.</b> What is citable here is the <i>tool</i>, not a study: the
 figures are outputs of running it, and anyone can re-run it.</p>
@@ -958,7 +1002,7 @@ co2gap ({RELEASE[:4]}). <i>co2gap — an open pipeline for measuring the CO<sub>
 of European flights against a fuel-optimal ideal, from ADS-B trajectories.</i> Release {RELEASE},
 methodology v{METHOD_VERSION}, covering {esc(days[0])} to {esc(days[-1])}.
 {SITE_URL}{doi_line}</p>
-{doi_note}
+{doi_note}{versions_note}
 <details><summary>BibTeX</summary>
 <pre style="overflow-x:auto;font-size:.82rem">@software{{co2gap_{RELEASE[:4]},
   author       = {{co2gap}},
