@@ -671,6 +671,45 @@ OG_ALT = "co2gap"   # ricomposto in main() con le cifre correnti: era
                     # rigenerazione perche' il cancello non guarda le meta.
 
 
+# ── URL CANONICI SENZA .html ────────────────────────────────────────────────
+# Cloudflare Pages serve i siti statici con URL puliti e NON si puo' spegnere:
+# ogni /pagina.html risponde 308 e rimanda a /pagina. Il sito pero' dichiarava
+# se stesso in .html dappertutto — 165 link interni, il canonical, og:url, la
+# sitemap e il feed — cioe' in una forma che il server non considera canonica.
+#
+# Perche' contava, e non era estetica: un <link rel=canonical> che a sua volta
+# redirige si contraddice, e una sitemap di URL che redirigono viene segnata da
+# Search Console come "Page with redirect" e indicizzata in un'altra forma.
+# Misurato e corretto l'1/09/2026, il giorno del lancio, perche' cio' che viene
+# indicizzato e condiviso nelle prime ore e' proprio quello che poi va
+# ri-strisciato.
+#
+# Home: "/" e non "/index" — Pages redirige ANCHE /index a /, quindi la forma
+# senza estensione della home e' la radice, non il nome del file.
+def canon(page: str) -> str:
+    """"index.html" -> "/" · "faq.html#weak" -> "/faq#weak" · "" -> "/"."""
+    if not page:
+        return "/"
+    name, _, frag = page.partition("#")
+    frag = f"#{frag}" if frag else ""
+    if name in ("", "index.html"):
+        return f"/{frag}"
+    return f"/{name[:-5] if name.endswith('.html') else name}{frag}"
+
+
+# Riscrive i link interni del documento gia' costruito, invece di toccare 165
+# stringhe sparse: la regex vede solo gli href RELATIVI che finiscono in .html,
+# e quelli assoluti ("https://...") non possono combaciare perche' contengono
+# ":" e "/" prima dell'estensione. feed.xml, og.png e le ancore pure restano
+# intatti. Applicata a ogni pagina al momento della scrittura.
+_REL_HTML = re.compile(r'href="([a-z0-9_-]+)\.html(#[^"]*)?"')
+
+
+def clean_urls(doc: str) -> str:
+    return _REL_HTML.sub(
+        lambda m: f'href="{canon(m.group(1) + ".html" + (m.group(2) or ""))}"', doc)
+
+
 def meta(title, desc, page=""):
     """Head tags for link previews and icons.
 
@@ -680,7 +719,7 @@ def meta(title, desc, page=""):
     (site/og.png) and inside the description below — never the headline
     percentage on its own.
     """
-    url = f"{SITE_URL}/{page}"
+    url = f"{SITE_URL}{canon(page)}"
     return f"""<meta name=description content="{esc(desc)}">
 <link rel=canonical href="{url}">
 <meta property=og:type content=website>
@@ -2874,7 +2913,7 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 </div></body></html>
 """
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(html_doc)
+    OUT.write_text(clean_urls(html_doc))
     print(f"scritto {OUT}  ({len(html_doc)/1024:.0f} KB)")
 
     # ---- pagina Dati -------------------------------------------------------
@@ -3014,7 +3053,7 @@ q.addEventListener('input',run);
 </body></html>
 """
     OUT_DATA = OUT.parent / "data.html"
-    OUT_DATA.write_text(data_doc)
+    OUT_DATA.write_text(clean_urls(data_doc))
     print(f"scritto {OUT_DATA}  ({len(data_doc)/1024:.0f} KB)")
 
 
@@ -3326,13 +3365,13 @@ replies are published on this site, in full and unconditionally.</p>
 </body></html>
 """
     OUT_FAQ = OUT.parent / "faq.html"
-    OUT_FAQ.write_text(faq_doc)
+    OUT_FAQ.write_text(clean_urls(faq_doc))
     print(f"scritto {OUT_FAQ}  ({len(faq_doc)/1024:.0f} KB)")
 
     rel_doc = build_releases(days, len(df))
-    (OUT.parent / "releases.html").write_text(rel_doc)
+    (OUT.parent / "releases.html").write_text(clean_urls(rel_doc))
     rep_doc = build_replies()
-    (OUT.parent / "replies.html").write_text(rep_doc)
+    (OUT.parent / "replies.html").write_text(clean_urls(rep_doc))
     service_files(OUT.parent, gen[:10], days)
     print(f"scritto {OUT.parent/'releases.html'} · {OUT.parent/'replies.html'} · "
           f"sitemap.xml · robots.txt · feed.xml")
@@ -3343,7 +3382,7 @@ replies are published on this site, in full and unconditionally.</p>
         method_version=METHOD_VERSION, n_flights=len(df), days=len(days),
         lat_w=lat_w, vert_w=vert_w)
     OUT_CTX = OUT.parent / "context.html"
-    OUT_CTX.write_text(ctx_doc)
+    OUT_CTX.write_text(clean_urls(ctx_doc))
     # Le cifre esterne viaggiano col sito: un lettore che vuole verificarle deve
     # poter leggere fonte e data di verifica senza aprire il repository.
     shutil.copyfile(context_page.EXTERNAL, OUT.parent / "context-sources.json")
@@ -3356,7 +3395,7 @@ replies are published on this site, in full and unconditionally.</p>
                              vert_long, vert_oper_eq,
                              conv_fleet, conv_ap1,
                              finding_sections, n_biz_routes, non_airliner_pct)
-    OUT_METH.write_text(add_toc(meth))
+    OUT_METH.write_text(clean_urls(add_toc(meth)))
     print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")
     print(f"  voli {len(df):,} · giorni {len(days)} · rotte n>={MIN_N} {len(g_all):,} "
           f"· in classifica n>={RANK_MIN_N} {len(g):,} · aeroporti {len(ga):,}")
@@ -3527,10 +3566,13 @@ def service_files(out_dir: Path, gen_iso: str, days) -> None:
     # La home entra come "" e non come "index.html": il suo canonical dice
     # https://co2gap.org/ e una sitemap che ne nomina un'altra offre a un
     # indicizzatore due URL per la stessa pagina.
+    # Passano da canon() come i <link rel=canonical>: la sitemap DEVE nominare
+    # gli stessi URL, altrimenti dichiara una forma e il server ne serve
+    # un'altra. Prima elencava sei .html che rispondevano tutti 308.
     pages = ["", "context.html", "data.html", "methodology.html",
              "faq.html", "releases.html", "replies.html"]
     urls = "".join(
-        f"<url><loc>{SITE_URL}/{p}</loc><lastmod>{gen_iso[:10]}</lastmod></url>\n"
+        f"<url><loc>{SITE_URL}{canon(p)}</loc><lastmod>{gen_iso[:10]}</lastmod></url>\n"
         for p in pages)
     (out_dir / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -3544,7 +3586,7 @@ def service_files(out_dir: Path, gen_iso: str, days) -> None:
         doi = f" DOI: {r['doi']}." if r["doi"] else ""
         entries += f"""<entry>
 <title>Release {r['date']}</title>
-<link href="{SITE_URL}/releases.html"/>
+<link href="{SITE_URL}{canon("releases.html")}"/>
 <id>tag:co2gap.org,{r['date']}:release</id>
 <updated>{r['date']}T00:00:00Z</updated>
 <summary>{esc(r['what'])} Covers {esc(days[0])} to {esc(days[-1])}, methodology
