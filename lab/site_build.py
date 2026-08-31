@@ -720,8 +720,16 @@ DESC_FAQ = (
     "being wasted, what an airport's number does and does not mean, who pays for "
     "it, what it leaves out, and how to reuse the figures."
 )
+# ⚠️ NON scrivere qui "Every route". La pagina mostra SELEZIONI — teste e code di
+# rotte e aeroporti, rotte per CO2 totale, fasce di distanza: 98 righe, non le
+# 5.483 rotte con n>=10 ne' i 152 aeroporti. Rilevato da una revisione esterna
+# l'1/09/2026 e verificato contando le righe. La frase era falsa come scritta, e
+# su questo sito una promessa piu' larga del contenuto e' il difetto peggiore.
+# Se un giorno l'aggregato completo esce come file scaricabile — sotto ODbL, non
+# CC BY, vedi DATA-LICENCE.md — allora la promessa larga torna vera e questa
+# riga si puo' riscrivere.
 DESC_DATA = (
-    "Every route, airport and distance band behind the co2gap figures, "
+    "The routes, airports and distance bands behind the co2gap figures, "
     "searchable by airport name or ICAO code. Aggregate data only."
 )
 
@@ -2774,8 +2782,8 @@ like is to be told where the method is wrong.</p>
 <p class=hint>Every figure here can be recomputed from scratch: the data is public,
 the method is documented in full and the code is open.</p>
 <div class=dl>
-<a href="data.html"><b>Browse the data →</b><span>Every route, airport and distance
-band, searchable by name or ICAO code</span></a>
+<a href="data.html"><b>Browse the data →</b><span>The routes and airports behind
+the published charts, searchable by name or ICAO code</span></a>
 <a href="methodology.html"><b>Methodology →</b><span>What is not measured,
 validations, stated limitations, independence</span></a>
 <a href="https://github.com/co2gap/co2gap"><b>Source code →</b><span>The whole
@@ -2884,6 +2892,16 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
           f'<th class=num>on dep.</th><th class=num>on arr.</th>'
           f'<th class=num>{term("lateral", "Δ lat.")}</th>'
           f'<th class=num>{term("lateral", "Δ vert.")}</th></tr>')
+    # ⚠️ Il contatore del filtro dice "route/airport rows", non "rows", e la
+    # differenza non e' pedanteria: `rows` conta solo `tbody.f`, mentre la tabella
+    # delle fasce di distanza NON e' filtrabile e resta a schermo. Con zero
+    # risultati, "0 of 80 rows match" si leggeva come una contraddizione avendo 12
+    # righe ancora visibili sotto. Rilevato da una revisione esterna l'1/09/2026.
+    #
+    # ⚠️ E i commenti di spiegazione stanno QUI, non dentro la stringa: scritti
+    # come `//` finivano nell'HTML servito a ogni lettore — quattro righe di
+    # italiano dentro una pagina in inglese. Successo davvero, in questa stessa
+    # modifica, e visto solo perche' il diff contava piu' righe del previsto.
     data_doc = f"""<!doctype html>
 <html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
@@ -2989,7 +3007,7 @@ function run(){{
     var any=[].slice.call(b.rows).some(function(r){{return r.style.display!=='none';}});
     b.closest('section').style.display=any?'':'none';
   }});
-  cnt.textContent=s?k+' of '+rows.length+' rows match \\u201c'+q.value+'\\u201d':'';
+  cnt.textContent=s?k+' of '+rows.length+' route/airport rows match \\u201c'+q.value+'\\u201d':'';
 }}
 q.addEventListener('input',run);
 </script>
