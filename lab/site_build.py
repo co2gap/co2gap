@@ -214,13 +214,44 @@ def coverage_note(days) -> str:
     except Exception as e:
         raise SystemExit(f"audit di copertura illeggibile ({COVERAGE}): {e}")
     lo, hi = days[0], days[-1]
+    # ⚠️ DUE PERIMETRI DIVERSI, e il file pubblicato non li distingueva.
+    # L'audit ADS-B copre 201 giorni fino al 24/07; la release CO2 ne copre 197
+    # fino al 20/07, perche' il vento ERA5 si ferma prima. Nessuna
+    # contaminazione — i risultati usano il perimetro giusto — ma un lettore che
+    # apriva coverage.json trovava `first_day`/`last_day` senza sapere quale dei
+    # due stesse leggendo, e doveva ricostruirlo dalla prosa. Rilevato da una
+    # revisione esterna l'1/09/2026.
+    #
+    # Si arricchisce la COPIA pubblicata, mai la sorgente in data/: quella e'
+    # l'audit dell'archivio e non deve sapere nulla della release.
+    pubcov = dict(cov)
+    pubcov["source_first_day"] = cov.get("first_day")
+    pubcov["source_last_day"] = cov.get("last_day")
+    pubcov["source_days_present"] = cov.get("days_present")
+    pubcov["release_first_day"] = lo
+    pubcov["release_last_day"] = hi
+    pubcov["release_days"] = len(days)
+    pubcov["perimeter_note"] = (
+        "Two different perimeters. The source_* fields describe the ADS-B archive "
+        "that was audited; the release_* fields describe the window the published "
+        "CO2 figures actually cover, which stops earlier because the ERA5 wind "
+        "data does. Days outside the release window are audited but not used: see "
+        "included_in_release on each day.")
+    pubcov["days"] = [dict(d, included_in_release=(lo <= d["day"] <= hi))
+                      for d in cov.get("days", [])]
+    # Scritto PRIMA dell'uscita anticipata: se una release non avesse giorni
+    # incompleti, la vecchia copyfile piu' in basso non sarebbe mai stata
+    # raggiunta e il file pubblicato sarebbe rimasto quello della release
+    # precedente, senza che nulla fallisse.
+    (OUT.parent / "coverage.json").write_text(
+        json.dumps(pubcov, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
     inside = [d for d in cov.get("days", [])
               if d.get("status") == "incomplete" and lo <= d["day"] <= hi]
     if not inside:
         return ("<li>Every day in the period was checked for whole hours missing "
                 "from the source data; <b>none were found</b>.</li>")
     lost = sum(d.get("flights_missing_estimate", 0) for d in inside)
-    shutil.copyfile(COVERAGE, OUT.parent / "coverage.json")   # so the link resolves
     n = len(inside)
     subject = "One day" if n == 1 else f"{n} days"
     verb = "is" if n == 1 else "are"

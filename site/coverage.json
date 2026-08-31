@@ -18,327 +18,392 @@
   {
    "day": "2026-01-01",
    "status": "complete",
-   "flights": 8803
+   "flights": 8803,
+   "included_in_release": true
   },
   {
    "day": "2026-01-02",
    "status": "complete",
-   "flights": 10251
+   "flights": 10251,
+   "included_in_release": true
   },
   {
    "day": "2026-01-03",
    "status": "complete",
-   "flights": 8725
+   "flights": 8725,
+   "included_in_release": true
   },
   {
    "day": "2026-01-04",
    "status": "complete",
-   "flights": 9598
+   "flights": 9598,
+   "included_in_release": true
   },
   {
    "day": "2026-01-05",
    "status": "complete",
-   "flights": 9211
+   "flights": 9211,
+   "included_in_release": true
   },
   {
    "day": "2026-01-06",
    "status": "complete",
-   "flights": 7225
+   "flights": 7225,
+   "included_in_release": true
   },
   {
    "day": "2026-01-07",
    "status": "complete",
-   "flights": 6805
+   "flights": 6805,
+   "included_in_release": true
   },
   {
    "day": "2026-01-08",
    "status": "complete",
-   "flights": 8152
+   "flights": 8152,
+   "included_in_release": true
   },
   {
    "day": "2026-01-09",
    "status": "complete",
-   "flights": 8824
+   "flights": 8824,
+   "included_in_release": true
   },
   {
    "day": "2026-01-10",
    "status": "complete",
-   "flights": 7172
+   "flights": 7172,
+   "included_in_release": true
   },
   {
    "day": "2026-01-11",
    "status": "complete",
-   "flights": 8773
+   "flights": 8773,
+   "included_in_release": true
   },
   {
    "day": "2026-01-12",
    "status": "complete",
-   "flights": 8869
+   "flights": 8869,
+   "included_in_release": true
   },
   {
    "day": "2026-01-13",
    "status": "complete",
-   "flights": 6553
+   "flights": 6553,
+   "included_in_release": true
   },
   {
    "day": "2026-01-14",
    "status": "complete",
-   "flights": 7222
+   "flights": 7222,
+   "included_in_release": true
   },
   {
    "day": "2026-01-15",
    "status": "complete",
-   "flights": 8175
+   "flights": 8175,
+   "included_in_release": true
   },
   {
    "day": "2026-01-16",
    "status": "complete",
-   "flights": 9443
+   "flights": 9443,
+   "included_in_release": true
   },
   {
    "day": "2026-01-17",
    "status": "complete",
-   "flights": 7232
+   "flights": 7232,
+   "included_in_release": true
   },
   {
    "day": "2026-01-18",
    "status": "complete",
-   "flights": 9098
+   "flights": 9098,
+   "included_in_release": true
   },
   {
    "day": "2026-01-19",
    "status": "complete",
-   "flights": 9359
+   "flights": 9359,
+   "included_in_release": true
   },
   {
    "day": "2026-01-20",
    "status": "complete",
-   "flights": 7140
+   "flights": 7140,
+   "included_in_release": true
   },
   {
    "day": "2026-01-21",
    "status": "complete",
-   "flights": 7308
+   "flights": 7308,
+   "included_in_release": true
   },
   {
    "day": "2026-01-22",
    "status": "complete",
-   "flights": 8354
+   "flights": 8354,
+   "included_in_release": true
   },
   {
    "day": "2026-01-23",
    "status": "complete",
-   "flights": 7955
+   "flights": 7955,
+   "included_in_release": true
   },
   {
    "day": "2026-01-24",
    "status": "complete",
-   "flights": 7058
+   "flights": 7058,
+   "included_in_release": true
   },
   {
    "day": "2026-01-25",
    "status": "complete",
-   "flights": 8799
+   "flights": 8799,
+   "included_in_release": true
   },
   {
    "day": "2026-01-26",
    "status": "complete",
-   "flights": 8811
+   "flights": 8811,
+   "included_in_release": true
   },
   {
    "day": "2026-01-27",
    "status": "complete",
-   "flights": 6754
+   "flights": 6754,
+   "included_in_release": true
   },
   {
    "day": "2026-01-28",
    "status": "complete",
-   "flights": 7049
+   "flights": 7049,
+   "included_in_release": true
   },
   {
    "day": "2026-01-29",
    "status": "complete",
-   "flights": 8179
+   "flights": 8179,
+   "included_in_release": true
   },
   {
    "day": "2026-01-30",
    "status": "complete",
-   "flights": 9656
+   "flights": 9656,
+   "included_in_release": true
   },
   {
    "day": "2026-01-31",
    "status": "complete",
-   "flights": 7209
+   "flights": 7209,
+   "included_in_release": true
   },
   {
    "day": "2026-02-01",
    "status": "complete",
-   "flights": 9368
+   "flights": 9368,
+   "included_in_release": true
   },
   {
    "day": "2026-02-02",
    "status": "complete",
-   "flights": 9495
+   "flights": 9495,
+   "included_in_release": true
   },
   {
    "day": "2026-02-03",
    "status": "complete",
-   "flights": 7156
+   "flights": 7156,
+   "included_in_release": true
   },
   {
    "day": "2026-02-04",
    "status": "complete",
-   "flights": 7470
+   "flights": 7470,
+   "included_in_release": true
   },
   {
    "day": "2026-02-05",
    "status": "complete",
-   "flights": 8487
+   "flights": 8487,
+   "included_in_release": true
   },
   {
    "day": "2026-02-06",
    "status": "complete",
-   "flights": 9759
+   "flights": 9759,
+   "included_in_release": true
   },
   {
    "day": "2026-02-07",
    "status": "complete",
-   "flights": 8079
+   "flights": 8079,
+   "included_in_release": true
   },
   {
    "day": "2026-02-08",
    "status": "complete",
-   "flights": 9834
+   "flights": 9834,
+   "included_in_release": true
   },
   {
    "day": "2026-02-09",
    "status": "complete",
-   "flights": 9958
+   "flights": 9958,
+   "included_in_release": true
   },
   {
    "day": "2026-02-10",
    "status": "complete",
-   "flights": 7512
+   "flights": 7512,
+   "included_in_release": true
   },
   {
    "day": "2026-02-11",
    "status": "complete",
-   "flights": 7684
+   "flights": 7684,
+   "included_in_release": true
   },
   {
    "day": "2026-02-12",
    "status": "complete",
-   "flights": 8556
+   "flights": 8556,
+   "included_in_release": true
   },
   {
    "day": "2026-02-13",
    "status": "complete",
-   "flights": 10459
+   "flights": 10459,
+   "included_in_release": true
   },
   {
    "day": "2026-02-14",
    "status": "complete",
-   "flights": 8610
+   "flights": 8610,
+   "included_in_release": true
   },
   {
    "day": "2026-02-15",
    "status": "complete",
-   "flights": 9680
+   "flights": 9680,
+   "included_in_release": true
   },
   {
    "day": "2026-02-16",
    "status": "complete",
-   "flights": 10543
+   "flights": 10543,
+   "included_in_release": true
   },
   {
    "day": "2026-02-17",
    "status": "complete",
-   "flights": 8206
+   "flights": 8206,
+   "included_in_release": true
   },
   {
    "day": "2026-02-18",
    "status": "complete",
-   "flights": 8490
+   "flights": 8490,
+   "included_in_release": true
   },
   {
    "day": "2026-02-19",
    "status": "complete",
-   "flights": 9398
+   "flights": 9398,
+   "included_in_release": true
   },
   {
    "day": "2026-02-20",
    "status": "complete",
-   "flights": 10674
+   "flights": 10674,
+   "included_in_release": true
   },
   {
    "day": "2026-02-21",
    "status": "complete",
-   "flights": 9283
+   "flights": 9283,
+   "included_in_release": true
   },
   {
    "day": "2026-02-22",
    "status": "complete",
-   "flights": 10577
+   "flights": 10577,
+   "included_in_release": true
   },
   {
    "day": "2026-02-23",
    "status": "complete",
-   "flights": 10722
+   "flights": 10722,
+   "included_in_release": true
   },
   {
    "day": "2026-02-24",
    "status": "complete",
-   "flights": 8378
+   "flights": 8378,
+   "included_in_release": true
   },
   {
    "day": "2026-02-25",
    "status": "complete",
-   "flights": 8762
+   "flights": 8762,
+   "included_in_release": true
   },
   {
    "day": "2026-02-26",
    "status": "complete",
-   "flights": 10136
+   "flights": 10136,
+   "included_in_release": true
   },
   {
    "day": "2026-02-27",
    "status": "complete",
-   "flights": 11377
+   "flights": 11377,
+   "included_in_release": true
   },
   {
    "day": "2026-02-28",
    "status": "complete",
-   "flights": 8980
+   "flights": 8980,
+   "included_in_release": true
   },
   {
    "day": "2026-03-01",
    "status": "complete",
-   "flights": 10290
+   "flights": 10290,
+   "included_in_release": true
   },
   {
    "day": "2026-03-02",
    "status": "complete",
-   "flights": 10689
+   "flights": 10689,
+   "included_in_release": true
   },
   {
    "day": "2026-03-03",
    "status": "complete",
-   "flights": 8504
+   "flights": 8504,
+   "included_in_release": true
   },
   {
    "day": "2026-03-04",
    "status": "complete",
-   "flights": 8754
+   "flights": 8754,
+   "included_in_release": true
   },
   {
    "day": "2026-03-05",
    "status": "complete",
-   "flights": 9884
+   "flights": 9884,
+   "included_in_release": true
   },
   {
    "day": "2026-03-06",
    "status": "complete",
-   "flights": 11089
+   "flights": 11089,
+   "included_in_release": true
   },
   {
    "day": "2026-03-07",
@@ -348,682 +413,825 @@
     14
    ],
    "flights_typical": 10178,
-   "flights_missing_estimate": 625
+   "flights_missing_estimate": 625,
+   "included_in_release": true
   },
   {
    "day": "2026-03-08",
    "status": "complete",
-   "flights": 10355
+   "flights": 10355,
+   "included_in_release": true
   },
   {
    "day": "2026-03-09",
    "status": "complete",
-   "flights": 10566
+   "flights": 10566,
+   "included_in_release": true
   },
   {
    "day": "2026-03-10",
    "status": "complete",
-   "flights": 8810
+   "flights": 8810,
+   "included_in_release": true
   },
   {
    "day": "2026-03-11",
    "status": "complete",
-   "flights": 8952
+   "flights": 8952,
+   "included_in_release": true
   },
   {
    "day": "2026-03-12",
    "status": "complete",
-   "flights": 9274
+   "flights": 9274,
+   "included_in_release": true
   },
   {
    "day": "2026-03-13",
    "status": "complete",
-   "flights": 10500
+   "flights": 10500,
+   "included_in_release": true
   },
   {
    "day": "2026-03-14",
    "status": "complete",
-   "flights": 8790
+   "flights": 8790,
+   "included_in_release": true
   },
   {
    "day": "2026-03-15",
    "status": "complete",
-   "flights": 10495
+   "flights": 10495,
+   "included_in_release": true
   },
   {
    "day": "2026-03-16",
    "status": "complete",
-   "flights": 11026
+   "flights": 11026,
+   "included_in_release": true
   },
   {
    "day": "2026-03-17",
    "status": "complete",
-   "flights": 8970
+   "flights": 8970,
+   "included_in_release": true
   },
   {
    "day": "2026-03-18",
    "status": "complete",
-   "flights": 9023
+   "flights": 9023,
+   "included_in_release": true
   },
   {
    "day": "2026-03-19",
    "status": "complete",
-   "flights": 10403
+   "flights": 10403,
+   "included_in_release": true
   },
   {
    "day": "2026-03-20",
    "status": "complete",
-   "flights": 11306
+   "flights": 11306,
+   "included_in_release": true
   },
   {
    "day": "2026-03-21",
    "status": "complete",
-   "flights": 8740
+   "flights": 8740,
+   "included_in_release": true
   },
   {
    "day": "2026-03-22",
    "status": "complete",
-   "flights": 10220
+   "flights": 10220,
+   "included_in_release": true
   },
   {
    "day": "2026-03-23",
    "status": "complete",
-   "flights": 11002
+   "flights": 11002,
+   "included_in_release": true
   },
   {
    "day": "2026-03-24",
    "status": "complete",
-   "flights": 6787
+   "flights": 6787,
+   "included_in_release": true
   },
   {
    "day": "2026-03-25",
    "status": "complete",
-   "flights": 8596
+   "flights": 8596,
+   "included_in_release": true
   },
   {
    "day": "2026-03-26",
    "status": "complete",
-   "flights": 10403
+   "flights": 10403,
+   "included_in_release": true
   },
   {
    "day": "2026-03-27",
    "status": "complete",
-   "flights": 11256
+   "flights": 11256,
+   "included_in_release": true
   },
   {
    "day": "2026-03-28",
    "status": "complete",
-   "flights": 9199
+   "flights": 9199,
+   "included_in_release": true
   },
   {
    "day": "2026-03-29",
    "status": "complete",
-   "flights": 11640
+   "flights": 11640,
+   "included_in_release": true
   },
   {
    "day": "2026-03-30",
    "status": "complete",
-   "flights": 11805
+   "flights": 11805,
+   "included_in_release": true
   },
   {
    "day": "2026-03-31",
    "status": "complete",
-   "flights": 11036
+   "flights": 11036,
+   "included_in_release": true
   },
   {
    "day": "2026-04-01",
    "status": "complete",
-   "flights": 6529
+   "flights": 6529,
+   "included_in_release": true
   },
   {
    "day": "2026-04-02",
    "status": "complete",
-   "flights": 7551
+   "flights": 7551,
+   "included_in_release": true
   },
   {
    "day": "2026-04-03",
    "status": "complete",
-   "flights": 11837
+   "flights": 11837,
+   "included_in_release": true
   },
   {
    "day": "2026-04-04",
    "status": "complete",
-   "flights": 10384
+   "flights": 10384,
+   "included_in_release": true
   },
   {
    "day": "2026-04-05",
    "status": "complete",
-   "flights": 11531
+   "flights": 11531,
+   "included_in_release": true
   },
   {
    "day": "2026-04-06",
    "status": "complete",
-   "flights": 12292
+   "flights": 12292,
+   "included_in_release": true
   },
   {
    "day": "2026-04-07",
    "status": "complete",
-   "flights": 11377
+   "flights": 11377,
+   "included_in_release": true
   },
   {
    "day": "2026-04-08",
    "status": "complete",
-   "flights": 11474
+   "flights": 11474,
+   "included_in_release": true
   },
   {
    "day": "2026-04-09",
    "status": "complete",
-   "flights": 11953
+   "flights": 11953,
+   "included_in_release": true
   },
   {
    "day": "2026-04-10",
    "status": "complete",
-   "flights": 10937
+   "flights": 10937,
+   "included_in_release": true
   },
   {
    "day": "2026-04-11",
    "status": "complete",
-   "flights": 10184
+   "flights": 10184,
+   "included_in_release": true
   },
   {
    "day": "2026-04-12",
    "status": "complete",
-   "flights": 11460
+   "flights": 11460,
+   "included_in_release": true
   },
   {
    "day": "2026-04-13",
    "status": "complete",
-   "flights": 10653
+   "flights": 10653,
+   "included_in_release": true
   },
   {
    "day": "2026-04-14",
    "status": "complete",
-   "flights": 9890
+   "flights": 9890,
+   "included_in_release": true
   },
   {
    "day": "2026-04-15",
    "status": "complete",
-   "flights": 10257
+   "flights": 10257,
+   "included_in_release": true
   },
   {
    "day": "2026-04-16",
    "status": "complete",
-   "flights": 10987
+   "flights": 10987,
+   "included_in_release": true
   },
   {
    "day": "2026-04-17",
    "status": "complete",
-   "flights": 11397
+   "flights": 11397,
+   "included_in_release": true
   },
   {
    "day": "2026-04-18",
    "status": "complete",
-   "flights": 9929
+   "flights": 9929,
+   "included_in_release": true
   },
   {
    "day": "2026-04-19",
    "status": "complete",
-   "flights": 11675
+   "flights": 11675,
+   "included_in_release": true
   },
   {
    "day": "2026-04-20",
    "status": "complete",
-   "flights": 11853
+   "flights": 11853,
+   "included_in_release": true
   },
   {
    "day": "2026-04-21",
    "status": "complete",
-   "flights": 10872
+   "flights": 10872,
+   "included_in_release": true
   },
   {
    "day": "2026-04-22",
    "status": "complete",
-   "flights": 10811
+   "flights": 10811,
+   "included_in_release": true
   },
   {
    "day": "2026-04-23",
    "status": "complete",
-   "flights": 11237
+   "flights": 11237,
+   "included_in_release": true
   },
   {
    "day": "2026-04-24",
    "status": "complete",
-   "flights": 11823
+   "flights": 11823,
+   "included_in_release": true
   },
   {
    "day": "2026-04-25",
    "status": "complete",
-   "flights": 9969
+   "flights": 9969,
+   "included_in_release": true
   },
   {
    "day": "2026-04-26",
    "status": "complete",
-   "flights": 11683
+   "flights": 11683,
+   "included_in_release": true
   },
   {
    "day": "2026-04-27",
    "status": "complete",
-   "flights": 12257
+   "flights": 12257,
+   "included_in_release": true
   },
   {
    "day": "2026-04-28",
    "status": "complete",
-   "flights": 11096
+   "flights": 11096,
+   "included_in_release": true
   },
   {
    "day": "2026-04-29",
    "status": "complete",
-   "flights": 10971
+   "flights": 10971,
+   "included_in_release": true
   },
   {
    "day": "2026-04-30",
    "status": "complete",
-   "flights": 11021
+   "flights": 11021,
+   "included_in_release": true
   },
   {
    "day": "2026-05-01",
    "status": "complete",
-   "flights": 11501
+   "flights": 11501,
+   "included_in_release": true
   },
   {
    "day": "2026-05-02",
    "status": "complete",
-   "flights": 9942
+   "flights": 9942,
+   "included_in_release": true
   },
   {
    "day": "2026-05-03",
    "status": "complete",
-   "flights": 11351
+   "flights": 11351,
+   "included_in_release": true
   },
   {
    "day": "2026-05-04",
    "status": "complete",
-   "flights": 14642
+   "flights": 14642,
+   "included_in_release": true
   },
   {
    "day": "2026-05-08",
    "status": "complete",
-   "flights": 11813
+   "flights": 11813,
+   "included_in_release": true
   },
   {
    "day": "2026-05-09",
    "status": "complete",
-   "flights": 9714
+   "flights": 9714,
+   "included_in_release": true
   },
   {
    "day": "2026-05-10",
    "status": "complete",
-   "flights": 11347
+   "flights": 11347,
+   "included_in_release": true
   },
   {
    "day": "2026-05-11",
    "status": "complete",
-   "flights": 11350
+   "flights": 11350,
+   "included_in_release": true
   },
   {
    "day": "2026-05-12",
    "status": "complete",
-   "flights": 10862
+   "flights": 10862,
+   "included_in_release": true
   },
   {
    "day": "2026-05-13",
    "status": "complete",
-   "flights": 11016
+   "flights": 11016,
+   "included_in_release": true
   },
   {
    "day": "2026-05-14",
    "status": "complete",
-   "flights": 10744
+   "flights": 10744,
+   "included_in_release": true
   },
   {
    "day": "2026-05-15",
    "status": "complete",
-   "flights": 10298
+   "flights": 10298,
+   "included_in_release": true
   },
   {
    "day": "2026-05-16",
    "status": "complete",
-   "flights": 10104
+   "flights": 10104,
+   "included_in_release": true
   },
   {
    "day": "2026-05-17",
    "status": "complete",
-   "flights": 11451
+   "flights": 11451,
+   "included_in_release": true
   },
   {
    "day": "2026-05-18",
    "status": "complete",
-   "flights": 12315
+   "flights": 12315,
+   "included_in_release": true
   },
   {
    "day": "2026-05-19",
    "status": "complete",
-   "flights": 11606
+   "flights": 11606,
+   "included_in_release": true
   },
   {
    "day": "2026-05-20",
    "status": "complete",
-   "flights": 12231
+   "flights": 12231,
+   "included_in_release": true
   },
   {
    "day": "2026-05-21",
    "status": "complete",
-   "flights": 12974
+   "flights": 12974,
+   "included_in_release": true
   },
   {
    "day": "2026-05-22",
    "status": "complete",
-   "flights": 13156
+   "flights": 13156,
+   "included_in_release": true
   },
   {
    "day": "2026-05-23",
    "status": "complete",
-   "flights": 11372
+   "flights": 11372,
+   "included_in_release": true
   },
   {
    "day": "2026-05-24",
    "status": "complete",
-   "flights": 12826
+   "flights": 12826,
+   "included_in_release": true
   },
   {
    "day": "2026-05-25",
    "status": "complete",
-   "flights": 13226
+   "flights": 13226,
+   "included_in_release": true
   },
   {
    "day": "2026-05-26",
    "status": "complete",
-   "flights": 12480
+   "flights": 12480,
+   "included_in_release": true
   },
   {
    "day": "2026-05-27",
    "status": "complete",
-   "flights": 13068
+   "flights": 13068,
+   "included_in_release": true
   },
   {
    "day": "2026-05-28",
    "status": "complete",
-   "flights": 13041
+   "flights": 13041,
+   "included_in_release": true
   },
   {
    "day": "2026-05-29",
    "status": "complete",
-   "flights": 13167
+   "flights": 13167,
+   "included_in_release": true
   },
   {
    "day": "2026-05-30",
    "status": "complete",
-   "flights": 11017
+   "flights": 11017,
+   "included_in_release": true
   },
   {
    "day": "2026-05-31",
    "status": "complete",
-   "flights": 12439
+   "flights": 12439,
+   "included_in_release": true
   },
   {
    "day": "2026-06-01",
    "status": "complete",
-   "flights": 13082
+   "flights": 13082,
+   "included_in_release": true
   },
   {
    "day": "2026-06-02",
    "status": "complete",
-   "flights": 11782
+   "flights": 11782,
+   "included_in_release": true
   },
   {
    "day": "2026-06-03",
    "status": "complete",
-   "flights": 11356
+   "flights": 11356,
+   "included_in_release": true
   },
   {
    "day": "2026-06-04",
    "status": "complete",
-   "flights": 11789
+   "flights": 11789,
+   "included_in_release": true
   },
   {
    "day": "2026-06-05",
    "status": "complete",
-   "flights": 12560
+   "flights": 12560,
+   "included_in_release": true
   },
   {
    "day": "2026-06-06",
    "status": "complete",
-   "flights": 10737
+   "flights": 10737,
+   "included_in_release": true
   },
   {
    "day": "2026-06-07",
    "status": "complete",
-   "flights": 12963
+   "flights": 12963,
+   "included_in_release": true
   },
   {
    "day": "2026-06-08",
    "status": "complete",
-   "flights": 13148
+   "flights": 13148,
+   "included_in_release": true
   },
   {
    "day": "2026-06-09",
    "status": "complete",
-   "flights": 11909
+   "flights": 11909,
+   "included_in_release": true
   },
   {
    "day": "2026-06-10",
    "status": "complete",
-   "flights": 11374
+   "flights": 11374,
+   "included_in_release": true
   },
   {
    "day": "2026-06-12",
    "status": "complete",
-   "flights": 12674
+   "flights": 12674,
+   "included_in_release": true
   },
   {
    "day": "2026-06-13",
    "status": "complete",
-   "flights": 11589
+   "flights": 11589,
+   "included_in_release": true
   },
   {
    "day": "2026-06-14",
    "status": "complete",
-   "flights": 13518
+   "flights": 13518,
+   "included_in_release": true
   },
   {
    "day": "2026-06-15",
    "status": "complete",
-   "flights": 13884
+   "flights": 13884,
+   "included_in_release": true
   },
   {
    "day": "2026-06-16",
    "status": "complete",
-   "flights": 13256
+   "flights": 13256,
+   "included_in_release": true
   },
   {
    "day": "2026-06-17",
    "status": "complete",
-   "flights": 13482
+   "flights": 13482,
+   "included_in_release": true
   },
   {
    "day": "2026-06-18",
    "status": "complete",
-   "flights": 13455
+   "flights": 13455,
+   "included_in_release": true
   },
   {
    "day": "2026-06-19",
    "status": "complete",
-   "flights": 13743
+   "flights": 13743,
+   "included_in_release": true
   },
   {
    "day": "2026-06-20",
    "status": "complete",
-   "flights": 12286
+   "flights": 12286,
+   "included_in_release": true
   },
   {
    "day": "2026-06-21",
    "status": "complete",
-   "flights": 13673
+   "flights": 13673,
+   "included_in_release": true
   },
   {
    "day": "2026-06-22",
    "status": "complete",
-   "flights": 13794
+   "flights": 13794,
+   "included_in_release": true
   },
   {
    "day": "2026-06-23",
    "status": "complete",
-   "flights": 12727
+   "flights": 12727,
+   "included_in_release": true
   },
   {
    "day": "2026-06-24",
    "status": "complete",
-   "flights": 13204
+   "flights": 13204,
+   "included_in_release": true
   },
   {
    "day": "2026-06-25",
    "status": "complete",
-   "flights": 13486
+   "flights": 13486,
+   "included_in_release": true
   },
   {
    "day": "2026-06-26",
    "status": "complete",
-   "flights": 13738
+   "flights": 13738,
+   "included_in_release": true
   },
   {
    "day": "2026-06-27",
    "status": "complete",
-   "flights": 11802
+   "flights": 11802,
+   "included_in_release": true
   },
   {
    "day": "2026-06-28",
    "status": "complete",
-   "flights": 13637
+   "flights": 13637,
+   "included_in_release": true
   },
   {
    "day": "2026-06-29",
    "status": "complete",
-   "flights": 13911
+   "flights": 13911,
+   "included_in_release": true
   },
   {
    "day": "2026-06-30",
    "status": "complete",
-   "flights": 13715
+   "flights": 13715,
+   "included_in_release": true
   },
   {
    "day": "2026-07-01",
    "status": "complete",
-   "flights": 13140
+   "flights": 13140,
+   "included_in_release": true
   },
   {
    "day": "2026-07-02",
    "status": "complete",
-   "flights": 13669
+   "flights": 13669,
+   "included_in_release": true
   },
   {
    "day": "2026-07-03",
    "status": "complete",
-   "flights": 14020
+   "flights": 14020,
+   "included_in_release": true
   },
   {
    "day": "2026-07-04",
    "status": "complete",
-   "flights": 12528
+   "flights": 12528,
+   "included_in_release": true
   },
   {
    "day": "2026-07-05",
    "status": "complete",
-   "flights": 13426
+   "flights": 13426,
+   "included_in_release": true
   },
   {
    "day": "2026-07-06",
    "status": "complete",
-   "flights": 13890
+   "flights": 13890,
+   "included_in_release": true
   },
   {
    "day": "2026-07-07",
    "status": "complete",
-   "flights": 13315
+   "flights": 13315,
+   "included_in_release": true
   },
   {
    "day": "2026-07-08",
    "status": "complete",
-   "flights": 13612
+   "flights": 13612,
+   "included_in_release": true
   },
   {
    "day": "2026-07-09",
    "status": "complete",
-   "flights": 14180
+   "flights": 14180,
+   "included_in_release": true
   },
   {
    "day": "2026-07-10",
    "status": "complete",
-   "flights": 13998
+   "flights": 13998,
+   "included_in_release": true
   },
   {
    "day": "2026-07-11",
    "status": "complete",
-   "flights": 10631
+   "flights": 10631,
+   "included_in_release": true
   },
   {
    "day": "2026-07-12",
    "status": "complete",
-   "flights": 13905
+   "flights": 13905,
+   "included_in_release": true
   },
   {
    "day": "2026-07-13",
    "status": "complete",
-   "flights": 13717
+   "flights": 13717,
+   "included_in_release": true
   },
   {
    "day": "2026-07-14",
    "status": "complete",
-   "flights": 13174
+   "flights": 13174,
+   "included_in_release": true
   },
   {
    "day": "2026-07-15",
    "status": "complete",
-   "flights": 13864
+   "flights": 13864,
+   "included_in_release": true
   },
   {
    "day": "2026-07-16",
    "status": "complete",
-   "flights": 13902
+   "flights": 13902,
+   "included_in_release": true
   },
   {
    "day": "2026-07-17",
    "status": "complete",
-   "flights": 14078
+   "flights": 14078,
+   "included_in_release": true
   },
   {
    "day": "2026-07-18",
    "status": "complete",
-   "flights": 12674
+   "flights": 12674,
+   "included_in_release": true
   },
   {
    "day": "2026-07-19",
    "status": "complete",
-   "flights": 13775
+   "flights": 13775,
+   "included_in_release": true
   },
   {
    "day": "2026-07-20",
    "status": "complete",
-   "flights": 14094
+   "flights": 14094,
+   "included_in_release": true
   },
   {
    "day": "2026-07-21",
    "status": "complete",
-   "flights": 13419
+   "flights": 13419,
+   "included_in_release": false
   },
   {
    "day": "2026-07-22",
    "status": "complete",
-   "flights": 13493
+   "flights": 13493,
+   "included_in_release": false
   },
   {
    "day": "2026-07-23",
    "status": "complete",
-   "flights": 13869
+   "flights": 13869,
+   "included_in_release": false
   },
   {
    "day": "2026-07-24",
    "status": "complete",
-   "flights": 13560
+   "flights": 13560,
+   "included_in_release": false
   }
- ]
+ ],
+ "source_first_day": "2026-01-01",
+ "source_last_day": "2026-07-24",
+ "source_days_present": 201,
+ "release_first_day": "2026-01-01",
+ "release_last_day": "2026-07-20",
+ "release_days": 197,
+ "perimeter_note": "Two different perimeters. The source_* fields describe the ADS-B archive that was audited; the release_* fields describe the window the published CO2 figures actually cover, which stops earlier because the ERA5 wind data does. Days outside the release window are audited but not used: see included_in_release on each day."
 }
