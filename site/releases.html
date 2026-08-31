@@ -22,6 +22,12 @@
 <link rel=icon href=favicon-32.png sizes=32x32>
 <link rel=apple-touch-icon href=apple-touch-icon.png>
 <style>
+.skip{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--fg);
+padding:10px 16px;border:1px solid var(--line);border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
 @font-face{font-family:Inter;src:url(inter.woff2) format('woff2');
 font-weight:100 900;font-style:normal;font-display:swap}
 :root{color-scheme:light dark;
@@ -163,12 +169,14 @@ padding:32px 0 60px;margin-top:0}
 }
 
 </style></head><body>
-<div class=top><div class=wrap>
+<a class=skip href="#content">Skip to content</a>
+<header class=top><div class=wrap>
 <a class=brand href="/"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
-<nav><a href="/#findings">Findings</a><a href="/context">Context</a>
+<nav aria-label="Main"><a href="/#findings">Findings</a><a href="/context">Context</a>
 <a href="/data">Data</a>
 <a href="/methodology">Method</a><a href="/faq">FAQ</a><a href="/#download">Download</a></nav>
-</div></div>
+</div></header>
+<main id=content>
 <div class=wrap>
 <div class=hero style="padding-bottom:0">
 <p class=eyebrow>Release history</p>
@@ -180,8 +188,8 @@ can be read for what it is.</p>
 
 <section>
 <h2>Published</h2>
-<div class=scroll><table>
-<thead><tr><th>release</th><th>covers</th><th>what changed</th><th>archive</th></tr></thead>
+<div class=scroll><table><caption class=vh>Published</caption>
+<thead><tr><th scope=col>release</th><th scope=col>covers</th><th scope=col>what changed</th><th scope=col>archive</th></tr></thead>
 <tbody><tr><td class=r style="white-space:nowrap"><b>2026-09-01</b></td>
 <td class=r style="min-width:15em">2026-01-01 → 2026-07-20, 197 days<br>
 <span class=mut>1,833,127 flights · methodology v1.0</span></td>
@@ -232,7 +240,8 @@ in the repository.</p>
 </div>
 </section>
 </div>
-<p class=foot><span class=wrap style="display:block">
+</main>
+<footer><p class=foot><span class=wrap style="display:block">
 <a href="/">Findings</a> · <a href="/context">Context</a> · <a href="/data">Data</a> · <a href="/methodology">Method</a> · <a href="/faq">FAQ</a> · <a href="/releases">Releases</a> · <a href="/replies">Replies</a> · <a href="feed.xml">Updates feed</a><br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a> — these pages
@@ -244,4 +253,4 @@ TU Delft.<br>
 <a href="feed.xml">updates feed</a><br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a>
 </span></p>
-</body></html>
+</footer></body></html>

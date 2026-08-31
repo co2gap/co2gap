@@ -22,6 +22,12 @@
 <link rel=icon href=favicon-32.png sizes=32x32>
 <link rel=apple-touch-icon href=apple-touch-icon.png>
 <style>
+.skip{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--fg);
+padding:10px 16px;border:1px solid var(--line);border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
 @font-face{font-family:Inter;src:url(inter.woff2) format('woff2');
 font-weight:100 900;font-style:normal;font-display:swap}
 :root{color-scheme:light dark;
@@ -163,12 +169,14 @@ padding:32px 0 60px;margin-top:0}
 }
 
 </style></head><body>
-<div class=top><div class=wrap>
+<a class=skip href="#content">Skip to content</a>
+<header class=top><div class=wrap>
 <a class=brand href="/"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
-<nav><a href="/#findings">Findings</a><a href="/context">Context</a>
+<nav aria-label="Main"><a href="/#findings">Findings</a><a href="/context">Context</a>
 <a href="/data">Data</a>
 <a href="/methodology">Method</a><a href="/faq">FAQ</a><a href="/#download">Download</a></nav>
-</div></div>
+</div></header>
+<main id=content>
 <div class=wrap>
 
 <div class=hero>
@@ -302,7 +310,7 @@ reach. It comes from choices and constraints no procedure removes: the cruise
 speed chosen to meet schedules rather than to minimise fuel, the need to climb
 in steps as the aircraft gets lighter, flight levels available only at discrete
 intervals.</p>
-<table><thead><tr><th>vertical component</th><th class=num>points</th></tr></thead>
+<table><caption class=vh>How much of this gap is compressible</caption><thead><tr><th scope=col>vertical component</th><th class=num scope=col>points</th></tr></thead>
 <tbody>
 <tr><td>median across all flights</td><td class=num>5.1</td></tr>
 <tr><td>— floor, not compressible</td><td class=num>2.2</td></tr>
@@ -566,7 +574,8 @@ keep that separate from what appears on this page are written down under
 <a href="/methodology#independence">independence</a>.
 </div>
 </section>
-<p class=foot>
+</main>
+<footer><p class=foot>
 <a href="/">Findings</a> · <a href="/context">Context</a> · <a href="/data">Data</a> · <a href="/methodology">Method</a> · <a href="/faq">FAQ</a> · <a href="/releases">Releases</a> · <a href="/replies">Replies</a> · <a href="feed.xml">Updates feed</a><br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>. These pages are
@@ -583,4 +592,4 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>
 
-</div></body></html>
+</div></footer></body></html>

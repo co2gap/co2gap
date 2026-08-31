@@ -22,6 +22,12 @@
 <link rel=icon href=favicon-32.png sizes=32x32>
 <link rel=apple-touch-icon href=apple-touch-icon.png>
 <style>
+.skip{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--fg);
+padding:10px 16px;border:1px solid var(--line);border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
 @font-face{font-family:Inter;src:url(inter.woff2) format('woff2');
 font-weight:100 900;font-style:normal;font-display:swap}
 :root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
@@ -105,12 +111,14 @@ a{color:var(--hi)}
 code{font-family:ui-monospace,monospace;font-size:.85em;background:var(--card);
 padding:1px 5px;border-radius:4px}
 </style></head><body>
-<div class=top><div class=wrap>
+<a class=skip href="#content">Skip to content</a>
+<header class=top><div class=wrap>
 <a class=brand href="/"><svg viewBox="0.2 6.5 63.6 63.6" aria-hidden="true"><path d="M6 50 A26 25 0 0 1 58 50 A26 11 0 0 0 6 50 Z" fill="#ff7a55" fill-opacity=".28"/><path d="M6 50 A26 11 0 0 1 58 50" fill="none" stroke="#8ea3b2" stroke-width="3.6" stroke-linecap="round" stroke-dasharray="6.5 5.5"/><path d="M6 50 A26 25 0 0 1 58 50" fill="none" stroke="#ff7a55" stroke-width="4.4" stroke-linecap="round"/><circle cx="6" cy="50" r="3.8" fill="#8ea3b2"/><circle cx="58" cy="50" r="3.8" fill="#8ea3b2"/></svg>co2gap</a>
-<nav><a href="/#findings">Findings</a><a href="/context">Context</a>
+<nav aria-label="Main"><a href="/#findings">Findings</a><a href="/context">Context</a>
 <a href="/data">Data</a>
 <a href="/methodology">Method</a><a href="/faq">FAQ</a><a href="/#download">Download</a></nav>
-</div></div>
+</div></header>
+<main id=content>
 <div class=wrap>
 
 <h1>Methodology</h1>
@@ -181,7 +189,7 @@ flights there is a spread of this size" — and only the second is something the
 data support.</p>
 <p class=sub>How the figures on this site are computed, what they mean and —
 above all — what they do <b>not</b> mean.<br>
-<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-31 22:37 UTC.</p>
+<b>Release 2026-09-01</b> · methodology v1.0 · generated 2026-08-31 22:43 UTC.</p>
 
 <h2 id=the-question-being-answered>1. The question being answered</h2>
 <p>For every flight we compare the CO&#8322; actually emitted with that of an
@@ -205,7 +213,7 @@ structure, constrained airspace, arrival sequencing and weather put it out of
 reach for reasons that are not inefficiency.</p>
 <p>Estimates of <i>avoidable</i> inefficiency published by bodies in the field
 are much smaller than the gap measured here, and rightly so:</p>
-<table><thead><tr><th>measure</th><th class=num>per flight</th></tr></thead><tbody>
+<table><caption class=vh>2. What is NOT being measured</caption><thead><tr><th scope=col>measure</th><th class=num scope=col>per flight</th></tr></thead><tbody>
 <tr><td>EUROCONTROL — level-offs in climb and descent, recoverable through
 CCO/CDO procedures</td><td class=num>~39 kg</td></tr>
 <tr><td>Pasutto et al. (EUROCONTROL, 2021) — cruise, against the best profile
@@ -393,8 +401,8 @@ directions. We therefore measure the spread between outbound and return on every
 route with at least 10 flights per direction. With wind modelled, the median of
 that spread collapses, and it stays <b>stable across seasons</b>. That is the
 real test, because winter jet streams are far stronger.</p>
-<div class=scroll><table><thead><tr><th>month</th><th class=num>routes</th>
-<th class=num>without wind</th><th class=num>with wind</th></tr></thead><tbody>
+<div class=scroll><table><caption class=vh>Is the wind modelled correctly?</caption><thead><tr><th scope=col>month</th><th class=num scope=col>routes</th>
+<th class=num scope=col>without wind</th><th class=num scope=col>with wind</th></tr></thead><tbody>
 <tr><td>January</td><td class=num>1,798</td><td class=num>8.6</td><td class=num><b>5.1</b></td></tr>
 <tr><td>February</td><td class=num>1,781</td><td class=num>9.9</td><td class=num><b>5.2</b></td></tr>
 <tr><td>July</td><td class=num>2,458</td><td class=num>8.5</td><td class=num><b>4.6</b></td></tr>
@@ -725,7 +733,8 @@ is assumed — if something here is still unclear, that is a fault of this page 
 an email.</p>
 <dl class=gloss><div id=g-ecac><dt>ECAC area</dt><dd>The European Civil Aviation Conference: 44 member states, from Iceland and Norway to Turkey, Armenia and Azerbaijan — a wider Europe than the European Union. It is the area this site covers, and the same one EUROCONTROL uses for its own published figures.</dd></div><div id=g-point><dt>Point</dt><dd>One percentage point of the ideal flight's CO&#8322;. An airport at +10 points emits about 10% more than comparable flights. Points are always relative: they never say how much fuel was burnt, only how far from the reference it is.</dd></div><div id=g-norm><dt>The norm (Δ norm)</dt><dd>The median of flights of the same length and the same aircraft type. The raw gap grows as flights get shorter, so ranking it would sort by shortness; every ranking here measures the distance from the norm instead.</dd></div><div id=g-lateral><dt>Lateral and vertical</dt><dd>The two parts the gap splits into, which add up to the total. Lateral is the cost of flying more kilometres than the direct route; vertical is the cost of flying the same route on a less efficient climb, cruise and descent profile.</dd></div><div id=g-movements><dt>Movements</dt><dd>Take-offs and landings counted together. A flight counts once at the airport it leaves and once at the airport it reaches.</dd></div><div id=g-adsb><dt>ADS-B</dt><dd>The position, altitude and speed each aircraft broadcasts about twice a second. Anyone with a receiver can pick it up; every trajectory here comes from those messages, collected by volunteers and published by adsb.lol.</dd></div><div id=g-gc><dt>Great circle</dt><dd>The shortest path between two points on the globe. It is the direct route each flight is compared against — a geometric reference, not a route anyone is allowed to fly.</dd></div><div id=g-enroute><dt>En route</dt><dd>The part of a flight beyond 40 NM from either airport, outside the terminal areas where departures and arrivals are sequenced. EUROCONTROL's efficiency indicator covers only this portion, so our comparison with it does too.</dd></div><div id=g-nm><dt>NM (nautical mile)</dt><dd>1,852 metres, the standard distance unit in aviation. 40 NM is about 74 km.</dd></div><div id=g-kea><dt>KEA</dt><dd>EUROCONTROL's indicator of horizontal en-route flight inefficiency: how much further flights actually fly than the direct route, over the en-route portion only. It is built from radar data, as a rolling 12-month average discarding the ten best and ten worst days of each area; ours is not. Same construction, not the same number.</dd></div><div id=g-cco><dt>Continuous climb and descent (CCO/CDO)</dt><dd>Climbing or descending without level-off segments. Level segments burn extra fuel, and removing them is one of the few savings the industry quantifies publicly: EUROCONTROL puts the network-wide potential at about 4 kg of fuel per departure and 35 kg per arrival.</dd></div><div id=g-mt><dt>Mt and kt</dt><dd>Million tonnes and thousand tonnes. Burning one kg of jet fuel releases about 3.16 kg of CO&#8322;.</dd></div><div id=g-era5><dt>ERA5</dt><dd>The weather reanalysis published by the European Centre for Medium-Range Weather Forecasts: the wind that was actually blowing, hour by hour. Without it the same route measures differently in the two directions.</dd></div><div id=g-openap><dt>OpenAP</dt><dd>An open aircraft performance model from TU Delft. It turns a trajectory and an aircraft type into fuel burnt; it is what makes this computable without any airline data.</dd></div><div id=g-odbl><dt>ODbL</dt><dd>The Open Database Licence covering the source trajectories. Reuse is free, with attribution, but a database derived from it must carry the same licence, which is why the figures on this site do.</dd></div></dl>
 
-<p class=foot>
+</main>
+<footer><p class=foot>
 <a href="/">Findings</a> · <a href="/context">Context</a> · <a href="/data">Data</a> · <a href="/methodology">Method</a> · <a href="/faq">FAQ</a> · <a href="/releases">Releases</a> · <a href="/replies">Replies</a> · <a href="feed.xml">Updates feed</a><br>
 Trajectory data © <a href="https://adsb.lol">adsb.lol</a> contributors, licensed
 under <a href="https://opendatacommons.org/licenses/odbl/">ODbL</a>. These pages are
@@ -739,9 +748,9 @@ Performance model: OpenAP, TU Delft.<br>
 <b>Release 2026-09-01</b> · methodology v1.0 · updated twice a year over a 12-month window ·
 next update 31 January 2027, covering the whole of 2026 — <a href="/releases">what changes</a>.<br>
 1,833,127 flights · 197 days · 5,483 publishable routes ·
-2,787 ranked · 152 airports · generated 2026-08-31 22:37 UTC.<br>
+2,787 ranked · 152 airports · generated 2026-08-31 22:43 UTC.<br>
 Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <a rel="me" href="https://mastodon.social/@co2gap">Mastodon</a> · <a rel="me" href="https://bsky.app/profile/co2gap.org">Bluesky</a> · <a href="https://www.linkedin.com/company/co2gap/">LinkedIn</a> · <a href="https://github.com/co2gap/co2gap">source</a>
 </p>
 
-</div></body></html>
+</div></footer></body></html>

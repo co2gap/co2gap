@@ -710,6 +710,48 @@ def clean_urls(doc: str) -> str:
         lambda m: f'href="{canon(m.group(1) + ".html" + (m.group(2) or ""))}"', doc)
 
 
+# ── ACCESSIBILITA' STRUTTURALE ──────────────────────────────────────────────
+# Rilevata da una revisione esterna l'1/09/2026 e verificata pagina per pagina:
+# mancavano i landmark su TUTTE E SETTE le pagine (non solo su Data), il salto al
+# contenuto, il nome del menu, e `scope`/`caption` sulle sei tabelle. Il resto
+# c'era gia' ed e' rimasto: descrizioni ARIA sui grafici, nome accessibile sulla
+# ricerca, alternative tabellari, contrasto.
+#
+# Come per clean_urls: si opera sul documento finito invece di rincorrere le
+# stringhe sparse, e cosi' la regola vale per ogni pagina senza eccezioni.
+#
+# La <caption> e' DERIVATA dal titolo visibile della sezione, mai inventata: se
+# un giorno il titolo cambia, la didascalia lo segue da sola. E' visivamente
+# nascosta (.vh) perche' il titolo e' gia' li' sopra per chi vede — serve a chi
+# naviga tabella per tabella e altrimenti trova sei tabelle senza nome.
+_TH = re.compile(r"<th(?=[ >])((?:(?!scope=)[^>])*)>")
+# Il nome si prende dall'elemento che PRECEDE la tabella piu' da vicino, e puo'
+# essere un titolo di sezione o un <summary>: le tabelle di context.html stanno
+# dentro <details><summary>Data behind this chart — 85 rows</summary>, e il
+# summary le descrive meglio del titolo del grafico che le contiene. Con il solo
+# <h2>/<h3> due tabelle restavano senza nome e le altre prendevano un titolo piu'
+# lontano del loro.
+_TABLE_IN_SECTION = re.compile(
+    r"(<(?:h[23]|summary)[^>]*>(?P<title>[^<]+)</(?:h[23]|summary)>"
+    r"(?:(?!<(?:h[23]|summary)[^>]*>).)*?)(?P<tag><table[^>]*>)", re.S)
+
+
+def a11y(doc: str) -> str:
+    # tutti i <th> del sito stanno in <thead>: sono intestazioni di COLONNA,
+    # verificato contandoli (44 su 44, zero dentro <tbody>).
+    doc = _TH.sub(lambda m: f"<th{m.group(1)} scope=col>", doc)
+    doc = _TABLE_IN_SECTION.sub(
+        # niente esc(): il titolo viene da markup gia' reso e contiene gia' le
+        # entita' (CO&#8322;, &#x27;). Riscapparlo produceva CO&amp;#8322;, che
+        # un lettore di schermo pronuncia come entita'.
+        lambda m: f'{m.group(1)}{m.group("tag")}<caption class=vh>{m.group("title").strip()}</caption>',
+        doc)
+    # <main> lo apre NAV; qui si chiude, e il piede diventa un landmark.
+    doc = doc.replace("<p class=foot", "</main>\n<footer><p class=foot", 1)
+    doc = doc.replace("</body>", "</footer></body>", 1)
+    return doc
+
+
 def meta(title, desc, page=""):
     """Head tags for link previews and icons.
 
@@ -773,6 +815,12 @@ DESC_DATA = (
 )
 
 STYLE = """
+.skip{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--fg);
+padding:10px 16px;border:1px solid var(--line);border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
 @font-face{font-family:Inter;src:url(inter.woff2) format('woff2');
 font-weight:100 900;font-style:normal;font-display:swap}
 :root{--bg:#0e1216;--card:#161d23;--fg:#e8eef3;--mut:#8ea3b2;--line:#243039;
@@ -858,6 +906,12 @@ padding:1px 5px;border-radius:4px}
 """
 
 STYLE_INDEX = """
+.skip{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--fg);
+padding:10px 16px;border:1px solid var(--line);border-radius:0 0 8px 0;z-index:99}
+.skip:focus{left:0}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
 @font-face{font-family:Inter;src:url(inter.woff2) format('woff2');
 font-weight:100 900;font-style:normal;font-display:swap}
 :root{color-scheme:light dark;
@@ -1075,12 +1129,20 @@ FOOTNAV = ('<a href="index.html">Findings</a> · <a href="context.html">Context<
            '<a href="faq.html">FAQ</a> · <a href="releases.html">Releases</a> · '
            '<a href="replies.html">Replies</a> · <a href="feed.xml">Updates feed</a>')
 
-NAV = f"""<div class=top><div class=wrap>
+# Il primo elemento del documento e' il salto al contenuto: chi naviga da
+# tastiera altrimenti riattraversa le sei voci del menu su OGNI pagina prima di
+# arrivare al testo. E' visibile solo quando riceve il fuoco (.skip:focus), quindi
+# non cambia nulla per chi usa il mouse.
+# NAV apre anche <main>: e' inserito esattamente una volta per pagina, quindi e'
+# il punto piu' sicuro dove farlo. La chiusura la mette a11y() prima del piede.
+NAV = f"""<a class=skip href="#content">Skip to content</a>
+<header class=top><div class=wrap>
 <a class=brand href="index.html">{LOGO}co2gap</a>
-<nav><a href="index.html#findings">Findings</a><a href="context.html">Context</a>
+<nav aria-label="Main"><a href="index.html#findings">Findings</a><a href="context.html">Context</a>
 <a href="data.html">Data</a>
 <a href="methodology.html">Method</a><a href="faq.html">FAQ</a><a href="index.html#download">Download</a></nav>
-</div></div>"""
+</div></header>
+<main id=content>"""
 
 # ---------------------------------------------------------------- glossario --
 # Il lettore che decide se questo sito viene capito non e' il controllore di
@@ -2913,7 +2975,7 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 </div></body></html>
 """
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(clean_urls(html_doc))
+    OUT.write_text(a11y(clean_urls(html_doc)))
     print(f"scritto {OUT}  ({len(html_doc)/1024:.0f} KB)")
 
     # ---- pagina Dati -------------------------------------------------------
@@ -2950,7 +3012,7 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 {NAV}
 <div class=wrap>
 <section style="border-top:none;padding-bottom:0">
-<h2>Data</h2>
+<h1>Data</h1>
 <p class=hint>Everything behind the charts, for the ECAC area over
 {esc(days[0])} → {esc(days[-1])}. Type to filter by airport name or ICAO code — the
 tables narrow as you type. Column headings are dotted: each one is defined in the
@@ -2961,7 +3023,7 @@ tables narrow as you type. Column headings are dotted: each one is defined in th
 </section>
 
 <section id=routes style="border-top:none">
-<h3>Routes furthest from the norm</h3>
+<h2>Routes furthest from the norm</h2>
 <p class=hint>Δ norm in points against flights of the same length and type. Rankings use
 only routes with at least <b>{RANK_MIN_N}</b> flights. ⚑ = the direct path crosses closed
 or avoided airspace ({n_closed} routes flagged).</p>
@@ -2971,14 +3033,14 @@ or avoided airspace ({n_closed} routes flagged).</p>
 </section>
 
 <section style="border-top:none">
-<h3>Routes closest to the optimum</h3>
+<h2>Routes closest to the optimum</h2>
 <div class=scroll><table><thead>{RH}</thead><tbody class=f>
 {best}
 </tbody></table></div>
 </section>
 
 <section id=airports style="border-top:none">
-<h3>Airports furthest from the norm</h3>
+<h2>Airports furthest from the norm</h2>
 <p class=hint>Arrivals and departures combined, at least {MIN_N_AIRPORT:,} flights.</p>
 <div class=note>
 <b>What this table does not say.</b> Each row measures the modelled deviation of the
@@ -2996,14 +3058,14 @@ ends. <a href="index.html#findings">The fuller note is on the home page</a>.
 </section>
 
 <section style="border-top:none">
-<h3>Airports closest to the norm</h3>
+<h2>Airports closest to the norm</h2>
 <div class=scroll><table><thead>{AH}</thead><tbody class=f>
 {ap_best}
 </tbody></table></div>
 </section>
 
 <section id=co2 style="border-top:none">
-<h3>Routes by total CO&#8322;</h3>
+<h2>Routes by total CO&#8322;</h2>
 <p class=hint>The routes that weigh most in absolute terms, regardless of efficiency.</p>
 <div class=scroll><table><thead>{RH}</thead><tbody class=f>
 {by_co2}
@@ -3011,7 +3073,7 @@ ends. <a href="index.html#findings">The fuller note is on the home page</a>.
 </section>
 
 <section id=bands style="border-top:none">
-<h3>European norm by distance band</h3>
+<h2>European norm by distance band</h2>
 <div class=scroll><table><thead><tr><th>Band</th><th class=num>flights</th>
 <th class=num>median gap</th></tr></thead><tbody>
 {bandrows}
@@ -3053,7 +3115,7 @@ q.addEventListener('input',run);
 </body></html>
 """
     OUT_DATA = OUT.parent / "data.html"
-    OUT_DATA.write_text(clean_urls(data_doc))
+    OUT_DATA.write_text(a11y(clean_urls(data_doc)))
     print(f"scritto {OUT_DATA}  ({len(data_doc)/1024:.0f} KB)")
 
 
@@ -3365,13 +3427,13 @@ replies are published on this site, in full and unconditionally.</p>
 </body></html>
 """
     OUT_FAQ = OUT.parent / "faq.html"
-    OUT_FAQ.write_text(clean_urls(faq_doc))
+    OUT_FAQ.write_text(a11y(clean_urls(faq_doc)))
     print(f"scritto {OUT_FAQ}  ({len(faq_doc)/1024:.0f} KB)")
 
     rel_doc = build_releases(days, len(df))
-    (OUT.parent / "releases.html").write_text(clean_urls(rel_doc))
+    (OUT.parent / "releases.html").write_text(a11y(clean_urls(rel_doc)))
     rep_doc = build_replies()
-    (OUT.parent / "replies.html").write_text(clean_urls(rep_doc))
+    (OUT.parent / "replies.html").write_text(a11y(clean_urls(rep_doc)))
     service_files(OUT.parent, gen[:10], days)
     print(f"scritto {OUT.parent/'releases.html'} · {OUT.parent/'replies.html'} · "
           f"sitemap.xml · robots.txt · feed.xml")
@@ -3382,7 +3444,7 @@ replies are published on this site, in full and unconditionally.</p>
         method_version=METHOD_VERSION, n_flights=len(df), days=len(days),
         lat_w=lat_w, vert_w=vert_w)
     OUT_CTX = OUT.parent / "context.html"
-    OUT_CTX.write_text(clean_urls(ctx_doc))
+    OUT_CTX.write_text(a11y(clean_urls(ctx_doc)))
     # Le cifre esterne viaggiano col sito: un lettore che vuole verificarle deve
     # poter leggere fonte e data di verifica senza aprire il repository.
     shutil.copyfile(context_page.EXTERNAL, OUT.parent / "context-sources.json")
@@ -3395,7 +3457,7 @@ replies are published on this site, in full and unconditionally.</p>
                              vert_long, vert_oper_eq,
                              conv_fleet, conv_ap1,
                              finding_sections, n_biz_routes, non_airliner_pct)
-    OUT_METH.write_text(clean_urls(add_toc(meth)))
+    OUT_METH.write_text(a11y(clean_urls(add_toc(meth))))
     print(f"scritto {OUT_METH}  ({len(meth)/1024:.0f} KB)")
     print(f"  voli {len(df):,} · giorni {len(days)} · rotte n>={MIN_N} {len(g_all):,} "
           f"· in classifica n>={RANK_MIN_N} {len(g):,} · aeroporti {len(ga):,}")
