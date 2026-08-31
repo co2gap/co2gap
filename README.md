@@ -1,5 +1,7 @@
 # co2gap
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22215588.svg)](https://doi.org/10.5281/zenodo.22215588)
+
 **An open pipeline that measures the CO₂ of European flights against a
 fuel-optimal ideal, from ADS-B trajectories.**
 

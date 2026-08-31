@@ -244,7 +244,7 @@ METHOD_VERSION = "1.0"
 # finche' il primo archivio non esiste: la pagina si adatta e NON promette un
 # identificativo che non c'e'. La metodologia dice che ogni release e' archiviata
 # con un DOI, ed e' l'unica frase del sito che dipende da qualcosa fuori da qui.
-ZENODO_DOI = None
+ZENODO_DOI = "10.5281/zenodo.22215588"
 # Va scritto NUDO — "10.5281/zenodo.1234567" — perche' le tre interpolazioni piu'
 # sotto lo infilano dentro un href che porta gia' il prefisso. Zenodo pero' lo
 # mostra anche come URL intero, ed e' quella la forma che finisce negli appunti:
