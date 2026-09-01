@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-combined-mass-structural-sensitivity-design",
+  "status": "frozen_before_co2_scenario_outcomes",
+  "frozen_on": "2026-09-01",
+  "chronology": "Designed after the external TOW comparison was completed and its aggregate cell residuals were inspected, but before those residuals were propagated through the co2gap fuel and decomposition model.",
+  "scope": "Laboratory-only paired structural sensitivity. No change to the September release, public site, production data or January work.",
+  "question": "How much does the co2gap total, lateral and vertical gap change when the measured PRC-minus-co2gap initial-mass pattern is transferred as one combined carried-mass perturbation by aircraft type and flown-distance cell?",
+  "source": {
+    "result": "tow-validation-result.json",
+    "result_sha256": "242871bc3f4f51e2b2eb5e80c073750a78b7a9ff53e13267ac1ab8b488a5e6a1",
+    "design": "tow-validation-design.json",
+    "design_sha256": "93c75a6cf0d9f5a38b5c7738f5f68617012ad6fed77ad3cfc6cb117566bc4fb1",
+    "external_dataset_doi": "10.4121/8cb8484b-dbe7-4750-8b87-a5b1dbc621b4.v2",
+    "reference_period": "2022",
+    "target_period": "2026-01-01/2026-07-20 excluding release-manifest gaps",
+    "retained_cells": 77,
+    "exact_release_coverage": 0.9397646753,
+    "cell_minimum_rows_per_source": 100
+  },
+  "cell_definition": {
+    "dimensions": [
+      "ICAO aircraft type",
+      "co2gap flown_km distance band"
+    ],
+    "distance_edges_km": [
+      150,
+      500,
+      1000,
+      1500,
+      2500,
+      4000,
+      "infinity"
+    ],
+    "intervals": "left-closed and right-open, matching the external TOW validation",
+    "lookup": "Exact aircraft_type and distance_band_km match against the 77 retained aggregate cells in tow-validation-result.json.",
+    "unsupported_cell_policy": "Apply zero perturbation, retain the flight in every paired scenario and report sample plus expanded-weight support. Do not extrapolate by type, family or distance."
+  },
+  "mass_perturbation": {
+    "name": "PRC 2022 selected-airline cell-mean alignment pattern",
+    "source_value": "co2gap_minus_prc_pp_mtow in each retained cell",
+    "requested_fraction_mtow": "scale times (PRC mean minus co2gap mean), equal to -scale times co2gap_minus_prc_pp_mtow divided by 100",
+    "implementation": "Add requested_fraction_mtow times OpenAP MTOW to the combined non-trip initial-mass term before iterating trip fuel. Apply the same cell perturbation to observed, ideal and hybrid trajectories.",
+    "reason_for_combined_term": "One TOW value cannot identify payload, carried reserve and trip fuel separately. The scenario must not disguise the residual as a corrected load factor or reserve distribution.",
+    "trip_fuel": "Recompute iteratively for every trajectory after applying the combined carried-mass perturbation.",
+    "mtow_policy": "Preserve the model's existing MTOW cap and report realised initial-mass shifts plus cap counts; do not claim the requested shift is always realised exactly.",
+    "oew_policy": "A perturbation that makes the combined non-trip term fall below OEW is a scenario failure. With full paired precision enabled, any flight failure makes the run terminate non-zero.",
+    "ground_policy": "Keep the stored nominal ground-fuel share fixed, as in the existing paired sensitivity harness; record this as a limitation rather than silently claiming ground mass was recomputed."
+  },
+  "scenarios": [
+    {
+      "id": "nominal",
+      "combined_mass_pattern_scale": 0.0,
+      "purpose": "Corrected-wind experimental nominal with the release mass assumptions unchanged."
+    },
+    {
+      "id": "prc_cell_mean_alignment",
+      "combined_mass_pattern_scale": 1.0,
+      "purpose": "Transfer the full observed PRC-minus-co2gap type/distance cell-mean pattern as a structural scenario, not a correction or probability bound."
+    }
+  ],
+  "shared_parameters": {
+    "load_factor": 0.82,
+    "reserve_kg": 2000.0,
+    "real_tas_mode": "ias",
+    "cruise_alt_offset_ft": 0.0,
+    "ground_definition": "a3000t70",
+    "reference_profile": "corrected-wind"
+  },
+  "sampling": {
+    "design": "Use the three existing balanced stratified samples without redrawing or changing their allocation.",
+    "primary": {
+      "seed": 20260901,
+      "path": "/tmp/co2gap-balanced-sample-seed1.json",
+      "sha256": "5e918a8e421431856ea06d7b921855d84efcde1f1e871bda3c59043b035d0a96"
+    },
+    "robustness": [
+      {
+        "seed": 20260902,
+        "path": "/tmp/co2gap-balanced-sample-seed2.json",
+        "sha256": "fcb3fe218f75b968989db993b403ccb2351634e5bfbc8cc6d0c45da6b5633c34"
+      },
+      {
+        "seed": 20260903,
+        "path": "/tmp/co2gap-balanced-sample-seed3.json",
+        "sha256": "10d2f9789170cbafa86615e7586273a6a03a5bf3ac1b09f290d7d1755dbea2f4"
+      }
+    ],
+    "rows_per_run": 2549,
+    "population_rows": 1833127,
+    "precision": "Use the existing paired finite-population Taylor linearisation. It estimates conditional sampling precision only, not physical or transfer uncertainty.",
+    "complete_pairing": "All flights and both scenarios must succeed; no limit, imputation, scenario-specific deletion or unverified input is permitted."
+  },
+  "estimands": {
+    "primary": "prc_cell_mean_alignment minus nominal in gap_total_pct, in percentage points, on the primary seed",
+    "secondary": [
+      "paired changes in gap_lateral_pct and gap_vertical_pct",
+      "paired changes in calibrated and uncalibrated CO2 totals",
+      "conditional sampling standard errors for the three gap contrasts",
+      "requested and realised MTOW-fraction shifts, MTOW-cap frequency and supported-cell coverage",
+      "same metrics on the two unchanged robustness samples"
+    ],
+    "sign": "Positive means transferring the PRC cell pattern increases the co2gap inefficiency gap relative to the corrected-wind nominal."
+  },
+  "stopping_rule": "Report the primary and both robustness runs as observed. Do not retune cells, add smoothing, change scale, redraw samples or create a probability range after seeing the CO2 effects.",
+  "interpretation": {
+    "permitted": [
+      "A paired structural sensitivity to an externally measured type/distance mass pattern.",
+      "A check of whether mass-pattern effects cancel in the gap even when absolute fuel changes.",
+      "A basis for deciding whether a richer mass model deserves future development."
+    ],
+    "forbidden": [
+      "Calling the PRC pattern representative of all 2026 ECAC flights.",
+      "Calling the scenario a correction, bound, confidence interval or probability distribution.",
+      "Inferring separate payload, load-factor, reserve-fuel or trip-fuel distributions.",
+      "Changing the September release, its site or its headline.",
+      "Treating this as preparation of the January release."
+    ]
+  },
+  "known_limitations": [
+    "PRC covers selected participating airlines in 2022, while co2gap covers January-July 2026.",
+    "Aircraft type and distance do not control airline, cabin, exact variant, route, season or operating policy.",
+    "Distances come from different trajectory-processing chains.",
+    "Unsupported release cells receive zero perturbation and therefore remain explicitly unvalidated by this scenario.",
+    "The model retains nominal ground-fuel shares under the mass perturbation.",
+    "The existing corrected-wind nominal is experimental and is not the frozen public release."
+  ],
+  "output_policy": {
+    "aggregate_results_may_be_tracked": true,
+    "per_flight_results_may_be_tracked": false,
+    "private_sampling_moments": "Write only outside the repository with restrictive permissions.",
+    "external_rows_committed": false,
+    "site_or_release_change": false,
+    "push": false
+  }
+}
