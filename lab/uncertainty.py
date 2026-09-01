@@ -42,6 +42,10 @@ sys.path.insert(0, str(ROOT))
 from release_manifest import ReleaseManifest, sha256_file  # noqa: E402
 from sampling_precision import (FROZEN, PairedSamplingPrecision,
                                 SamplingPrecisionError)  # noqa: E402
+from combined_mass import (CombinedMassError, DESIGN_KIND,
+                           load_combined_mass_design,
+                           requested_mass_fraction,
+                           validate_combined_mass_design)  # noqa: E402
 
 
 REGISTRY_STATUSES = {
@@ -3219,6 +3223,69 @@ def _new_accumulator() -> dict[str, float | int]:
     }
 
 
+def _new_mass_accumulator() -> dict[str, float | int]:
+    return {
+        "sample_flights": 0, "supported_sample_flights": 0,
+        "expanded_weight": 0.0, "supported_expanded_weight": 0.0,
+        "requested_fraction_weighted": 0.0,
+        "requested_abs_fraction_weighted": 0.0,
+        "realised_real_fraction_weighted": 0.0,
+        "realised_ideal_fraction_weighted": 0.0,
+        "realised_hybrid_fraction_weighted": 0.0,
+        "real_capped_weight": 0.0, "ideal_capped_weight": 0.0,
+        "hybrid_capped_weight": 0.0,
+        "real_capped_sample_flights": 0, "ideal_capped_sample_flights": 0,
+        "hybrid_capped_sample_flights": 0,
+    }
+
+
+def _accumulate_mass(acc: dict, *, weight: float, supported: bool,
+                     requested_fraction: float, realised: dict,
+                     caps: dict) -> None:
+    acc["sample_flights"] += 1
+    acc["supported_sample_flights"] += int(supported)
+    acc["expanded_weight"] += weight
+    acc["supported_expanded_weight"] += weight * int(supported)
+    acc["requested_fraction_weighted"] += weight * requested_fraction
+    acc["requested_abs_fraction_weighted"] += weight * abs(requested_fraction)
+    for name in ("real", "ideal", "hybrid"):
+        acc[f"realised_{name}_fraction_weighted"] += weight * realised[name]
+        acc[f"{name}_capped_weight"] += weight * int(caps[name])
+        acc[f"{name}_capped_sample_flights"] += int(caps[name])
+
+
+def _finish_mass_accumulator(acc: dict, scenario_id: str) -> dict:
+    weight = float(acc["expanded_weight"])
+    supported_weight = float(acc["supported_expanded_weight"])
+    if weight <= 0:
+        raise UncertaintyError(
+            f"combined-mass scenario {scenario_id} has no expanded weight")
+    return {
+        "sample_flights": int(acc["sample_flights"]),
+        "supported_sample_flights": int(acc["supported_sample_flights"]),
+        "expanded_weight": weight,
+        "supported_expanded_weight": supported_weight,
+        "supported_expanded_weight_fraction": supported_weight / weight,
+        "requested_mean_pp_mtow_all_flights": (
+            100.0 * acc["requested_fraction_weighted"] / weight),
+        "requested_mean_abs_pp_mtow_all_flights": (
+            100.0 * acc["requested_abs_fraction_weighted"] / weight),
+        "requested_mean_pp_mtow_supported_flights": (
+            100.0 * acc["requested_fraction_weighted"] / supported_weight
+            if supported_weight > 0 else None),
+        "realised_mean_shift_pp_mtow": {
+            name: 100.0 * acc[f"realised_{name}_fraction_weighted"] / weight
+            for name in ("real", "ideal", "hybrid")
+        },
+        "mtow_cap": {
+            name: {
+                "sample_flights": int(acc[f"{name}_capped_sample_flights"]),
+                "expanded_weight_fraction": acc[f"{name}_capped_weight"] / weight,
+            } for name in ("real", "ideal", "hybrid")
+        },
+    }
+
+
 def _finish_accumulator(acc: dict, scenario_id: str) -> dict:
     if acc["ideal_u"] <= 0 or acc["ideal_c"] <= 0:
         raise UncertaintyError(f"scenario {scenario_id} produced no valid denominator")
@@ -3378,9 +3445,38 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
     warnings.filterwarnings("ignore", category=RuntimeWarning,
                             module=r"openap(?:\..*)?$")
 
+    raw_config = _load_json(scenarios_path)
+    combined_mass = None
+    if raw_config.get("kind") == DESIGN_KIND:
+        try:
+            combined_mass = validate_combined_mass_design(raw_config, scenarios_path)
+        except CombinedMassError as exc:
+            raise UncertaintyError(f"invalid combined-mass design: {exc}") from exc
+        config = combined_mass["config"]
+        implementation["lab/combined_mass.py"] = sha256_file(
+            ROOT / "lab/combined_mass.py")
+        if reference_profile != combined_mass["reference_profile"]:
+            raise UncertaintyError(
+                "combined-mass design requires corrected-wind reference profile")
+    else:
+        config = raw_config
+        validate_scenarios(config)
+
     sample = _load_json(sample_path)
     if sample.get("schema_version") != 1 or sample.get("kind") != "co2gap-uncertainty-sample":
         raise UncertaintyError("unsupported uncertainty sample manifest")
+    sample_digest = sha256_file(sample_path)
+    registered_mass_seed = None
+    if combined_mass is not None:
+        registered_mass_seed = combined_mass["registered_samples"].get(sample_digest)
+        if registered_mass_seed is None:
+            raise UncertaintyError(
+                "combined-mass run requires one of the three frozen balanced samples")
+        if (sample.get("seed") != registered_mass_seed
+                or sample.get("sample_rows") != combined_mass["sample_rows"]
+                or sample.get("population_rows") != combined_mass["population_rows"]):
+            raise UncertaintyError(
+                "combined-mass sample metadata differs from its registration")
     manifest = ReleaseManifest.load(manifest_path)
     if sample.get("release_id") != manifest.release_id:
         raise UncertaintyError("sample and release ids differ")
@@ -3393,8 +3489,6 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         manifest.verify_set("ground", ground_dir, artifact=True)
         manifest.verify_file("calibration", calibration)
 
-    config = _load_json(scenarios_path)
-    validate_scenarios(config)
     scenarios = {entry["id"]: entry for entry in config["scenarios"]}
     nominal = scenarios[config["nominal"]]
     if reference_profile == "corrected-wind":
@@ -3444,6 +3538,8 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         raise UncertaintyError(
             "release manifest lacks the ERA5 validation configuration") from exc
     acc = {sid: _new_accumulator() for sid in scenarios}
+    mass_acc = ({sid: _new_mass_accumulator() for sid in scenarios}
+                if combined_mass is not None else None)
     frozen_acc = _new_accumulator()
     replay_checks = {
         "checked_flights": 0,
@@ -3501,10 +3597,23 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
             row = dec.loc[fid]
             grow = ground.loc[fid]
             flight = _flight_from_points(str(row.typecode), groups[fid])
+            base_mass_fraction = 0.0
+            mass_supported = False
+            mass_cell = None
+            if combined_mass is not None:
+                try:
+                    base_mass_fraction, mass_supported, mass_cell = requested_mass_fraction(
+                        str(row.typecode), float(row.flown_km), combined_mass)
+                except CombinedMassError as exc:
+                    raise UncertaintyError(
+                        f"combined-mass lookup failed for {day}/{fid}: {exc}") from exc
+            nominal_mass_kwargs = ({"mass_adjustment_frac_mtow": 0.0}
+                                   if combined_mass is not None else {})
             nominal_real = estimate_fuel(
                 flight, load_factor=float(nominal["load_factor"]),
                 reserve_kg=float(nominal["reserve_kg"]),
                 tas_mode=str(nominal["real_tas_mode"]),
+                **nominal_mass_kwargs,
             )
             if not nominal_real.ok or nominal_real.co2_kg <= 0:
                 for scenario_acc in [*acc.values(), frozen_acc]:
@@ -3517,13 +3626,19 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                 for name in ("lat", "lon", "alt_ft", "ias_kt", "vs_fpm")
             }
             flight_results = {}
+            flight_mass_results = {}
             nominal_decomposition = None
             failure = None
             for sid, scenario in scenarios.items():
+                pattern_scale = float(scenario.get("combined_mass_pattern_scale", 0.0))
+                applied_mass_fraction = base_mass_fraction * pattern_scale
+                mass_kwargs = ({"mass_adjustment_frac_mtow": applied_mass_fraction}
+                               if combined_mass is not None else {})
                 real = estimate_fuel(
                     flight, load_factor=float(scenario["load_factor"]),
                     reserve_kg=float(scenario["reserve_kg"]),
                     tas_mode=str(scenario["real_tas_mode"]),
+                    **mass_kwargs,
                 )
                 if not real.ok or real.co2_kg <= 0:
                     failure = f"{sid}:real_fuel"
@@ -3539,6 +3654,10 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                     vs_fpm=arrays["vs_fpm"],
                     cruise_alt_offset_ft=float(scenario["cruise_alt_offset_ft"]),
                     cruise_alt_override_ft=float(row.cruise_alt_ft),
+                    **({
+                        "mass_adjustment_frac_mtow": applied_mass_fraction,
+                        "include_mass_diagnostics": True,
+                    } if combined_mass is not None else {}),
                 )
                 if result is None:
                     failure = f"{sid}:decomposition"
@@ -3562,6 +3681,40 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                 flight_results[sid] = (
                     real_airborne, ideal, hybrid, factor,
                 )
+                if combined_mass is not None:
+                    diagnostic = result.get("combined_mass_diagnostics")
+                    if not isinstance(diagnostic, dict):
+                        failure = f"{sid}:mass_diagnostics"
+                        break
+                    mtow = _finite_number(real.mtow_kg, f"{day}/{fid}/{sid}/MTOW")
+                    if mtow <= 0 or not math.isclose(
+                            _finite_number(diagnostic.get("mtow_kg"),
+                                           f"{day}/{fid}/{sid}/baseline MTOW"),
+                            mtow, rel_tol=0.0, abs_tol=1e-9):
+                        failure = f"{sid}:mass_mtow"
+                        break
+                    if not math.isclose(
+                            _finite_number(diagnostic.get("requested_fraction_mtow"),
+                                           f"{day}/{fid}/{sid}/requested mass"),
+                            applied_mass_fraction, rel_tol=0.0, abs_tol=1e-12):
+                        failure = f"{sid}:mass_request"
+                        break
+                    flight_mass_results[sid] = {
+                        "requested_fraction": applied_mass_fraction,
+                        "mtow_kg": mtow,
+                        "real_init_mass_kg": _finite_number(
+                            real.init_mass_kg, f"{day}/{fid}/{sid}/real initial mass"),
+                        "ideal_init_mass_kg": _finite_number(
+                            diagnostic.get("ideal_init_mass_kg"),
+                            f"{day}/{fid}/{sid}/ideal initial mass"),
+                        "hybrid_init_mass_kg": _finite_number(
+                            diagnostic.get("hybrid_init_mass_kg"),
+                            f"{day}/{fid}/{sid}/hybrid initial mass"),
+                        "real_capped": bool(real.mass_capped_at_mtow),
+                        "ideal_capped": bool(diagnostic.get("ideal_capped_at_mtow")),
+                        "hybrid_capped": bool(diagnostic.get("hybrid_capped_at_mtow")),
+                        "cell": mass_cell,
+                    }
 
             # Sensitivities are paired only if every scenario uses the same
             # flight population.  Letting one failed scenario silently drop a
@@ -3611,6 +3764,25 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
                               (frozen_real, float(row.ideal_gc_co2_kg), float(row.hybrid_co2_kg)))
             for sid, values in flight_results.items():
                 _accumulate_flight(acc[sid], weight, *values)
+            if mass_acc is not None:
+                nominal_mass = flight_mass_results[config["nominal"]]
+                for sid, value in flight_mass_results.items():
+                    mtow = value["mtow_kg"]
+                    realised = {
+                        name: (
+                            value[f"{name}_init_mass_kg"]
+                            - nominal_mass[f"{name}_init_mass_kg"]
+                        ) / mtow
+                        for name in ("real", "ideal", "hybrid")
+                    }
+                    caps = {
+                        name: value[f"{name}_capped"]
+                        for name in ("real", "ideal", "hybrid")
+                    }
+                    _accumulate_mass(
+                        mass_acc[sid], weight=weight, supported=mass_supported,
+                        requested_fraction=value["requested_fraction"],
+                        realised=realised, caps=caps)
         del wind
 
     results = {sid: _finish_accumulator(value, sid) for sid, value in acc.items()}
@@ -3621,6 +3793,29 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
             name: float(result[name] - nominal_result[name]) for name in METRIC_COLUMNS
         }
     any_failures = any(value["failed_flights"] for value in results.values())
+    mass_results = None
+    if mass_acc is not None:
+        mass_results = {
+            "status": "structural_scenario_not_probability_or_correction",
+            "source_result_sha256": combined_mass["source_result_sha256"],
+            "source_design_sha256": combined_mass["source_design_sha256"],
+            "external_dataset_doi": combined_mass["external_dataset_doi"],
+            "retained_source_cells": combined_mass["retained_cells"],
+            "exact_release_support_fraction_from_tow_validation": (
+                combined_mass["exact_release_coverage"]),
+            "unsupported_cell_policy": "zero perturbation; no extrapolation",
+            "scenarios": {
+                sid: _finish_mass_accumulator(value, sid)
+                for sid, value in mass_acc.items()
+            },
+            "limitations": [
+                "PRC 2022 selected-airline cell means are transferred to the 2026 release as a structural scenario, not a representative correction.",
+                "Payload, reserve and trip fuel are not identified separately.",
+                "The nominal stored ground-fuel share is held fixed under the mass perturbation.",
+                "Requested and realised shifts can differ because trip fuel is re-iterated and initial mass remains capped at MTOW.",
+                "Sample expanded support is an estimate under the existing sensitivity draw; exact source support is reported separately.",
+            ],
+        }
     closure_result = {
         "ideal_weighted_relative": (
             closure["recomputed_ideal_u"] / closure["stored_ideal_u"] - 1.0
@@ -3638,7 +3833,7 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
         "implementation_sha256": implementation,
         "release_id": manifest.release_id,
         "release_manifest_sha256": sha256_file(manifest.path),
-        "sample_sha256": sha256_file(sample_path),
+        "sample_sha256": sample_digest,
         "scenario_sha256": sha256_file(scenarios_path),
         "sample_rows_requested": len(rows),
         "sample_truncated_for_smoke_test": truncated,
@@ -3707,6 +3902,9 @@ def paired_sensitivity(*, sample_path: Path, scenarios_path: Path,
             "are diagnostic steps, not probability bounds or confidence intervals."
         ),
     }
+    if mass_results is not None:
+        mass_results["registered_sample_seed"] = registered_mass_seed
+        output["combined_mass_pattern"] = mass_results
     if precision is not None:
         totals = {
             sid: [value[f"{name}_u"] for name in ("real", "ideal", "hybrid")]
@@ -3762,6 +3960,9 @@ def main(argv: list[str] | None = None) -> int:
     check = sub.add_parser("validate", help="validate register and diagnostic scenarios")
     check.add_argument("--registry", type=Path, default=ROOT / "uncertainty-register.json")
     check.add_argument("--scenarios", type=Path, default=ROOT / "uncertainty-scenarios.json")
+    check.add_argument(
+        "--combined-mass-design", type=Path,
+        default=ROOT / "combined-mass-sensitivity-design.json")
     check.add_argument(
         "--selection-design", type=Path,
         default=ROOT / "selection-validation-design.json")
@@ -3914,6 +4115,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate":
         registry = validate_registry(_load_json(args.registry))
         scenarios = validate_scenarios(_load_json(args.scenarios))
+        try:
+            combined_mass_design = load_combined_mass_design(
+                args.combined_mass_design)
+        except CombinedMassError as exc:
+            raise UncertaintyError(f"invalid combined-mass design: {exc}") from exc
         design = validate_selection_design(
             _load_json(args.selection_design), ROOT / "release-manifest.json")
         sensitivity_design = validate_selection_sensitivity_design(
@@ -3929,6 +4135,11 @@ def main(argv: list[str] | None = None) -> int:
               f"{registry['sources']} sources")
         print(f"diagnostic scenarios: {scenarios['scenarios']}, "
               f"nominal={scenarios['nominal']}")
+        print(
+            "combined-mass structural scenario: "
+            f"{combined_mass_design['retained_cells']} TOW cells, "
+            f"{combined_mass_design['exact_release_coverage'] * 100:.2f}% "
+            "exact release support")
         print(
             f"selection validation: {design['sample_rows']:,} rows in "
             f"{design['strata']:,} strata pre-registered")

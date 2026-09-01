@@ -291,7 +291,9 @@ def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
                      load_factor=0.82, reserve_kg=2000.0,
                      alt_ft=None, ias_kt=None, vs_fpm=None,
                      cruise_alt_offset_ft=0.0,
-                     cruise_alt_override_ft=None) -> dict | None:
+                     cruise_alt_override_ft=None,
+                     mass_adjustment_frac_mtow=0.0,
+                     include_mass_diagnostics=False) -> dict | None:
     """
     Split one flight's excess into lateral and vertical/speed components.
 
@@ -325,7 +327,8 @@ def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
     if nom_gc is None:
         return None
     r_gc = estimate_fuel(nom_gc, load_factor=load_factor,
-                         reserve_kg=reserve_kg, tas_mode="gs")
+                         reserve_kg=reserve_kg, tas_mode="gs",
+                         mass_adjustment_frac_mtow=mass_adjustment_frac_mtow)
     if not r_gc.ok or r_gc.co2_kg <= 0:
         return None
 
@@ -337,7 +340,8 @@ def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
     if nom_tr is None:
         return None
     r_tr = estimate_fuel(nom_tr, load_factor=load_factor,
-                         reserve_kg=reserve_kg, tas_mode="gs")
+                         reserve_kg=reserve_kg, tas_mode="gs",
+                         mass_adjustment_frac_mtow=mass_adjustment_frac_mtow)
     if not r_tr.ok or r_tr.co2_kg <= 0:
         return None
 
@@ -380,9 +384,11 @@ def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
                                cruise_tas_kt=tas_d)
         if nom_c is not None and nom_d is not None:
             r_c = estimate_fuel(nom_c, load_factor=load_factor,
-                                reserve_kg=reserve_kg, tas_mode="gs")
+                                reserve_kg=reserve_kg, tas_mode="gs",
+                                mass_adjustment_frac_mtow=mass_adjustment_frac_mtow)
             r_d = estimate_fuel(nom_d, load_factor=load_factor,
-                                reserve_kg=reserve_kg, tas_mode="gs")
+                                reserve_kg=reserve_kg, tas_mode="gs",
+                                mass_adjustment_frac_mtow=mass_adjustment_frac_mtow)
             if r_c.ok and r_c.co2_kg > 0 and r_d.ok and r_d.co2_kg > 0:
                 vertical = (real_co2_kg - hybrid) / ideal * 100.0
                 v_alt = (r_c.co2_kg - hybrid) / ideal * 100.0   # cruise level alone
@@ -390,7 +396,7 @@ def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
                 v_resid = vertical - v_alt - v_spd
 
     ratio_er, flown_er = enroute_dist_ratio(lat, lon)
-    return {
+    result = {
         "excess_vert_alt_pct": v_alt,
         "excess_vert_speed_pct": v_spd,
         "excess_vert_residual_pct": v_resid,
@@ -408,3 +414,13 @@ def decompose_flight(typecode, real_co2_kg, gc_km, flown_km,
         "mean_wpar_track_ms": wpar_tr,
         "cruise_alt_ft": cruise_alt,
     }
+    if include_mass_diagnostics:
+        result["combined_mass_diagnostics"] = {
+            "requested_fraction_mtow": float(mass_adjustment_frac_mtow),
+            "ideal_init_mass_kg": float(r_gc.init_mass_kg),
+            "hybrid_init_mass_kg": float(r_tr.init_mass_kg),
+            "mtow_kg": float(r_gc.mtow_kg),
+            "ideal_capped_at_mtow": bool(r_gc.mass_capped_at_mtow),
+            "hybrid_capped_at_mtow": bool(r_tr.mass_capped_at_mtow),
+        }
+    return result

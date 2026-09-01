@@ -105,6 +105,12 @@ class FuelResult:
     # arc-length axis as the burn: the integral runs over kept steps only, so a
     # position measured over all segments would not line up with it.
     valid_step: object = None
+    # Laboratory-only combined-mass diagnostics.  Defaults preserve every
+    # production caller; the uncertainty harness may request a deterministic
+    # MTOW-fraction perturbation without relabelling it as load or reserve.
+    mtow_kg: float = 0.0
+    mass_adjustment_kg: float = 0.0
+    mass_capped_at_mtow: bool = False
 
 
 # OpenAP type-code aliases -> supported model
@@ -160,7 +166,7 @@ def _get_ac(model: str) -> dict:
 
 def _estimate_fuel_scalar(flight, load_factor=DEFAULT_LOAD_FACTOR,
                           reserve_kg=DEFAULT_RESERVE_KG, tas_mode="ias",
-                          iters=3) -> FuelResult:
+                          iters=3, mass_adjustment_frac_mtow=0.0) -> FuelResult:
     """Reference per-step integrator (kept for validation of the vector path)."""
     from trajectories import haversine_km
 
@@ -176,6 +182,15 @@ def _estimate_fuel_scalar(flight, load_factor=DEFAULT_LOAD_FACTOR,
     mtow = ac["mtow"]
     pax_max = ac.get("pax", {}).get("max", 150)
     payload = load_factor * pax_max * PAX_WEIGHT_KG
+    try:
+        mass_adjustment_kg = float(mass_adjustment_frac_mtow) * mtow
+    except (TypeError, ValueError):
+        return FuelResult(flight.typecode, False, "invalid combined mass adjustment")
+    if not math.isfinite(mass_adjustment_kg):
+        return FuelResult(flight.typecode, False, "invalid combined mass adjustment")
+    base_mass = oew + payload + reserve_kg + mass_adjustment_kg
+    if base_mass < oew:
+        return FuelResult(flight.typecode, False, "combined mass adjustment below OEW")
 
     pts = flight.points
     # precompute per-step tas / vs / dt / dist
@@ -202,7 +217,7 @@ def _estimate_fuel_scalar(flight, load_factor=DEFAULT_LOAD_FACTOR,
     trip_fuel = 0.25 * (mtow - oew)   # first guess
     burned = 0.0
     for _ in range(iters):
-        m0 = min(oew + payload + reserve_kg + trip_fuel, mtow)
+        m0 = min(base_mass + trip_fuel, mtow)
         mass = m0
         burned = 0.0
         for (dt, alt, vs, tas, _d) in steps:
@@ -215,7 +230,8 @@ def _estimate_fuel_scalar(flight, load_factor=DEFAULT_LOAD_FACTOR,
         trip_fuel = burned
 
     # phase breakdown + cruise ff, one final pass at converged m0
-    m0 = min(oew + payload + reserve_kg + trip_fuel, mtow)
+    uncapped_m0 = base_mass + trip_fuel
+    m0 = min(uncapped_m0, mtow)
     mass = m0
     phase_fuel = {"climb": 0.0, "cruise": 0.0, "descent": 0.0,
                   "ground": 0.0, "unknown": 0.0}
@@ -239,7 +255,9 @@ def _estimate_fuel_scalar(flight, load_factor=DEFAULT_LOAD_FACTOR,
         typecode=flight.typecode, ok=True, fuel_kg=burned,
         co2_kg=burned * CO2_PER_KG_FUEL, duration_s=duration,
         dist_flown_km=dist_km, init_mass_kg=m0, cruise_ff_kgph=cruise_ff,
-        tas_mode=tas_mode, phase_fuel=phase_fuel,
+        tas_mode=tas_mode, phase_fuel=phase_fuel, mtow_kg=mtow,
+        mass_adjustment_kg=mass_adjustment_kg,
+        mass_capped_at_mtow=bool(uncapped_m0 > mtow),
     )
 
 
@@ -306,7 +324,8 @@ def _steps_from_flight(flight, tas_mode):
 
 def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
                   reserve_kg=DEFAULT_RESERVE_KG, tas_mode="ias",
-                  iters=4, with_steps=False) -> FuelResult:
+                  iters=4, with_steps=False,
+                  mass_adjustment_frac_mtow=0.0) -> FuelResult:
     model = openap_model(flight.typecode)
     if model is None:
         return FuelResult(flight.typecode, False, "type not in OpenAP")
@@ -323,13 +342,22 @@ def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
     oew, mtow = ac["oew"], ac["mtow"]
     pax_max = ac.get("pax", {}).get("max", 150)
     payload = load_factor * pax_max * PAX_WEIGHT_KG
+    try:
+        mass_adjustment_kg = float(mass_adjustment_frac_mtow) * mtow
+    except (TypeError, ValueError):
+        return FuelResult(flight.typecode, False, "invalid combined mass adjustment")
+    if not math.isfinite(mass_adjustment_kg):
+        return FuelResult(flight.typecode, False, "invalid combined mass adjustment")
+    base_mass = oew + payload + reserve_kg + mass_adjustment_kg
+    if base_mass < oew:
+        return FuelResult(flight.typecode, False, "combined mass adjustment below OEW")
 
     trip_fuel = 0.25 * (mtow - oew)
     cum_before = np.zeros_like(dt)
     burn = np.zeros_like(dt)
-    m0 = min(oew + payload + reserve_kg + trip_fuel, mtow)
+    m0 = min(base_mass + trip_fuel, mtow)
     for _ in range(iters):
-        m0 = min(oew + payload + reserve_kg + trip_fuel, mtow)
+        m0 = min(base_mass + trip_fuel, mtow)
         mass = np.maximum(m0 - cum_before, oew)
         fps = np.asarray(ff.enroute(mass=mass, tas=tas, alt=alt, vs=vs), dtype=float)
         fps = np.where(np.isfinite(fps) & (fps > 0), fps, 0.0)
@@ -363,4 +391,6 @@ def estimate_fuel(flight, load_factor=DEFAULT_LOAD_FACTOR,
         dist_km_step=(d_km if with_steps else None),
         vs_fpm_step=(vs if with_steps else None),
         valid_step=(valid if with_steps else None),
+        mtow_kg=mtow, mass_adjustment_kg=mass_adjustment_kg,
+        mass_capped_at_mtow=bool(m0 >= mtow),
     )
