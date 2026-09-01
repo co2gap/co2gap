@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-takeoff-mass-external-validation-design",
+  "status": "frozen_before_tow_values_were_accessed",
+  "frozen_on": "2026-09-01",
+  "scope": "Laboratory validation of the combined co2gap initial-mass assumption; no change to the frozen release or public site.",
+  "question": "How does the co2gap modelled initial mass distribution compare with airline-derived take-off weights after conditioning on aircraft type and distance?",
+  "external_source": {
+    "title": "Dataset for EUROCONTROL PRC 2024 Data Challenge on Aircraft Take-off Weight Estimation",
+    "authors": ["Junzi Sun", "Enrico Spinielli", "Xavier Olive", "Martin Strohmeier"],
+    "doi": "10.4121/8cb8484b-dbe7-4750-8b87-a5b1dbc621b4.v2",
+    "version": 2,
+    "license": "CC BY 4.0",
+    "period": "2022",
+    "geography": "Europe",
+    "population_note": "527,162 flights, reported as 6.1% of EUROCONTROL traffic; airline participation and complete weight data determine inclusion.",
+    "file": {
+      "name": "flight_list.csv",
+      "bytes": 101091663,
+      "md5": "2da9db49afcae255eab0828f1e2f8575",
+      "download_url": "https://data.4tu.nl/file/8cb8484b-dbe7-4750-8b87-a5b1dbc621b4/2bfbef1a-a75b-4045-a46e-3325bf363c27"
+    },
+    "required_columns": [
+      "flight_id",
+      "date",
+      "aircraft_type",
+      "flown_distance",
+      "tow"
+    ],
+    "distance_unit": "nautical_miles",
+    "mass_unit": "kilograms",
+    "label_caveat": "The repository describes airline-provided actual take-off weights but its README names the public tow field estimated take-off weight. Treat the label as airline-derived reference data, not measurement-error-free ground truth."
+  },
+  "co2gap_target": {
+    "release_id": "2026-09-01",
+    "release_manifest": "release-manifest.json",
+    "release_manifest_sha256": "db69266d5a4d9ce66f1d1f9bc4533cb31e6fd1b6d8e4fbcc600c53e6a5266a0c",
+    "flight_input_sha256": "caaad496f62183c7fde5fc7c7538f67afdac4344e40331a4774b04787e4db7c0",
+    "period": "2026-01-01/2026-07-20 excluding the three manifest gaps",
+    "mass_field": "init_mass_kg",
+    "distance_field": "flown_km",
+    "selection": "Exact release days; both endpoints resolved, coverage at least 0.85, flown/great-circle gate passed and great-circle distance at least 150 km.",
+    "nominal_assumptions": {
+      "load_factor": 0.82,
+      "reserve_kg": 2000.0,
+      "passenger_and_baggage_kg": 100.0,
+      "trip_fuel": "OpenAP iterative closure on the observed trajectory"
+    }
+  },
+  "aircraft_reference": {
+    "mapping": "pipeline/emissions.py openap_model aliases",
+    "properties": "OpenAP 2.6.0 OEW and MTOW",
+    "normalisation": "initial_mass_kg / MTOW for co2gap and tow / MTOW for PRC",
+    "variant_caveat": "An ICAO type designator does not resolve an exact airframe, cabin or engine variant."
+  },
+  "eligibility": {
+    "shared": [
+      "Aircraft type maps through the co2gap OpenAP alias table and has finite positive OEW and MTOW.",
+      "Distance is finite and at least 150 km.",
+      "Mass is finite and lies from OEW through MTOW, inclusive."
+    ],
+    "prc": [
+      "Date parses as UTC and belongs to 2022.",
+      "flown_distance is converted from nautical miles to kilometres with factor 1.852.",
+      "Duplicate flight_id rows are an error, not silently deduplicated."
+    ],
+    "co2gap": [
+      "Day belongs to the immutable release manifest.",
+      "coverage_frac, flown_ge_09gc, endpoint and great-circle gates reproduce the release flight-quality gate.",
+      "Duplicate day plus flight_id rows are an error."
+    ],
+    "exclusions_are_reported": [
+      "unsupported aircraft type",
+      "missing or non-finite required value",
+      "distance below scope",
+      "mass below OEW",
+      "mass above MTOW",
+      "co2gap quality-gate failure"
+    ]
+  },
+  "standardisation": {
+    "dimensions": ["aircraft_type", "distance_band_km"],
+    "distance_edges_km": [150, 500, 1000, 1500, 2500, 4000, "infinity"],
+    "minimum_rows_per_source_per_cell": 100,
+    "minimum_release_row_coverage": 0.8,
+    "weights": "Each retained cell receives its share of eligible co2gap release rows. PRC rows within a cell receive equal weight.",
+    "guard": "If common retained cells cover less than 80% of eligible release rows, the analysis is incomplete and exits non-zero."
+  },
+  "estimands": {
+    "primary": "100 times the release-weighted mean of (co2gap mean initial_mass/MTOW minus PRC mean tow/MTOW) within common cells, in percentage points of MTOW.",
+    "secondary": [
+      "Release-standardised weighted median and interquartile range in each source.",
+      "Release-weighted mean absolute and root-mean-square cell differences.",
+      "Differences by aircraft type and distance band, reported only for retained cells.",
+      "Raw source composition and the fraction of each source retained by every eligibility step."
+    ],
+    "sign": "Positive means the co2gap initial mass is heavier than the PRC reference after standardisation."
+  },
+  "precision": {
+    "method": "Resample PRC UTC dates as whole blocks with replacement; keep the co2gap release population and its cell weights fixed.",
+    "replicates": 2000,
+    "seed": 20260901,
+    "reported_quantiles": [0.025, 0.5, 0.975],
+    "interpretation": "A descriptive day-block sampling-precision interval conditional on the selected PRC dataset and fixed design, not a physical or total uncertainty interval."
+  },
+  "robustness": [
+    "Repeat the primary calculation with minimum cell counts 30 and 300.",
+    "Repeat after allowing the PRC reference mass up to 1.02 times OpenAP MTOW, while continuing to report those rows as property/label mismatches.",
+    "Report unstandardised source summaries to expose the effect of post-stratification.",
+    "Report results by broad aircraft type and distance groups; do not pool a cell that fails its declared minimum."
+  ],
+  "decision_use": [
+    "Use the sign, scale and cell pattern to redesign combined initial-mass sensitivity scenarios.",
+    "Do not infer separate load-factor, reserve-fuel or trip-fuel distributions from TOW alone.",
+    "Do not mark load_factor or reserve_fuel quantified solely from this comparison.",
+    "Do not change a release headline, publish an uncertainty interval or recalibrate the production model without a separate propagation design and review."
+  ],
+  "known_noncomparabilities": [
+    "PRC represents 2022 and co2gap represents January to July 2026.",
+    "PRC airline participation is selective and airline identities are obfuscated.",
+    "PRC and co2gap distance fields come from different trajectory-processing chains.",
+    "Aircraft type codes do not identify cabin, airframe or engine variants.",
+    "The comparison validates combined take-off mass, not the individual assumptions that compose it."
+  ],
+  "output_policy": {
+    "aggregate_only": true,
+    "minimum_reported_cell_rows": 100,
+    "external_rows_committed": false,
+    "co2gap_flight_rows_committed": false,
+    "site_or_release_change": false
+  }
+}
