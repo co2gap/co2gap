@@ -1,0 +1,1176 @@
+{
+  "comparison": {
+    "by_aircraft_type": [
+      {
+        "aircraft_type": "A20N",
+        "co2gap_mean_mass_fraction": 0.8228486506,
+        "co2gap_minus_prc_pp_mtow": 3.9577784595,
+        "co2gap_rows": 213439,
+        "prc_mean_mass_fraction": 0.783270866,
+        "prc_rows": 54208,
+        "release_weight_within_reported_cells": 0.1238973755
+      },
+      {
+        "aircraft_type": "A21N",
+        "co2gap_mean_mass_fraction": 0.7833405994,
+        "co2gap_minus_prc_pp_mtow": 0.0881561733,
+        "co2gap_rows": 152226,
+        "prc_mean_mass_fraction": 0.7824590377,
+        "prc_rows": 28296,
+        "release_weight_within_reported_cells": 0.0883643659
+      },
+      {
+        "aircraft_type": "A319",
+        "co2gap_mean_mass_fraction": 0.7817882108,
+        "co2gap_minus_prc_pp_mtow": 1.6767750282,
+        "co2gap_rows": 153850,
+        "prc_mean_mass_fraction": 0.7650204605,
+        "prc_rows": 25046,
+        "release_weight_within_reported_cells": 0.0893070677
+      },
+      {
+        "aircraft_type": "A320",
+        "co2gap_mean_mass_fraction": 0.8164093173,
+        "co2gap_minus_prc_pp_mtow": 1.9664263934,
+        "co2gap_rows": 395527,
+        "prc_mean_mass_fraction": 0.7967450533,
+        "prc_rows": 113958,
+        "release_weight_within_reported_cells": 0.2295960778
+      },
+      {
+        "aircraft_type": "A321",
+        "co2gap_mean_mass_fraction": 0.7925864898,
+        "co2gap_minus_prc_pp_mtow": 0.3913299019,
+        "co2gap_rows": 100474,
+        "prc_mean_mass_fraction": 0.7886731907,
+        "prc_rows": 41817,
+        "release_weight_within_reported_cells": 0.058323291
+      },
+      {
+        "aircraft_type": "A332",
+        "co2gap_mean_mass_fraction": 0.7251883159,
+        "co2gap_minus_prc_pp_mtow": -1.2244953902,
+        "co2gap_rows": 3129,
+        "prc_mean_mass_fraction": 0.7374332698,
+        "prc_rows": 3164,
+        "release_weight_within_reported_cells": 0.0018163264
+      },
+      {
+        "aircraft_type": "A333",
+        "co2gap_mean_mass_fraction": 0.7157021836,
+        "co2gap_minus_prc_pp_mtow": -1.1955053529,
+        "co2gap_rows": 3168,
+        "prc_mean_mass_fraction": 0.7276572371,
+        "prc_rows": 11059,
+        "release_weight_within_reported_cells": 0.0018389652
+      },
+      {
+        "aircraft_type": "A359",
+        "co2gap_mean_mass_fraction": 0.700935046,
+        "co2gap_minus_prc_pp_mtow": 0.4750520683,
+        "co2gap_rows": 2105,
+        "prc_mean_mass_fraction": 0.6961845254,
+        "prc_rows": 963,
+        "release_weight_within_reported_cells": 0.0012219134
+      },
+      {
+        "aircraft_type": "B38M",
+        "co2gap_mean_mass_fraction": 0.8370182484,
+        "co2gap_minus_prc_pp_mtow": 2.9896991403,
+        "co2gap_rows": 160246,
+        "prc_mean_mass_fraction": 0.807121257,
+        "prc_rows": 17145,
+        "release_weight_within_reported_cells": 0.0930198269
+      },
+      {
+        "aircraft_type": "B39M",
+        "co2gap_mean_mass_fraction": 0.8058644173,
+        "co2gap_minus_prc_pp_mtow": -1.9398691143,
+        "co2gap_rows": 172,
+        "prc_mean_mass_fraction": 0.8252631084,
+        "prc_rows": 508,
+        "release_weight_within_reported_cells": 9.98428e-05
+      },
+      {
+        "aircraft_type": "B737",
+        "co2gap_mean_mass_fraction": 0.7978166191,
+        "co2gap_minus_prc_pp_mtow": 0.1467363082,
+        "co2gap_rows": 8983,
+        "prc_mean_mass_fraction": 0.7963492561,
+        "prc_rows": 4914,
+        "release_weight_within_reported_cells": 0.0052144647
+      },
+      {
+        "aircraft_type": "B738",
+        "co2gap_mean_mass_fraction": 0.8030338198,
+        "co2gap_minus_prc_pp_mtow": -0.8505102489,
+        "co2gap_rows": 381504,
+        "prc_mean_mass_fraction": 0.8115389223,
+        "prc_rows": 53476,
+        "release_weight_within_reported_cells": 0.2214559867
+      },
+      {
+        "aircraft_type": "B739",
+        "co2gap_mean_mass_fraction": 0.8127988871,
+        "co2gap_minus_prc_pp_mtow": 1.8858099728,
+        "co2gap_rows": 4758,
+        "prc_mean_mass_fraction": 0.7939407873,
+        "prc_rows": 2524,
+        "release_weight_within_reported_cells": 0.0027619306
+      },
+      {
+        "aircraft_type": "B763",
+        "co2gap_mean_mass_fraction": 0.8550065557,
+        "co2gap_minus_prc_pp_mtow": 1.6085244302,
+        "co2gap_rows": 721,
+        "prc_mean_mass_fraction": 0.8389213114,
+        "prc_rows": 349,
+        "release_weight_within_reported_cells": 0.0004185271
+      },
+      {
+        "aircraft_type": "B77W",
+        "co2gap_mean_mass_fraction": 0.7077237996,
+        "co2gap_minus_prc_pp_mtow": 0.3897758466,
+        "co2gap_rows": 233,
+        "prc_mean_mass_fraction": 0.7038260412,
+        "prc_rows": 778,
+        "release_weight_within_reported_cells": 0.0001352522
+      },
+      {
+        "aircraft_type": "B788",
+        "co2gap_mean_mass_fraction": 0.7070490113,
+        "co2gap_minus_prc_pp_mtow": 6.863375707,
+        "co2gap_rows": 1009,
+        "prc_mean_mass_fraction": 0.6384152542,
+        "prc_rows": 1041,
+        "release_weight_within_reported_cells": 0.0005857058
+      },
+      {
+        "aircraft_type": "B789",
+        "co2gap_mean_mass_fraction": 0.6952548388,
+        "co2gap_minus_prc_pp_mtow": 6.1148162952,
+        "co2gap_rows": 1766,
+        "prc_mean_mass_fraction": 0.6341066759,
+        "prc_rows": 921,
+        "release_weight_within_reported_cells": 0.0010251302
+      },
+      {
+        "aircraft_type": "CRJ9",
+        "co2gap_mean_mass_fraction": 0.8389128442,
+        "co2gap_minus_prc_pp_mtow": -2.3190308238,
+        "co2gap_rows": 17047,
+        "prc_mean_mass_fraction": 0.8621031525,
+        "prc_rows": 32821,
+        "release_weight_within_reported_cells": 0.0098954669
+      },
+      {
+        "aircraft_type": "E190",
+        "co2gap_mean_mass_fraction": 0.8369967236,
+        "co2gap_minus_prc_pp_mtow": -0.7027724762,
+        "co2gap_rows": 67734,
+        "prc_mean_mass_fraction": 0.8440244484,
+        "prc_rows": 2955,
+        "release_weight_within_reported_cells": 0.039318329
+      },
+      {
+        "aircraft_type": "E195",
+        "co2gap_mean_mass_fraction": 0.8482981111,
+        "co2gap_minus_prc_pp_mtow": 1.08861529,
+        "co2gap_rows": 54617,
+        "prc_mean_mass_fraction": 0.8374119582,
+        "prc_rows": 35350,
+        "release_weight_within_reported_cells": 0.0317041542
+      }
+    ],
+    "by_distance_band": [
+      {
+        "co2gap_mean_mass_fraction": 0.8117353494,
+        "co2gap_minus_prc_pp_mtow": 0.276931028,
+        "co2gap_rows": 451616,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.8089660391,
+        "prc_rows": 74268,
+        "release_weight_within_reported_cells": 0.2621547006
+      },
+      {
+        "co2gap_mean_mass_fraction": 0.7867469045,
+        "co2gap_minus_prc_pp_mtow": 4.2483541634,
+        "co2gap_rows": 188081,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7442633628,
+        "prc_rows": 64810,
+        "release_weight_within_reported_cells": 0.1091775275
+      },
+      {
+        "co2gap_mean_mass_fraction": 0.8291743306,
+        "co2gap_minus_prc_pp_mtow": -0.2789030281,
+        "co2gap_rows": 417958,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8319633609,
+        "prc_rows": 116559,
+        "release_weight_within_reported_cells": 0.2426168567
+      },
+      {
+        "co2gap_mean_mass_fraction": 0.855787131,
+        "co2gap_minus_prc_pp_mtow": -0.9285780349,
+        "co2gap_rows": 52471,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.8650729113,
+        "prc_rows": 33317,
+        "release_weight_within_reported_cells": 0.030458441
+      },
+      {
+        "co2gap_mean_mass_fraction": 0.7988980156,
+        "co2gap_minus_prc_pp_mtow": 2.1608059762,
+        "co2gap_rows": 612582,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7772899559,
+        "prc_rows": 142339,
+        "release_weight_within_reported_cells": 0.3555924742
+      }
+    ],
+    "cell_difference": {
+      "release_weighted_mean_absolute_pp": 2.1814282478,
+      "release_weighted_root_mean_square_pp": 2.6513658479
+    },
+    "cells": [
+      {
+        "aircraft_type": "A20N",
+        "co2gap_mean_mass_fraction": 0.8248294016,
+        "co2gap_minus_prc_pp_mtow": 4.1235123431,
+        "co2gap_rows": 58147,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.7835942782,
+        "prc_rows": 11589,
+        "release_weight": 0.0337532536
+      },
+      {
+        "aircraft_type": "A20N",
+        "co2gap_mean_mass_fraction": 0.8039363938,
+        "co2gap_minus_prc_pp_mtow": 5.9324792961,
+        "co2gap_rows": 25637,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7446116008,
+        "prc_rows": 11753,
+        "release_weight": 0.0148818024
+      },
+      {
+        "aircraft_type": "A20N",
+        "co2gap_mean_mass_fraction": 0.8382357074,
+        "co2gap_minus_prc_pp_mtow": 2.5494438264,
+        "co2gap_rows": 50735,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8127412692,
+        "prc_rows": 10360,
+        "release_weight": 0.0294507253
+      },
+      {
+        "aircraft_type": "A20N",
+        "co2gap_mean_mass_fraction": 0.8587957054,
+        "co2gap_minus_prc_pp_mtow": -0.68051435,
+        "co2gap_rows": 8812,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.8656008489,
+        "prc_rows": 5040,
+        "release_weight": 0.0051152023
+      },
+      {
+        "aircraft_type": "A20N",
+        "co2gap_mean_mass_fraction": 0.8124682521,
+        "co2gap_minus_prc_pp_mtow": 4.7003778827,
+        "co2gap_rows": 70108,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7654644732,
+        "prc_rows": 15466,
+        "release_weight": 0.040696392
+      },
+      {
+        "aircraft_type": "A21N",
+        "co2gap_mean_mass_fraction": 0.778433109,
+        "co2gap_minus_prc_pp_mtow": -0.5797898724,
+        "co2gap_rows": 46265,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.7842310078,
+        "prc_rows": 3328,
+        "release_weight": 0.0268559733
+      },
+      {
+        "aircraft_type": "A21N",
+        "co2gap_mean_mass_fraction": 0.7613890938,
+        "co2gap_minus_prc_pp_mtow": 3.3298511473,
+        "co2gap_rows": 6170,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7280905823,
+        "prc_rows": 536,
+        "release_weight": 0.0035815704
+      },
+      {
+        "aircraft_type": "A21N",
+        "co2gap_mean_mass_fraction": 0.7930314117,
+        "co2gap_minus_prc_pp_mtow": -0.9139219418,
+        "co2gap_rows": 59332,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8021706311,
+        "prc_rows": 12491,
+        "release_weight": 0.0344411241
+      },
+      {
+        "aircraft_type": "A21N",
+        "co2gap_mean_mass_fraction": 0.8125211938,
+        "co2gap_minus_prc_pp_mtow": -2.108122203,
+        "co2gap_rows": 8835,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.8336024158,
+        "prc_rows": 8221,
+        "release_weight": 0.0051285534
+      },
+      {
+        "aircraft_type": "A21N",
+        "co2gap_mean_mass_fraction": 0.768468983,
+        "co2gap_minus_prc_pp_mtow": 2.9265284222,
+        "co2gap_rows": 31624,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7392036988,
+        "prc_rows": 3720,
+        "release_weight": 0.0183571447
+      },
+      {
+        "aircraft_type": "A319",
+        "co2gap_mean_mass_fraction": 0.7932576182,
+        "co2gap_minus_prc_pp_mtow": 0.8705827667,
+        "co2gap_rows": 34674,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.7845517905,
+        "prc_rows": 5494,
+        "release_weight": 0.020127613
+      },
+      {
+        "aircraft_type": "A319",
+        "co2gap_mean_mass_fraction": 0.7632037645,
+        "co2gap_minus_prc_pp_mtow": 3.0639894945,
+        "co2gap_rows": 26069,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7325638695,
+        "prc_rows": 2292,
+        "release_weight": 0.0151325703
+      },
+      {
+        "aircraft_type": "A319",
+        "co2gap_mean_mass_fraction": 0.8136081089,
+        "co2gap_minus_prc_pp_mtow": 0.119551207,
+        "co2gap_rows": 17717,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8124125969,
+        "prc_rows": 1254,
+        "release_weight": 0.0102843895
+      },
+      {
+        "aircraft_type": "A319",
+        "co2gap_mean_mass_fraction": 0.7754615701,
+        "co2gap_minus_prc_pp_mtow": 1.933837649,
+        "co2gap_rows": 75390,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7561231936,
+        "prc_rows": 16006,
+        "release_weight": 0.0437624949
+      },
+      {
+        "aircraft_type": "A320",
+        "co2gap_mean_mass_fraction": 0.8235672146,
+        "co2gap_minus_prc_pp_mtow": 0.846117229,
+        "co2gap_rows": 103974,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.8151060424,
+        "prc_rows": 25082,
+        "release_weight": 0.060354976
+      },
+      {
+        "aircraft_type": "A320",
+        "co2gap_mean_mass_fraction": 0.7894130772,
+        "co2gap_minus_prc_pp_mtow": 4.7819742764,
+        "co2gap_rows": 45160,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7415933344,
+        "prc_rows": 15459,
+        "release_weight": 0.0262145413
+      },
+      {
+        "aircraft_type": "A320",
+        "co2gap_mean_mass_fraction": 0.8469813744,
+        "co2gap_minus_prc_pp_mtow": 0.3057572279,
+        "co2gap_rows": 73502,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8439238021,
+        "prc_rows": 20500,
+        "release_weight": 0.0426665459
+      },
+      {
+        "aircraft_type": "A320",
+        "co2gap_mean_mass_fraction": 0.8869890463,
+        "co2gap_minus_prc_pp_mtow": -1.6766102021,
+        "co2gap_rows": 5238,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.9037551483,
+        "prc_rows": 2134,
+        "release_weight": 0.0030405617
+      },
+      {
+        "aircraft_type": "A320",
+        "co2gap_mean_mass_fraction": 0.8036335901,
+        "co2gap_minus_prc_pp_mtow": 2.7446863313,
+        "co2gap_rows": 167653,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7761867268,
+        "prc_rows": 50783,
+        "release_weight": 0.0973194529
+      },
+      {
+        "aircraft_type": "A321",
+        "co2gap_mean_mass_fraction": 0.7930740577,
+        "co2gap_minus_prc_pp_mtow": -0.4641821933,
+        "co2gap_rows": 28800,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.7977158796,
+        "prc_rows": 7418,
+        "release_weight": 0.0167178651
+      },
+      {
+        "aircraft_type": "A321",
+        "co2gap_mean_mass_fraction": 0.7607963037,
+        "co2gap_minus_prc_pp_mtow": 2.8097406967,
+        "co2gap_rows": 9059,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7326988968,
+        "prc_rows": 2047,
+        "release_weight": 0.0052585813
+      },
+      {
+        "aircraft_type": "A321",
+        "co2gap_mean_mass_fraction": 0.817354131,
+        "co2gap_minus_prc_pp_mtow": -1.274307336,
+        "co2gap_rows": 26662,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8300972044,
+        "prc_rows": 19336,
+        "release_weight": 0.0154767958
+      },
+      {
+        "aircraft_type": "A321",
+        "co2gap_mean_mass_fraction": 0.8630691409,
+        "co2gap_minus_prc_pp_mtow": 0.5326456027,
+        "co2gap_rows": 3144,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.8577426848,
+        "prc_rows": 1930,
+        "release_weight": 0.0018250336
+      },
+      {
+        "aircraft_type": "A321",
+        "co2gap_mean_mass_fraction": 0.7740547769,
+        "co2gap_minus_prc_pp_mtow": 1.8145762193,
+        "co2gap_rows": 32809,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7559090147,
+        "prc_rows": 11086,
+        "release_weight": 0.0190450152
+      },
+      {
+        "aircraft_type": "A332",
+        "co2gap_mean_mass_fraction": 0.7216312971,
+        "co2gap_minus_prc_pp_mtow": -1.5180870733,
+        "co2gap_rows": 807,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.7368121679,
+        "prc_rows": 288,
+        "release_weight": 0.0004684485
+      },
+      {
+        "aircraft_type": "A332",
+        "co2gap_mean_mass_fraction": 0.6978761172,
+        "co2gap_minus_prc_pp_mtow": -0.9352619579,
+        "co2gap_rows": 175,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7072287368,
+        "prc_rows": 169,
+        "release_weight": 0.0001015842
+      },
+      {
+        "aircraft_type": "A332",
+        "co2gap_mean_mass_fraction": 0.7354087174,
+        "co2gap_minus_prc_pp_mtow": -2.0187004298,
+        "co2gap_rows": 1149,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.7555957217,
+        "prc_rows": 2251,
+        "release_weight": 0.0006669732
+      },
+      {
+        "aircraft_type": "A332",
+        "co2gap_mean_mass_fraction": 0.7606117352,
+        "co2gap_minus_prc_pp_mtow": -2.1235087548,
+        "co2gap_rows": 252,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.7818468227,
+        "prc_rows": 286,
+        "release_weight": 0.0001462813
+      },
+      {
+        "aircraft_type": "A332",
+        "co2gap_mean_mass_fraction": 0.7077355089,
+        "co2gap_minus_prc_pp_mtow": 0.5521877142,
+        "co2gap_rows": 746,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7022136317,
+        "prc_rows": 170,
+        "release_weight": 0.0004330391
+      },
+      {
+        "aircraft_type": "A333",
+        "co2gap_mean_mass_fraction": 0.7076757233,
+        "co2gap_minus_prc_pp_mtow": -1.0414689714,
+        "co2gap_rows": 319,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.718090413,
+        "prc_rows": 609,
+        "release_weight": 0.0001851736
+      },
+      {
+        "aircraft_type": "A333",
+        "co2gap_mean_mass_fraction": 0.6836104238,
+        "co2gap_minus_prc_pp_mtow": 0.5044277767,
+        "co2gap_rows": 270,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.6785661461,
+        "prc_rows": 604,
+        "release_weight": 0.00015673
+      },
+      {
+        "aircraft_type": "A333",
+        "co2gap_mean_mass_fraction": 0.722123957,
+        "co2gap_minus_prc_pp_mtow": -1.9828106655,
+        "co2gap_rows": 1805,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.7419520636,
+        "prc_rows": 6945,
+        "release_weight": 0.001047769
+      },
+      {
+        "aircraft_type": "A333",
+        "co2gap_mean_mass_fraction": 0.740231452,
+        "co2gap_minus_prc_pp_mtow": -2.9130130719,
+        "co2gap_rows": 357,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.7693615827,
+        "prc_rows": 2157,
+        "release_weight": 0.0002072319
+      },
+      {
+        "aircraft_type": "A333",
+        "co2gap_mean_mass_fraction": 0.6938244049,
+        "co2gap_minus_prc_pp_mtow": 2.464247151,
+        "co2gap_rows": 417,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.6691819334,
+        "prc_rows": 744,
+        "release_weight": 0.0002420608
+      },
+      {
+        "aircraft_type": "A359",
+        "co2gap_mean_mass_fraction": 0.6892536658,
+        "co2gap_minus_prc_pp_mtow": 1.0370173293,
+        "co2gap_rows": 538,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.6788834925,
+        "prc_rows": 172,
+        "release_weight": 0.000312299
+      },
+      {
+        "aircraft_type": "A359",
+        "co2gap_mean_mass_fraction": 0.703690979,
+        "co2gap_minus_prc_pp_mtow": 0.3601383482,
+        "co2gap_rows": 1453,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.7000895955,
+        "prc_rows": 538,
+        "release_weight": 0.0008434395
+      },
+      {
+        "aircraft_type": "A359",
+        "co2gap_mean_mass_fraction": 0.7209369057,
+        "co2gap_minus_prc_pp_mtow": -0.7123836777,
+        "co2gap_rows": 114,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.7280607425,
+        "prc_rows": 253,
+        "release_weight": 6.61749e-05
+      },
+      {
+        "aircraft_type": "B38M",
+        "co2gap_mean_mass_fraction": 0.830095397,
+        "co2gap_minus_prc_pp_mtow": 2.0551846353,
+        "co2gap_rows": 41601,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.8095435507,
+        "prc_rows": 2600,
+        "release_weight": 0.0241486079
+      },
+      {
+        "aircraft_type": "B38M",
+        "co2gap_mean_mass_fraction": 0.8031345321,
+        "co2gap_minus_prc_pp_mtow": 9.1421437692,
+        "co2gap_rows": 11539,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7117130944,
+        "prc_rows": 990,
+        "release_weight": 0.0066981752
+      },
+      {
+        "aircraft_type": "B38M",
+        "co2gap_mean_mass_fraction": 0.8495449796,
+        "co2gap_minus_prc_pp_mtow": 2.0600123804,
+        "co2gap_rows": 65083,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8289448558,
+        "prc_rows": 8386,
+        "release_weight": 0.0377794728
+      },
+      {
+        "aircraft_type": "B38M",
+        "co2gap_mean_mass_fraction": 0.8780532469,
+        "co2gap_minus_prc_pp_mtow": 1.3310458498,
+        "co2gap_rows": 12673,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.8647427884,
+        "prc_rows": 4335,
+        "release_weight": 0.0073564411
+      },
+      {
+        "aircraft_type": "B38M",
+        "co2gap_mean_mass_fraction": 0.8146559984,
+        "co2gap_minus_prc_pp_mtow": 4.6731947414,
+        "co2gap_rows": 29350,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.767924051,
+        "prc_rows": 834,
+        "release_weight": 0.0170371299
+      },
+      {
+        "aircraft_type": "B39M",
+        "co2gap_mean_mass_fraction": 0.8058644173,
+        "co2gap_minus_prc_pp_mtow": -1.9398691143,
+        "co2gap_rows": 172,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8252631084,
+        "prc_rows": 508,
+        "release_weight": 9.98428e-05
+      },
+      {
+        "aircraft_type": "B737",
+        "co2gap_mean_mass_fraction": 0.8033669994,
+        "co2gap_minus_prc_pp_mtow": 0.3284852435,
+        "co2gap_rows": 2268,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.800082147,
+        "prc_rows": 865,
+        "release_weight": 0.0013165319
+      },
+      {
+        "aircraft_type": "B737",
+        "co2gap_mean_mass_fraction": 0.7712920399,
+        "co2gap_minus_prc_pp_mtow": 2.1876978957,
+        "co2gap_rows": 1405,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.749415061,
+        "prc_rows": 2543,
+        "release_weight": 0.0008155764
+      },
+      {
+        "aircraft_type": "B737",
+        "co2gap_mean_mass_fraction": 0.8251056785,
+        "co2gap_minus_prc_pp_mtow": -2.1432554036,
+        "co2gap_rows": 1860,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8465382325,
+        "prc_rows": 902,
+        "release_weight": 0.0010796955
+      },
+      {
+        "aircraft_type": "B737",
+        "co2gap_mean_mass_fraction": 0.7902575238,
+        "co2gap_minus_prc_pp_mtow": 0.4306861542,
+        "co2gap_rows": 3450,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7859506623,
+        "prc_rows": 604,
+        "release_weight": 0.0020026609
+      },
+      {
+        "aircraft_type": "B738",
+        "co2gap_mean_mass_fraction": 0.803799742,
+        "co2gap_minus_prc_pp_mtow": -2.1993731434,
+        "co2gap_rows": 108731,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.8257934734,
+        "prc_rows": 7557,
+        "release_weight": 0.0631163262
+      },
+      {
+        "aircraft_type": "B738",
+        "co2gap_mean_mass_fraction": 0.7709372373,
+        "co2gap_minus_prc_pp_mtow": 3.8298424664,
+        "co2gap_rows": 37400,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7326388127,
+        "prc_rows": 5518,
+        "release_weight": 0.0217100054
+      },
+      {
+        "aircraft_type": "B738",
+        "co2gap_mean_mass_fraction": 0.8264042685,
+        "co2gap_minus_prc_pp_mtow": -2.7760726535,
+        "co2gap_rows": 106652,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.854164995,
+        "prc_rows": 26731,
+        "release_weight": 0.0619095053
+      },
+      {
+        "aircraft_type": "B738",
+        "co2gap_mean_mass_fraction": 0.8609787986,
+        "co2gap_minus_prc_pp_mtow": -2.816357154,
+        "co2gap_rows": 12099,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.8891423702,
+        "prc_rows": 7531,
+        "release_weight": 0.0070232448
+      },
+      {
+        "aircraft_type": "B738",
+        "co2gap_mean_mass_fraction": 0.7852288715,
+        "co2gap_minus_prc_pp_mtow": 0.8710164195,
+        "co2gap_rows": 116622,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7765187073,
+        "prc_rows": 6139,
+        "release_weight": 0.0676969051
+      },
+      {
+        "aircraft_type": "B739",
+        "co2gap_mean_mass_fraction": 0.8135045396,
+        "co2gap_minus_prc_pp_mtow": 1.3164216004,
+        "co2gap_rows": 1269,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.8003403236,
+        "prc_rows": 364,
+        "release_weight": 0.0007366309
+      },
+      {
+        "aircraft_type": "B739",
+        "co2gap_mean_mass_fraction": 0.7873868524,
+        "co2gap_minus_prc_pp_mtow": 3.3394684162,
+        "co2gap_rows": 174,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.7539921682,
+        "prc_rows": 364,
+        "release_weight": 0.0001010038
+      },
+      {
+        "aircraft_type": "B739",
+        "co2gap_mean_mass_fraction": 0.8386585006,
+        "co2gap_minus_prc_pp_mtow": 1.8905206553,
+        "co2gap_rows": 1189,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8197532941,
+        "prc_rows": 1127,
+        "release_weight": 0.0006901924
+      },
+      {
+        "aircraft_type": "B739",
+        "co2gap_mean_mass_fraction": 0.7999950961,
+        "co2gap_minus_prc_pp_mtow": 2.1040678628,
+        "co2gap_rows": 2126,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.7789544175,
+        "prc_rows": 669,
+        "release_weight": 0.0012341035
+      },
+      {
+        "aircraft_type": "B763",
+        "co2gap_mean_mass_fraction": 0.8462695712,
+        "co2gap_minus_prc_pp_mtow": 1.3999718634,
+        "co2gap_rows": 592,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8322698526,
+        "prc_rows": 164,
+        "release_weight": 0.000343645
+      },
+      {
+        "aircraft_type": "B763",
+        "co2gap_mean_mass_fraction": 0.895101864,
+        "co2gap_minus_prc_pp_mtow": 2.5656028763,
+        "co2gap_rows": 129,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.8694458352,
+        "prc_rows": 185,
+        "release_weight": 7.48821e-05
+      },
+      {
+        "aircraft_type": "B77W",
+        "co2gap_mean_mass_fraction": 0.7077237996,
+        "co2gap_minus_prc_pp_mtow": 0.3897758466,
+        "co2gap_rows": 233,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.7038260412,
+        "prc_rows": 778,
+        "release_weight": 0.0001352522
+      },
+      {
+        "aircraft_type": "B788",
+        "co2gap_mean_mass_fraction": 0.6819550139,
+        "co2gap_minus_prc_pp_mtow": 12.6693565635,
+        "co2gap_rows": 433,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.5552614483,
+        "prc_rows": 372,
+        "release_weight": 0.0002513485
+      },
+      {
+        "aircraft_type": "B788",
+        "co2gap_mean_mass_fraction": 0.7168794838,
+        "co2gap_minus_prc_pp_mtow": 2.8245298085,
+        "co2gap_rows": 365,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.6886341857,
+        "prc_rows": 424,
+        "release_weight": 0.0002118757
+      },
+      {
+        "aircraft_type": "B788",
+        "co2gap_mean_mass_fraction": 0.741539904,
+        "co2gap_minus_prc_pp_mtow": 1.9353616885,
+        "co2gap_rows": 211,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.7221862871,
+        "prc_rows": 245,
+        "release_weight": 0.0001224816
+      },
+      {
+        "aircraft_type": "B789",
+        "co2gap_mean_mass_fraction": 0.690556819,
+        "co2gap_minus_prc_pp_mtow": 0.7258177914,
+        "co2gap_rows": 317,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.6832986411,
+        "prc_rows": 124,
+        "release_weight": 0.0001840126
+      },
+      {
+        "aircraft_type": "B789",
+        "co2gap_mean_mass_fraction": 0.6674624174,
+        "co2gap_minus_prc_pp_mtow": 11.9183414755,
+        "co2gap_rows": 773,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.5482790026,
+        "prc_rows": 135,
+        "release_weight": 0.0004487121
+      },
+      {
+        "aircraft_type": "B789",
+        "co2gap_mean_mass_fraction": 0.7097239185,
+        "co2gap_minus_prc_pp_mtow": 1.0494104658,
+        "co2gap_rows": 302,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.6992298139,
+        "prc_rows": 440,
+        "release_weight": 0.0001753054
+      },
+      {
+        "aircraft_type": "B789",
+        "co2gap_mean_mass_fraction": 0.7449958868,
+        "co2gap_minus_prc_pp_mtow": 2.7777577973,
+        "co2gap_rows": 374,
+        "distance_band_km": "2500-4000",
+        "prc_mean_mass_fraction": 0.7172183089,
+        "prc_rows": 222,
+        "release_weight": 0.0002171001
+      },
+      {
+        "aircraft_type": "CRJ9",
+        "co2gap_mean_mass_fraction": 0.861640079,
+        "co2gap_minus_prc_pp_mtow": -4.2153016186,
+        "co2gap_rows": 1660,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.9037930951,
+        "prc_rows": 5631,
+        "release_weight": 0.0009635992
+      },
+      {
+        "aircraft_type": "CRJ9",
+        "co2gap_mean_mass_fraction": 0.8237914155,
+        "co2gap_minus_prc_pp_mtow": -1.5551554062,
+        "co2gap_rows": 5163,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.8393429696,
+        "prc_rows": 9462,
+        "release_weight": 0.0029970256
+      },
+      {
+        "aircraft_type": "CRJ9",
+        "co2gap_mean_mass_fraction": 0.8850108826,
+        "co2gap_minus_prc_pp_mtow": -5.0550600009,
+        "co2gap_rows": 114,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.9355614826,
+        "prc_rows": 1224,
+        "release_weight": 6.61749e-05
+      },
+      {
+        "aircraft_type": "CRJ9",
+        "co2gap_mean_mass_fraction": 0.8423836207,
+        "co2gap_minus_prc_pp_mtow": -2.366921223,
+        "co2gap_rows": 10110,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.8660528329,
+        "prc_rows": 16504,
+        "release_weight": 0.0058686672
+      },
+      {
+        "aircraft_type": "E190",
+        "co2gap_mean_mass_fraction": 0.8477610598,
+        "co2gap_minus_prc_pp_mtow": -1.9050721644,
+        "co2gap_rows": 15344,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.8668117815,
+        "prc_rows": 460,
+        "release_weight": 0.008906907
+      },
+      {
+        "aircraft_type": "E190",
+        "co2gap_mean_mass_fraction": 0.8755532525,
+        "co2gap_minus_prc_pp_mtow": -1.7611920689,
+        "co2gap_rows": 7369,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.8931651732,
+        "prc_rows": 2387,
+        "release_weight": 0.0042775676
+      },
+      {
+        "aircraft_type": "E190",
+        "co2gap_mean_mass_fraction": 0.8270171355,
+        "co2gap_minus_prc_pp_mtow": -0.119764982,
+        "co2gap_rows": 45021,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.8282147854,
+        "prc_rows": 108,
+        "release_weight": 0.0261338544
+      },
+      {
+        "aircraft_type": "E195",
+        "co2gap_mean_mass_fraction": 0.8722490933,
+        "co2gap_minus_prc_pp_mtow": -0.6442810915,
+        "co2gap_rows": 6902,
+        "distance_band_km": "1000-1500",
+        "prc_mean_mass_fraction": 0.8786919042,
+        "prc_rows": 2687,
+        "release_weight": 0.0040064828
+      },
+      {
+        "aircraft_type": "E195",
+        "co2gap_mean_mass_fraction": 0.8327266771,
+        "co2gap_minus_prc_pp_mtow": 2.4708882699,
+        "co2gap_rows": 18654,
+        "distance_band_km": "150-500",
+        "prc_mean_mass_fraction": 0.8080177944,
+        "prc_rows": 12566,
+        "release_weight": 0.0108283006
+      },
+      {
+        "aircraft_type": "E195",
+        "co2gap_mean_mass_fraction": 0.9020540579,
+        "co2gap_minus_prc_pp_mtow": -0.7769144929,
+        "co2gap_rows": 1905,
+        "distance_band_km": "1500-2500",
+        "prc_mean_mass_fraction": 0.9098232029,
+        "prc_rows": 591,
+        "release_weight": 0.0011058171
+      },
+      {
+        "aircraft_type": "E195",
+        "co2gap_mean_mass_fraction": 0.849136039,
+        "co2gap_minus_prc_pp_mtow": 0.7104066029,
+        "co2gap_rows": 27156,
+        "distance_band_km": "500-1000",
+        "prc_mean_mass_fraction": 0.842031973,
+        "prc_rows": 19506,
+        "release_weight": 0.0157635537
+      }
+    ],
+    "day_block_sampling_precision": {
+      "days": 365,
+      "interpretation": "sampling precision conditional on PRC selection; not total uncertainty",
+      "median_pp_mtow": 1.210016583,
+      "method": "PRC UTC day blocks with replacement; fixed release cells and weights",
+      "q025_pp_mtow": 1.1032232724,
+      "q975_pp_mtow": 1.3253463164,
+      "replicates": 2000,
+      "seed": 20260901,
+      "standard_error_pp_mtow": 0.0566644536
+    },
+    "minimum_release_row_coverage": 0.8,
+    "minimum_rows_per_source_per_cell": 100,
+    "prc_rows_in_common_cells": 431293,
+    "primary": {
+      "co2gap_minus_prc_pp_mtow": 1.2088403021,
+      "co2gap_standardised_mean_mass_fraction": 0.8100150529,
+      "prc_standardised_mean_mass_fraction": 0.7979266499,
+      "sign": "positive_means_co2gap_heavier"
+    },
+    "release_row_coverage": 0.9397646753,
+    "release_rows_in_common_cells": 1722708,
+    "retained_cells": 77,
+    "standardised_distribution": {
+      "co2gap": {
+        "mean_mass_fraction": 0.8100150529,
+        "median_mass_fraction": 0.8092557852,
+        "q25_mass_fraction": 0.7893302351,
+        "q75_mass_fraction": 0.8292856245,
+        "rows": 1722708
+      },
+      "prc": {
+        "mean_mass_fraction": 0.7979266499,
+        "median_mass_fraction": 0.8053589744,
+        "q25_mass_fraction": 0.7596082474,
+        "q75_mass_fraction": 0.8440520245,
+        "rows": 431293
+      }
+    },
+    "status": "complete"
+  },
+  "design_sha256": "93c75a6cf0d9f5a38b5c7738f5f68617012ad6fed77ad3cfc6cb117566bc4fb1",
+  "external_dataset_doi": "10.4121/8cb8484b-dbe7-4750-8b87-a5b1dbc621b4.v2",
+  "funnel": {
+    "co2gap": {
+      "distance_below_150_km": 82,
+      "eligible_rows": 1833127,
+      "input_rows": 2115824,
+      "mass_above_openap_mtow": 0,
+      "mass_below_openap_oew": 0,
+      "quality_gate_failure": 282697,
+      "unsupported_aircraft_type": 0
+    },
+    "prc": {
+      "distance_below_150_km": 581,
+      "eligible_rows": 491277,
+      "input_rows": 527162,
+      "mass_above_allowed_openap_mtow": 849,
+      "mass_below_openap_oew": 2,
+      "missing_or_nonfinite_required_value": 0,
+      "outside_2022": 0,
+      "unsupported_aircraft_type": 34464
+    }
+  },
+  "input_validation": {
+    "aircraft_types_with_properties": 31,
+    "external_file": {
+      "bytes": 101091663,
+      "md5": "2da9db49afcae255eab0828f1e2f8575",
+      "sha256": "bd30540049d6f8afd6804eb30ff58d76b3351d361930f25cac8fbf3c27185fc1",
+      "verified": true
+    },
+    "implementation_sha256": "4dd8c607b787a63f6b070b29b1c61d63b68cc965841824b750402e126ce16d88",
+    "openap_version": "2.6.0",
+    "release_flight_input_sha256": "caaad496f62183c7fde5fc7c7538f67afdac4344e40331a4774b04787e4db7c0",
+    "release_flight_input_verified": true,
+    "requirements_lock_sha256": "147d11f7ddf518e47214d115e2d85209039fc9f5751500225c55bf434628fa72",
+    "unsupported_typecodes": [
+      "A310",
+      "A343",
+      "AT76",
+      "B773",
+      "BCS1",
+      "BCS3",
+      "C56X"
+    ]
+  },
+  "interpretation": {
+    "noncomparabilities": [
+      "PRC represents 2022 and co2gap represents January to July 2026.",
+      "PRC airline participation is selective and airline identities are obfuscated.",
+      "PRC and co2gap distance fields come from different trajectory-processing chains.",
+      "Aircraft type codes do not identify cabin, airframe or engine variants.",
+      "The comparison validates combined take-off mass, not the individual assumptions that compose it."
+    ],
+    "not_permitted": [
+      "separate inference for load factor, reserve fuel or trip fuel",
+      "total or physical uncertainty interval",
+      "release headline correction",
+      "claim of population representativeness"
+    ],
+    "permitted": "descriptive validation and redesign of combined initial-mass scenarios"
+  },
+  "kind": "co2gap-takeoff-mass-external-validation-result",
+  "raw_eligible_distribution": {
+    "co2gap": {
+      "mean_mass_fraction": 0.8111477895,
+      "median_mass_fraction": 0.8101287579,
+      "q25_mass_fraction": 0.7899904143,
+      "q75_mass_fraction": 0.8309880237,
+      "rows": 1833127
+    },
+    "prc": {
+      "mean_mass_fraction": 0.8002862102,
+      "median_mass_fraction": 0.8080253165,
+      "q25_mass_fraction": 0.7567341772,
+      "q75_mass_fraction": 0.8564102564,
+      "rows": 491277
+    }
+  },
+  "release_id": "2026-09-01",
+  "robustness": {
+    "minimum_30": {
+      "primary": {
+        "co2gap_minus_prc_pp_mtow": 1.2283883331,
+        "co2gap_standardised_mean_mass_fraction": 0.8098195722,
+        "prc_standardised_mean_mass_fraction": 0.7975356889,
+        "sign": "positive_means_co2gap_heavier"
+      },
+      "release_row_coverage": 0.9437349404,
+      "retained_cells": 94,
+      "status": "complete"
+    },
+    "minimum_300": {
+      "primary": {
+        "co2gap_minus_prc_pp_mtow": 1.2424256304,
+        "co2gap_standardised_mean_mass_fraction": 0.8098342944,
+        "prc_standardised_mean_mass_fraction": 0.7974100381,
+        "sign": "positive_means_co2gap_heavier"
+      },
+      "release_row_coverage": 0.9119368162,
+      "retained_cells": 59,
+      "status": "complete"
+    },
+    "prc_up_to_1_02_mtow": {
+      "prc_funnel": {
+        "distance_below_150_km": 581,
+        "eligible_rows": 491457,
+        "input_rows": 527162,
+        "mass_above_allowed_openap_mtow": 669,
+        "mass_below_openap_oew": 2,
+        "missing_or_nonfinite_required_value": 0,
+        "outside_2022": 0,
+        "unsupported_aircraft_type": 34464
+      },
+      "primary": {
+        "co2gap_minus_prc_pp_mtow": 1.2087664576,
+        "co2gap_standardised_mean_mass_fraction": 0.8100150529,
+        "prc_standardised_mean_mass_fraction": 0.7979273883,
+        "sign": "positive_means_co2gap_heavier"
+      },
+      "release_row_coverage": 0.9397646753,
+      "retained_cells": 77,
+      "status": "complete"
+    }
+  },
+  "schema_version": 1,
+  "status": "complete"
+}

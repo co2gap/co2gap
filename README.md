@@ -106,6 +106,7 @@ lab/        calibrate.py     per-type correction factors
             anchor_refs.py   ICAO reference cruise fuel flows
             gate.py          wind-correction validation gate
             targeted_match.py  blinded external-flight matcher v2
+            tow_validation.py  external take-off-mass diagnostic
             release_data.py  authoritative ground-corrected release loader
             stability.py     month-over-month rank stability
             run_phase_split.py  vertical excess by phase of flight and position
@@ -262,6 +263,27 @@ standard errors for total, lateral and vertical sensitivities on those same
 samples. [Full command and privacy rules](UNCERTAINTY.md#conditional-sampling-precision)
 keep the within-cell moments private. These conditional sampling errors are not
 physical CO2 uncertainty or confidence intervals for the release headline.
+
+The [external take-off-mass check](TOW-VALIDATION.md) compares the combined
+co2gap initial-mass assumption with 527,162 airline-derived TOW labels from the
+EUROCONTROL PRC 2024 data challenge. Its design was frozen before opening the
+weights. The complete external file remains outside git; the tracked result is
+aggregate only. Reproduce it with exact locked dependencies and outputs in
+`/tmp`:
+
+```bash
+python lab/tow_validation.py \
+  --prc-flight-list /private/path/flight_list.csv \
+  --flights-dir /path/to/data/flights_ecac \
+  --out /tmp/co2gap-tow-validation.json \
+  --markdown-out /tmp/co2gap-tow-validation.md
+```
+
+The runner verifies the official external MD5, the full release flight-input
+SHA-256, the release quality thresholds and OpenAP 2.6.0 before comparing 77
+aircraft-type/distance cells. The result constrains combined take-off mass; it
+does not infer separate load-factor, reserve or trip-fuel distributions and is
+not an interval for the public headline.
 
 The release-gate denominator and attrition can be audited independently of the
 fuel sensitivities:

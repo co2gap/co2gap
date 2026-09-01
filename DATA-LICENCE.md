@@ -12,6 +12,7 @@ the distinction matters enough to write down — the ODbL obligations attach to
 | **The source code** (`pipeline/`, `lab/`, `ingest/`, …) | Not a database | **Apache-2.0**. No ODbL obligation — it contains no adsb.lol data. |
 | **Per-flight parquet** (`data/flights*/`, `data/decomposition*/`) | Derivative Database | **Never published.** Excluded by `.gitignore`. Per-flight rows do not leave the lab, for GDPR reasons independent of licensing. |
 | **Aggregated per-route / per-airport tables**, if ever released as a downloadable file | Derivative Database | Would have to be released **under ODbL**, share-alike included. This is the one that trips people up. |
+| **TOW validation aggregate** (`tow-validation-result.json`) | Derivative Database assembled from private co2gap rows and the PRC 2024 reference | Released under **ODbL v1.0** because of the co2gap/adsb.lol contribution. Contains no source row or identifier. The PRC contribution remains attributed under CC BY 4.0 below. |
 
 The practical consequence: **publishing the site is unproblematic; publishing a
 downloadable dataset is a licensing decision**, because share-alike would then
@@ -55,6 +56,23 @@ not because LGPL-3.0 compels a line on a web page. Those two are carried because
 crediting what you rely on is right, not because anyone could sue over it.
 Claiming otherwise would overstate the obligation, which is its own kind of
 error.
+
+## External take-off-weight reference
+
+The laboratory mass diagnostic uses *Dataset for EUROCONTROL PRC 2024 Data
+Challenge on Aircraft Take-off Weight Estimation*, version 2, by Junzi Sun,
+Enrico Spinielli, Xavier Olive and Martin Strohmeier,
+[4TU.ResearchData](https://doi.org/10.4121/8cb8484b-dbe7-4750-8b87-a5b1dbc621b4.v2),
+under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The accompanying
+paper is [Spinielli et al., 2025](https://doi.org/10.59490/joas.2025.8252).
+
+No source row is redistributed. `tow-validation-result.json` is a transformed
+aggregate: co2gap filtered the reference to its supported aircraft and distance
+scope, normalised weight by OpenAP MTOW, formed aircraft-type/distance cells and
+standardised their means to the September-release mix. The JSON is offered as a
+Derivative Database under [ODbL v1.0](https://opendatacommons.org/licenses/odbl/1-0/);
+the PRC material within it remains subject to its CC BY attribution. This does
+not imply endorsement by the authors, EUROCONTROL, TU Delft or 4TU.ResearchData.
 
 ## Privacy floor, which is stricter than any licence
 

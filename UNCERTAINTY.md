@@ -703,6 +703,40 @@ must always be described that way. A provider-specific v2 outcome schema and
 raw-to-proxy adapter remain pending until a permitted extract format exists;
 v1 outcomes may not be relabelled v2.
 
+## 12. External take-off-mass diagnostic
+
+`tow-validation-design.json` was committed before opening the weight values in
+the EUROCONTROL PRC 2024 `flight_list.csv`. It fixes a comparison of combined
+take-off mass, not separate load factor or reserve. `lab/tow_validation.py`
+verifies the official file identity, the full immutable release flight input,
+OpenAP 2.6.0 and the release quality gate before reading aggregate results.
+
+Run with the complete 101 MB flight list outside git:
+
+```bash
+python lab/tow_validation.py \
+  --prc-flight-list /private/path/flight_list.csv \
+  --flights-dir /path/to/data/flights_ecac \
+  --out /tmp/co2gap-tow-validation.json \
+  --markdown-out /tmp/co2gap-tow-validation.md
+```
+
+The registered type/distance standardisation retains 77 cells and 93.98% of
+eligible release flights. Co2gap initial mass is +1.209 percentage points of
+MTOW above the PRC reference mean, but the weighted mean absolute cell gap is
+2.181 points and the observed interquartile range is more than twice as wide as
+the modelled one. Distance and type effects change sign. The 365-day block
+resampling range (+1.103 to +1.325 points) is sampling precision conditional on
+the selected PRC airlines, not total uncertainty.
+
+Full provenance, funnels, robustness checks and interpretation are in
+`TOW-VALIDATION.md`; the aggregate machine result is
+`tow-validation-result.json`. The evidence supports designing a paired,
+type/distance-aware **combined mass** scenario. It does not make either
+`load_factor` or `reserve_fuel` quantified, because one TOW value cannot
+identify payload, reserve and trip fuel separately and the 2022 participating-
+airline sample is not the 2026 release population.
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:

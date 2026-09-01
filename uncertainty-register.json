@@ -78,9 +78,9 @@
       "correlation_scope": "flight with common seasonal and route effects",
       "nominal": 0.82,
       "range": null,
-      "evidence": "pipeline/emissions.py; no flight-specific mass is observed",
+      "evidence": "pipeline/emissions.py plus the aggregate external comparison in TOW-VALIDATION.md against EUROCONTROL PRC 2024 TOW data",
       "propagation": "paired finite-difference scenarios; probability distribution blocked pending external evidence",
-      "notes": "Natural variation between flights and uncertainty about the population mean must remain separate."
+      "notes": "TOW constrains combined initial mass and shows type/distance structure, but cannot separate payload, reserve and trip fuel. Natural variation between flights and uncertainty about the population mean must remain separate."
     },
     {
       "id": "reserve_fuel",
@@ -90,9 +90,9 @@
       "correlation_scope": "flight and operational policy",
       "nominal": 2000.0,
       "range": null,
-      "evidence": "pipeline/emissions.py; carried reserve is assumed, not observed",
+      "evidence": "pipeline/emissions.py plus the aggregate external comparison in TOW-VALIDATION.md against EUROCONTROL PRC 2024 TOW data",
       "propagation": "paired finite-difference scenarios; probability distribution blocked pending external evidence",
-      "notes": "Reserve changes mass but is not counted as burned fuel."
+      "notes": "Reserve changes mass but is not counted as burned fuel. TOW observes reserve only together with payload and trip fuel, so it does not identify a reserve distribution."
     },
     {
       "id": "airspeed_source",
