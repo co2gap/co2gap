@@ -95,6 +95,18 @@
       "notes": "Reserve changes mass but is not counted as burned fuel. TOW observes reserve only together with payload and trip fuel, so it does not identify a reserve distribution."
     },
     {
+      "id": "combined_initial_mass_structure",
+      "category": "parameter",
+      "status": "scenario_only",
+      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "correlation_scope": "aircraft type and flown-distance cell, paired across observed and both baselines",
+      "nominal": "zero cell adjustment around load factor 0.82, reserve 2000 kg and iterated trip fuel",
+      "range": null,
+      "evidence": "TOW-VALIDATION.md and COMBINED-MASS-SENSITIVITY.md using 77 retained EUROCONTROL PRC 2024 type/distance cells",
+      "propagation": "one full-scale externally observed cell-mean pattern, zero outside supported cells, paired through observed, ideal and hybrid fuel estimates",
+      "notes": "The three frozen samples move the total gap by +0.163 to +0.227 percentage points, almost entirely vertical. This replication range is not a probability interval or bound. PRC 2022 airline selection, temporal transfer, label/variant error and mass-dependent ground share remain unquantified."
+    },
+    {
       "id": "airspeed_source",
       "category": "observation",
       "status": "scenario_only",

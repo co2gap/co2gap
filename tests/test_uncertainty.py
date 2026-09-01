@@ -51,7 +51,7 @@ class RegistryTests(unittest.TestCase):
             (ROOT / "targeted-validation-design.json").read_text())
         targeted_registration = json.loads(
             (ROOT / "targeted-validation-registration.json").read_text())
-        self.assertEqual(validate_registry(registry), {"estimands": 6, "sources": 16})
+        self.assertEqual(validate_registry(registry), {"estimands": 6, "sources": 17})
         self.assertEqual(validate_scenarios(scenarios)["nominal"], "nominal")
         self.assertEqual(
             validate_selection_design(design, ROOT / "release-manifest.json"),

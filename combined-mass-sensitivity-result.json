@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "kind": "co2gap-combined-mass-structural-sensitivity-result",
+  "status": "complete_structural_scenario_not_probability_or_correction",
+  "completed_on": "2026-09-01",
+  "design": {
+    "path": "combined-mass-sensitivity-design.json",
+    "sha256": "e370e0bc8df5f422973b728759be5f0e57ab969cd36e49257ca36f60d374b2d5",
+    "commit": "98a694e",
+    "frozen_before_co2_scenario_outcomes": true
+  },
+  "implementation_commit": "a8c16dc",
+  "source": {
+    "tow_result_sha256": "242871bc3f4f51e2b2eb5e80c073750a78b7a9ff53e13267ac1ab8b488a5e6a1",
+    "tow_design_sha256": "93c75a6cf0d9f5a38b5c7738f5f68617012ad6fed77ad3cfc6cb117566bc4fb1",
+    "external_dataset_doi": "10.4121/8cb8484b-dbe7-4750-8b87-a5b1dbc621b4.v2",
+    "retained_cells": 77,
+    "exact_release_support_fraction": 0.9397646753
+  },
+  "release": {
+    "id": "2026-09-01",
+    "manifest_sha256": "db69266d5a4d9ce66f1d1f9bc4533cb31e6fd1b6d8e4fbcc600c53e6a5266a0c",
+    "population_rows": 1833127,
+    "reference_profile": "corrected-wind",
+    "site_or_release_changed": false
+  },
+  "implementation_sha256": {
+    "lab/combined_mass.py": "c58136377a1c441a367cdff57c8a1fcbf22ffab3a6484f6c9ca4e42f51aa5726",
+    "lab/sampling_precision.py": "0c7aef3cd3fbdbdae031e80353843c5712dab8b5d2c814e7ce5ac5d552c77a6a",
+    "lab/uncertainty.py": "3dd8654d28674af24409f4938fdcea75a07e399b678c66bab614124b6e015121",
+    "pipeline/decompose.py": "7c1188c75205182fa04c0540701a4474e9965f96b397e2cc04848421c698f3d1",
+    "pipeline/emissions.py": "5313419e3c255f95c7079760f96fb7f23eca8474aee3edb2d52eed575e9ff8ee",
+    "pipeline/excess_wind.py": "193df6e61e707ee9476c5f9d1de85a520450c864a3d0e36fe72e09d57891f996",
+    "wind/era5.py": "2b06410e25516577b181d2514864029b53f4515e7ed876b987a6f200f0e0afec"
+  },
+  "scenario": {
+    "id": "prc_cell_mean_alignment",
+    "requested_mass": "Add PRC mean minus co2gap mean initial-mass fraction times OpenAP MTOW to the combined non-trip mass term in each supported type and flown-distance cell.",
+    "unsupported_cells": "zero perturbation with the flight retained; no extrapolation",
+    "pairing": "same perturbation on observed, ideal and hybrid trajectories; trip fuel re-iterated",
+    "ground_share": "held at the nominal stored value"
+  },
+  "primary": {
+    "seed": 20260901,
+    "sample_rows": 2549,
+    "sample_sha256": "5e918a8e421431856ea06d7b921855d84efcde1f1e871bda3c59043b035d0a96",
+    "population_expansion_complete": true,
+    "failed_flights": 0,
+    "mass": {
+      "supported_sample_flights": 1978,
+      "supported_expanded_weight_fraction": 0.939281530048563,
+      "requested_mean_pp_mtow_all_flights": -1.1448113777021764,
+      "requested_mean_pp_mtow_supported_flights": -1.218816021691587,
+      "requested_mean_absolute_pp_mtow_all_flights": 2.0485803917068584,
+      "realised_mean_shift_pp_mtow": {
+        "real": -1.1457014524901332,
+        "ideal": -1.1533488058576855,
+        "hybrid": -1.1548952584868273
+      },
+      "mtow_cap_expanded_weight_fraction": {
+        "real": 0.00010419354469166636,
+        "ideal": 0.00010228423889888713,
+        "hybrid": 0.0001028297548396812
+      }
+    },
+    "nominal": {
+      "co2_real_tonnes": 23395043.124088164,
+      "co2_ideal_tonnes": 20859968.660964295,
+      "co2_gap_tonnes": 2535074.463123871,
+      "gap_total_pct": 12.280750829479778,
+      "gap_lateral_pct": 7.7136916553213055,
+      "gap_vertical_pct": 4.567059174158472,
+      "gap_total_pct_calibrated": 12.152820094441513
+    },
+    "scenario_level": {
+      "co2_real_tonnes": 23373419.549256764,
+      "co2_ideal_tonnes": 20796034.889198832,
+      "co2_gap_tonnes": 2577384.66005793,
+      "gap_total_pct": 12.503612058072008,
+      "gap_lateral_pct": 7.691615433185225,
+      "gap_vertical_pct": 4.811996624886782,
+      "gap_total_pct_calibrated": 12.393635006818474
+    },
+    "delta_from_nominal": {
+      "co2_real_tonnes": -21623.574831400067,
+      "co2_ideal_tonnes": -63933.771765463054,
+      "co2_gap_tonnes": 42310.1969340588,
+      "gap_total_pct": 0.22286122859222957,
+      "gap_lateral_pct": -0.022076222136080403,
+      "gap_vertical_pct": 0.24493745072830997,
+      "gap_total_pct_calibrated": 0.24081491237696184
+    },
+    "conditional_sampling_standard_error_pp": {
+      "gap_total_pct": 0.024832103661065065,
+      "gap_lateral_pct": 0.001917860384990192,
+      "gap_vertical_pct": 0.024846486280995627
+    },
+    "aggregate_output": {
+      "private_path": "/tmp/co2gap-combined-mass-seed1.json",
+      "sha256": "efa58b3059949e2f1ba2021a192beaa5963ce65b9428e9ba43c4a8a5dfbdada0",
+      "mode": "0600"
+    },
+    "private_moments": {
+      "path": "/tmp/co2gap-combined-mass-moments-seed1.json",
+      "sha256": "643eadc691aeeb74c3ccd8642c19dd9bc75dadedee47caf6a2e3eab5eb18beaa",
+      "mode": "0600",
+      "may_not_be_published": true
+    }
+  },
+  "robustness": [
+    {
+      "seed": 20260902,
+      "sample_sha256": "fcb3fe218f75b968989db993b403ccb2351634e5bfbc8cc6d0c45da6b5633c34",
+      "sample_rows": 2549,
+      "failed_flights": 0,
+      "supported_expanded_weight_fraction": 0.939184246372454,
+      "requested_mean_pp_mtow_all_flights": -1.109984333490571,
+      "realised_real_mean_shift_pp_mtow": -1.111790663209759,
+      "delta_gap_total_pp": 0.22746825948601668,
+      "delta_gap_lateral_pp": -0.020912481891707912,
+      "delta_gap_vertical_pp": 0.2483807413777246,
+      "conditional_sampling_se_total_pp": 0.03275360394181389,
+      "aggregate_output_sha256": "5504f1e39941b86d65a84d182c012ce81ec93a1da2f1b06dcfe07902964cfcab",
+      "private_moments_sha256": "4213dfb6171f9dd43e50fa1f2b9293e4ed5324c0000a72c8e15003fd7e2218a1"
+    },
+    {
+      "seed": 20260903,
+      "sample_sha256": "10d2f9789170cbafa86615e7586273a6a03a5bf3ac1b09f290d7d1755dbea2f4",
+      "sample_rows": 2549,
+      "failed_flights": 0,
+      "supported_expanded_weight_fraction": 0.9409425351689573,
+      "requested_mean_pp_mtow_all_flights": -1.1299854980709274,
+      "realised_real_mean_shift_pp_mtow": -1.1336529487447027,
+      "delta_gap_total_pp": 0.16265056238570352,
+      "delta_gap_lateral_pp": -0.02079423296891658,
+      "delta_gap_vertical_pp": 0.1834447953546201,
+      "conditional_sampling_se_total_pp": 0.025104022494134504,
+      "aggregate_output_sha256": "5ba0501569df1e9ea0c4ce231874578f867d56b0f19820f3237d8e9da1088822",
+      "private_moments_sha256": "46676fdd9770e172d33d4b4b47d9016bff02ee0857e77820332cf10306b729ac"
+    }
+  ],
+  "replication_summary": {
+    "delta_gap_total_pp_range": [
+      0.16265056238570352,
+      0.22746825948601668
+    ],
+    "delta_gap_total_pp_simple_mean_descriptive_only": 0.20432668348798325,
+    "delta_gap_lateral_pp_range": [
+      -0.022076222136080403,
+      -0.02079423296891658
+    ],
+    "delta_gap_vertical_pp_range": [
+      0.1834447953546201,
+      0.2483807413777246
+    ],
+    "conditional_sampling_se_total_pp_range": [
+      0.024832103661065065,
+      0.03275360394181389
+    ],
+    "interpretation": "The sign and decomposition are stable across the three frozen draws. The range is replication variability, not a probability interval or physical uncertainty bound."
+  },
+  "verification": {
+    "tests_normal": 142,
+    "tests_python_optimized": 142,
+    "independent_verifier": "/tmp/co2gap_verify_combined_mass.py",
+    "independent_verifier_sha256": "6d492ee954c6ad1627d351df9d99e6a55614608a82989aa68302190a3108a081",
+    "verified": [
+      "all implementation, design, source, sample, aggregate and private-moment hashes",
+      "0600 modes for all six private files",
+      "exact registered sample identities and complete paired populations",
+      "independent type/distance lookup, support weights and requested mass means",
+      "private moment reconstruction of all runner totals",
+      "total equals lateral plus vertical at both levels and contrasts",
+      "unregistered sample exits non-zero before writing output",
+      "wrong reference profile exits non-zero before writing output"
+    ]
+  },
+  "conclusion": {
+    "finding": "Transferring the externally measured combined-mass pattern lowers absolute modelled mass and both real and ideal CO2, but most shared mass sensitivity cancels in the gap. The residual gap increase is about 0.16 to 0.23 percentage points and is almost entirely vertical.",
+    "decision": "Keep combined mass as a named structural scenario. Do not change the public headline or replace the fixed mass model solely from this result.",
+    "remaining_evidence": "Temporal and airline selection transfer, label and aircraft-variant error, ground-share mass dependence, baseline-model uncertainty and independent interval coverage remain open."
+  },
+  "nonclaims": [
+    "not a correction to the September release",
+    "not a confidence or credible interval",
+    "not a bound on the public headline",
+    "not a load-factor, reserve-fuel or trip-fuel distribution",
+    "not preparation of the January release"
+  ]
+}

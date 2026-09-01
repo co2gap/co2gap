@@ -107,6 +107,7 @@ lab/        calibrate.py     per-type correction factors
             gate.py          wind-correction validation gate
             targeted_match.py  blinded external-flight matcher v2
             tow_validation.py  external take-off-mass diagnostic
+            combined_mass.py  registered type/distance mass-pattern contract
             release_data.py  authoritative ground-corrected release loader
             stability.py     month-over-month rank stability
             run_phase_split.py  vertical excess by phase of flight and position
@@ -284,6 +285,16 @@ SHA-256, the release quality thresholds and OpenAP 2.6.0 before comparing 77
 aircraft-type/distance cells. The result constrains combined take-off mass; it
 does not infer separate load-factor, reserve or trip-fuel distributions and is
 not an interval for the public headline.
+
+The follow-up [combined-mass structural sensitivity](COMBINED-MASS-SENSITIVITY.md)
+propagates those 77 measured cell residuals through the observed, ideal and
+hybrid trajectories together. Its design was frozen before the CO2 outcomes.
+The primary effect is +0.223 percentage points on the total gap; two unchanged
+replications give +0.227 and +0.163 points, almost entirely vertical. The
+tracked [aggregate result](combined-mass-sensitivity-result.json) records all
+hashes and non-claims. This remains a structural scenario: unsupported cells
+are left nominal, no load/reserve distribution is inferred and the release is
+unchanged.
 
 The release-gate denominator and attrition can be audited independently of the
 fuel sensitivities:

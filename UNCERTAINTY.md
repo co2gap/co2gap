@@ -737,6 +737,34 @@ type/distance-aware **combined mass** scenario. It does not make either
 identify payload, reserve and trip fuel separately and the 2022 participating-
 airline sample is not the 2026 release population.
 
+## 13. Combined-mass structural propagation
+
+`combined-mass-sensitivity-design.json` was committed as `98a694e` after the
+TOW cell residuals were known but before their CO2 effects were calculated.
+`lab/combined_mass.py` verifies the source hashes, 77 cells, distance partition,
+cell arithmetic, scenario scale, non-extrapolation rule and the identities of
+the three frozen balanced samples.
+
+For a supported type/flown-distance cell the scenario adds
+`(PRC mean - co2gap mean) * MTOW` to the combined non-trip mass term, then
+re-iterates trip fuel. The same adjustment is paired across observed, ideal and
+hybrid trajectories. Unsupported cells stay nominal and remain in the paired
+population. The stored ground-fuel share stays nominal and is an explicit
+limitation.
+
+The primary registered run changes the total gap by **+0.223 percentage
+points** (conditional sampling SE 0.025), split into -0.022 lateral and +0.245
+vertical. The unchanged seed-2 and seed-3 replications give +0.227 and +0.163
+points. All three runs contain 2,549/2,549 successful flights and expand to the
+1,833,127-flight release population. Complete results, interpretation and
+reproduction are in `COMBINED-MASS-SENSITIVITY.md`; machine-readable aggregates
+and hashes are in `combined-mass-sensitivity-result.json`.
+
+These values are a structural scenario around the experimental corrected-wind
+nominal. They are not a correction, distribution, interval or bound for the
+public headline. `load_factor`, `reserve_fuel` and the new combined-mass source
+remain `scenario_only`.
+
 ## Gates before a public interval
 
 A public probabilistic interval remains blocked until:
