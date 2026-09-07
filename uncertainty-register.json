@@ -404,7 +404,7 @@
     {
       "id": "release_reconstructibility",
       "category": "selection",
-      "status": "coverage_measured",
+      "status": "quantified",
       "affects": [
         "co2_real_tonnes",
         "co2_ideal_tonnes",
@@ -416,10 +416,10 @@
       ],
       "correlation_scope": "the entire release",
       "nominal": "figures published from branch master",
-      "range": "no manifest, no input fingerprint and no OpenAP version assertion exist for the published run: release_manifest.py, make_release_manifest.py, verify_release_manifest.py and release-manifest.json are present ONLY on branch uncertainty-v1",
-      "evidence": "audit/reports/PHASE2-ASSESSMENT.md item (b); and Phase 2.3, where lab/stability.py reproduced the published rho while reading 201 days against the release's 197, because it pins no window and reads a directory that grows nightly",
-      "propagation": "not propagable: the exact state cannot be reconstructed",
-      "notes": "Top-priority gap for public contestable output. A challenger cannot be handed the state that produced a number, and neither can a future release. Not an error in any figure; an absence of the record that would let one be defended."
+      "range": "verified: scripts/verify_release_manifest.py --include-artifacts exits 0 over ~43 GB, with all four track_quality thresholds and eleven roles OK - five config files, three input sets (flights 394 files/14.16 GB, calibration_flights 402/14.54 GB, era5 200/14.25 GB) and the three derived artifacts the site reads (decomposition, phase, ground; 197 files each). All eight figures the README pins reproduce exactly, and freeze_check reports 0 missing numeric claims over 316 reference sentences.",
+      "evidence": "audit/reports/phase1-reconstructibility.md, commit ed70d9c on branch audit/methodology-2026-09; criteria registered at e2084f9",
+      "propagation": "not applicable: this is a provenance property, not a numerical uncertainty",
+      "notes": "CORRECTS the earlier entry, which asserted that no manifest, input fingerprint or OpenAP version assertion existed for the published run. All three exist and verify. Two real defects remain and both are cheap. First, uncertainty-v1 has NEVER been pushed: the remote holds refs/heads/master alone, so for anyone who clones the published repository the manifest does not exist at all. Second, release.code_commit is 5619476, which is an ancestor of master but eleven commits and 269 lab/site_build.py lines before master's tip 6c78707, dated the release date - so it names A code state and not THE code state that built the site. Fix: push the branch, and stamp the commit at build time rather than beforehand."
     }
   ]
 }
