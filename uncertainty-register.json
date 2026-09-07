@@ -2,19 +2,48 @@
   "schema_version": 1,
   "scope": "CO2 v1: airborne observed trajectory, wind-aware ideal and lateral/vertical gap",
   "estimands": [
-    {"id": "co2_real_tonnes", "description": "Calibrated airborne CO2 of qualified observed flights"},
-    {"id": "co2_ideal_tonnes", "description": "Calibrated airborne CO2 of the same-wind great-circle counterfactual"},
-    {"id": "co2_gap_tonnes", "description": "Calibrated difference between observed and ideal CO2"},
-    {"id": "gap_total_pct", "description": "Uncalibrated ratio of summed observed-minus-ideal CO2 to summed ideal CO2"},
-    {"id": "gap_lateral_pct", "description": "Uncalibrated ratio of summed hybrid-minus-ideal CO2 to summed ideal CO2"},
-    {"id": "gap_vertical_pct", "description": "Uncalibrated ratio of summed observed-minus-hybrid CO2 to summed ideal CO2"}
+    {
+      "id": "co2_real_tonnes",
+      "description": "Calibrated airborne CO2 of qualified observed flights"
+    },
+    {
+      "id": "co2_ideal_tonnes",
+      "description": "Calibrated airborne CO2 of the same-wind great-circle counterfactual"
+    },
+    {
+      "id": "co2_gap_tonnes",
+      "description": "Calibrated difference between observed and ideal CO2"
+    },
+    {
+      "id": "gap_total_pct",
+      "description": "Uncalibrated ratio of summed observed-minus-ideal CO2 to summed ideal CO2"
+    },
+    {
+      "id": "gap_lateral_pct",
+      "description": "Uncalibrated ratio of summed hybrid-minus-ideal CO2 to summed ideal CO2"
+    },
+    {
+      "id": "gap_vertical_pct",
+      "description": "Uncalibrated ratio of summed observed-minus-hybrid CO2 to summed ideal CO2"
+    },
+    {
+      "id": "airport_deviation_d",
+      "description": "Published per-airport metric: the median over that airport's movements of d_tot, the per-flight deviation of excess_total_pct from its (distance band x aircraft type) median, with every flight attributed to BOTH endpoints"
+    }
   ],
   "sources": [
     {
       "id": "source_day_completeness",
       "category": "selection",
       "status": "scenario_only",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "day and geographic reception area",
       "nominal": "release coverage audit and immutable day perimeter",
       "range": null,
@@ -26,7 +55,13 @@
       "id": "adsb_track_and_thinning",
       "category": "observation",
       "status": "scenario_only",
-      "affects": ["co2_real_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "flight, receiver coverage and phase of flight",
       "nominal": "stored subset at at least 10-second spacing; gaps are not interpolated",
       "range": null,
@@ -38,7 +73,14 @@
       "id": "airport_resolution",
       "category": "observation",
       "status": "needs_evidence",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "airport and route",
       "nominal": "nearest qualifying airport resolved by pipeline/airports.py",
       "range": null,
@@ -50,7 +92,14 @@
       "id": "aircraft_type_mapping",
       "category": "observation",
       "status": "needs_evidence",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "typecode family",
       "nominal": "durable ADS-B typecode mapped by emissions._ALIAS",
       "range": null,
@@ -62,7 +111,14 @@
       "id": "engine_variant",
       "category": "parameter",
       "status": "needs_evidence",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "aircraft family and operator fleet",
       "nominal": "OpenAP default engine for the mapped type",
       "range": null,
@@ -74,7 +130,14 @@
       "id": "load_factor",
       "category": "parameter",
       "status": "scenario_only",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "flight with common seasonal and route effects",
       "nominal": 0.82,
       "range": null,
@@ -86,7 +149,14 @@
       "id": "reserve_fuel",
       "category": "parameter",
       "status": "scenario_only",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "flight and operational policy",
       "nominal": 2000.0,
       "range": null,
@@ -98,7 +168,14 @@
       "id": "combined_initial_mass_structure",
       "category": "parameter",
       "status": "scenario_only",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "aircraft type and flown-distance cell, paired across observed and both baselines",
       "nominal": "zero cell adjustment around load factor 0.82, reserve 2000 kg and iterated trip fuel",
       "range": null,
@@ -110,7 +187,12 @@
       "id": "airspeed_source",
       "category": "observation",
       "status": "scenario_only",
-      "affects": ["co2_real_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "flight and receiver capability",
       "nominal": "IAS converted to TAS where usable, otherwise ground speed",
       "range": null,
@@ -121,32 +203,49 @@
     {
       "id": "openap_fuel_model",
       "category": "model",
-      "status": "needs_evidence",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "status": "coverage_measured",
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "global model version and aircraft family",
       "nominal": "OpenAP 2.6.0 FuelFlow.enroute",
-      "range": null,
+      "range": "30.3% of flights on OpenAP's generic fuel branch; of those, 29.33 points carry a calibration factor and 1.01% carry none. Group-median contrast D between generic and own-model flights ranges 4.4974 points across distance bands and 4.3325 across real-minus-baseline altitude bands, with sign changes on both.",
       "evidence": "requirements-lab.lock and pipeline/emissions.py",
       "propagation": "cross-model or version scenario; never independent noise per flight",
-      "notes": "A shared model error may cancel in the gap while remaining large in absolute tonnes."
+      "notes": "A shared model error may cancel in the gap while remaining large in absolute tonnes. Methodology audit Phase 0, commit 62d1fd3, verdict DRIFTING on both axes against a registered 0.5-point flatness threshold. This does NOT prove a non-multiplicative error: D mixes model error with genuine fleet and mission differences. It establishes that the frozen data cannot exclude one. Confounded with the baseline-ceiling defect on BOTH axes, since generic-branch types skew widebody and widebodies fly long. Closing it requires recomputing fuel under an alternative model, i.e. re-running trajectories."
     },
     {
       "id": "type_calibration",
       "category": "model",
       "status": "scenario_only",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes"
+      ],
       "correlation_scope": "aircraft type across the entire release",
       "nominal": "per-type scalar anchored to ICAO ICEC v13.1 where sample size permits",
       "range": null,
-      "evidence": "data/calibration_ecac.json, data/anchored_cruise_ff.json and lab/calibrate.py",
+      "evidence": "data/calibration_ecac.json, data/anchored_cruise_ff.json, lab/calibrate.py, and audit/reports/phase0-invariance.md on branch audit/methodology-2026-09",
       "propagation": "calibrated versus uncalibrated basis and future anchor uncertainty",
-      "notes": "The factor multiplies real and all baselines for a type and therefore cancels within a per-type ratio."
+      "notes": "The factor multiplies real and all baselines for a type and therefore cancels within a per-type ratio. CONFIRMED BY MEASUREMENT, methodology audit Phase 0, 6 September 2026, commit 62d1fd3: k never enters the percentage path, so the airport table is identical with and without calibration - same 152 airports, identical order, max|delta d| exactly 0.0. The converse is registered with it: the ranking therefore receives NO benefit from the calibration either, and carries the uncorrected fuel-model error, including k=1.6004 on the 11.64% of flights flown by A20N."
     },
     {
       "id": "era5_wind_field",
       "category": "observation",
       "status": "needs_evidence",
-      "affects": ["co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "hour, pressure level and weather system",
       "nominal": "hourly ERA5 pressure-level u/v field with no time extrapolation",
       "range": null,
@@ -158,7 +257,13 @@
       "id": "cruise_baseline",
       "category": "model",
       "status": "scenario_only",
-      "affects": ["co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "aircraft type and distance band",
       "nominal": "frozen per-flight cruise_alt_ft originally selected by optimal_cruise_alt_ft",
       "range": null,
@@ -170,7 +275,12 @@
       "id": "ground_definition",
       "category": "model",
       "status": "quantified",
-      "affects": ["co2_real_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "flight terminal segments",
       "nominal": "altitude below 3000 ft and TAS below 70 kt",
       "range": "five stored definitions from literal ground through altitude/speed thresholds",
@@ -182,10 +292,17 @@
       "id": "quality_gate",
       "category": "selection",
       "status": "coverage_measured",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "coverage area, route and flight length",
       "nominal": "thresholds in pipeline/track_quality.py",
-      "range": "exact conditional retention plus declared failure-mask stress shifts of ±0.184, ±0.369 and ±0.737 percentage points; the stress shifts are not bounds",
+      "range": "exact conditional retention plus declared failure-mask stress shifts of \u00b10.184, \u00b10.369 and \u00b10.737 percentage points; the stress shifts are not bounds",
       "evidence": "release manifest; pipeline/track_quality.py; lab/uncertainty.py selection, selection-stress, selection-sensitivity and targeted-validation; selection-validation-design.json; opensky-day-audit-design.json and opensky-day-audit-result.json; selection-sensitivity-design.json; targeted-validation-design.json and targeted-validation-registration.json",
       "propagation": "exact aggregate attrition; nested internal stress; one-day separate-source mask contrasts propagated at half, one and twice magnitude with first-pass CO2 exposure weights; provider-neutral 2,279-flight held-out tranche for separate mask contrasts; full independent-proxy estimator remains blocked until complete suitable external outcomes exist",
       "notes": "The denominator begins after complete-flight reconstruction and successful modelling. Retention and the within-gate quality gradient are measured, and a 5,000-flight weighted validation sample is frozen outside git. A free OpenSky day shows differential match/quality response and a 4.61-point proxy offset on controls, so its conditional contrasts cannot correct or bound the headline. The central signed mask transfer is -0.014 points only because 96.3% of gross contributions cancel; coverage-only and unresolved-endpoint masks supply 94.4% of the central adverse magnitude. A separate 2,279-flight blinded tranche now targets those masks without altering the canonical design, but it remains conditional on source response and cannot cover rare masks or upstream ingestion. Changing a gate changes the target population and must be reported separately from model uncertainty."
@@ -194,7 +311,14 @@
       "id": "upstream_ingestion_selection",
       "category": "selection",
       "status": "needs_evidence",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "source dump, receiver geography, aircraft type and flight completeness",
       "nominal": "regional trace, complete-flight, supported-aircraft and successful-fuel-model filters",
       "range": null,
@@ -206,13 +330,96 @@
       "id": "temporal_composition",
       "category": "variability",
       "status": "quantified",
-      "affects": ["co2_real_tonnes", "co2_ideal_tonnes", "co2_gap_tonnes", "gap_total_pct", "gap_lateral_pct", "gap_vertical_pct"],
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct"
+      ],
       "correlation_scope": "whole day",
       "nominal": "197 fixed release days",
       "range": "day-block resampling and leave-one-month-out diagnostics",
       "evidence": "immutable release population",
       "propagation": "resample complete day aggregates, never individual flights",
       "notes": "This describes temporal composition; it is not model uncertainty and not a confidence interval for the frozen population."
+    },
+    {
+      "id": "airport_rank_resolution",
+      "category": "model",
+      "status": "quantified",
+      "affects": [
+        "airport_deviation_d"
+      ],
+      "correlation_scope": "adjacent pairs in the published order",
+      "nominal": "152 airports ordered by d, presented as a ranked table and chart",
+      "range": "147 of 151 adjacent pairs not distinguishable (97.4%); median adjacent gap 0.035 points against a median day-block interval width of 0.396 points; median inversion rate 0.381",
+      "evidence": "audit/reports/phase21-fragility.md, commit 9535b85 on branch audit/methodology-2026-09; criteria registered at 14a2dfb",
+      "propagation": "day-block bootstrap, 2000 replicates, seed 20260901, per C1",
+      "notes": "Registered verdict INTERVALS ONLY, NO ORDER. Each of the three OR-ed criteria returns the same verdict alone, so it does not rest on the 0.5-point materiality yardstick. This is a statement about temporal composition, not a confidence interval on a census."
+    },
+    {
+      "id": "airport_signal_vs_null",
+      "category": "variability",
+      "status": "quantified",
+      "affects": [
+        "airport_deviation_d"
+      ],
+      "correlation_scope": "the whole airport table",
+      "nominal": "observed spread of d across the 152 qualifying airports",
+      "range": "real spread 13.5798 points against a permuted maximum of 0.9129 over 100 seeds (95th percentile 0.7453); ratio 14.9",
+      "evidence": "audit/reports/phase22-permutation.md, commit a82e0cd",
+      "propagation": "joint permutation of the (origin, dest) pair, seeds 20260901-20261000, preserving every airport's movement count and the qualifying set exactly",
+      "notes": "Registered verdict INFORMATIVE. Closes the alternative that the ranking re-expresses fleet composition or route mix. Says nothing about the modelling layer: a permutation moves assignments within the same frozen metric, so an error common to the metric survives it untouched."
+    },
+    {
+      "id": "airport_temporal_stability",
+      "category": "variability",
+      "status": "quantified",
+      "affects": [
+        "airport_deviation_d"
+      ],
+      "correlation_scope": "quarter",
+      "nominal": "d computed over the full 197-day window",
+      "range": "Spearman rho(Q1, Q2) = 0.9155 on 137 common airports, with the norm recomputed within each period; median absolute position change 7 places, maximum 80, 13.9% moving more than 20",
+      "evidence": "audit/reports/phase23-stability.md, commit 826b853",
+      "propagation": "full-quarter split Jan-Mar against Apr-Jun, qualifying floor scaled to the period; the 20-day July stub is reported and excluded from the criterion",
+      "notes": "Registered verdict STABLE. The high rho and the large position changes are both true and measure different things: rho is dominated by the spread, the flags by position. STABLE licenses the claim that the above-norm and below-norm structure persists; it does not license printing an order."
+    },
+    {
+      "id": "airport_role_stacking",
+      "category": "model",
+      "status": "quantified",
+      "affects": [
+        "airport_deviation_d"
+      ],
+      "correlation_scope": "airport, and the role it played in the flight",
+      "nominal": "every flight attributed to BOTH endpoints with the same d_tot (lab/site_build.py:2344-2346)",
+      "range": "Spearman rho(dep-only, arr-only) = 0.5043 on 147 common airports; median absolute position change 25 places, maximum 117, 60.5% moving more than 20; 56 of 147 airports (38.1%) carry opposite signs in the two roles. The published metric correlates 0.9233 with the arrival-only ranking and 0.7782 with the departure-only one.",
+      "evidence": "audit/reports/phase24-double-counting.md, commit 51969c0",
+      "propagation": "three rankings on the same frame; per-role qualifying floor 1000, half of MIN_N_AIRPORT",
+      "notes": "Registered verdict MIXING TWO PHENOMENA, a registered stop condition. The published per-airport figure is substantially the ARRIVAL figure, which the project's own 70%/33% within-40NM asymmetry predicts. For the 38% with opposite-signed roles the published number is a cancellation and not a summary: Graz publishes -0.36 while standing 3rd of 154 on departures and 112th of 148 on arrivals."
+    },
+    {
+      "id": "release_reconstructibility",
+      "category": "selection",
+      "status": "coverage_measured",
+      "affects": [
+        "co2_real_tonnes",
+        "co2_ideal_tonnes",
+        "co2_gap_tonnes",
+        "gap_total_pct",
+        "gap_lateral_pct",
+        "gap_vertical_pct",
+        "airport_deviation_d"
+      ],
+      "correlation_scope": "the entire release",
+      "nominal": "figures published from branch master",
+      "range": "no manifest, no input fingerprint and no OpenAP version assertion exist for the published run: release_manifest.py, make_release_manifest.py, verify_release_manifest.py and release-manifest.json are present ONLY on branch uncertainty-v1",
+      "evidence": "audit/reports/PHASE2-ASSESSMENT.md item (b); and Phase 2.3, where lab/stability.py reproduced the published rho while reading 201 days against the release's 197, because it pins no window and reads a directory that grows nightly",
+      "propagation": "not propagable: the exact state cannot be reconstructed",
+      "notes": "Top-priority gap for public contestable output. A challenger cannot be handed the state that produced a number, and neither can a future release. Not an error in any figure; an absence of the record that would let one be defended."
     }
   ]
 }
