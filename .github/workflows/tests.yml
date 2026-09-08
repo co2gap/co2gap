@@ -2,7 +2,10 @@ name: pipeline regression tests
 
 on:
   push:
-    branches: [hardening-2027-01]
+    # master is the published branch and was NOT in this list, so nothing ever
+    # ran against what people actually clone. uncertainty-v1 carries the tests
+    # themselves and the release-manifest tooling, so it guards them too.
+    branches: [master, uncertainty-v1, hardening-2027-01]
   pull_request:
 
 jobs:

@@ -51,7 +51,11 @@ class RegistryTests(unittest.TestCase):
             (ROOT / "targeted-validation-design.json").read_text())
         targeted_registration = json.loads(
             (ROOT / "targeted-validation-registration.json").read_text())
-        self.assertEqual(validate_registry(registry), {"estimands": 6, "sources": 17})
+        # 7/22 since 7 September 2026: the methodology audit added the
+        # airport_deviation_d estimand and five sources. The exact counts are
+        # a deliberate tripwire against an accidental edit to the register, so
+        # they are updated when it grows on purpose, never relaxed.
+        self.assertEqual(validate_registry(registry), {"estimands": 7, "sources": 22})
         self.assertEqual(validate_scenarios(scenarios)["nominal"], "nominal")
         self.assertEqual(
             validate_selection_design(design, ROOT / "release-manifest.json"),

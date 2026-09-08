@@ -13,7 +13,7 @@ import importlib.metadata
 import json
 import subprocess
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,6 +60,8 @@ def main() -> None:
     ap.add_argument("--days-from", type=Path, required=True)
     ap.add_argument("--root", type=Path, default=ROOT)
     ap.add_argument("--code-commit", default=None)
+    ap.add_argument("--allow-dirty", action="store_true",
+                    help="record a dirty tree instead of refusing to run")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     root = args.root.resolve()
@@ -74,8 +76,22 @@ def main() -> None:
     # Calibration is fitted on the release population, never on every day that
     # happens to have accumulated in the mutable flight cache.
     calibration_days = list(days)
+    # The commit is the state the release was BUILT from, so it has to be
+    # captured at build time. The 2026-09-01 manifest was generated three days
+    # before the site and named a commit eleven behind the tip, differing by 269
+    # lines in lab/site_build.py: a field that identified A code state and not
+    # THE one. Recording when it was captured, and whether the tree was clean,
+    # makes that visible in the artefact instead of leaving it to an audit.
     commit = args.code_commit or subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    dirty = subprocess.check_output(["git", "status", "--porcelain"],
+                                    cwd=root, text=True).strip()
+    if dirty and not args.allow_dirty:
+        raise SystemExit(
+            "the working tree is dirty, so code_commit would not describe what "
+            "produced these artefacts:\n" + dirty +
+            "\ncommit the tree, or pass --allow-dirty to record it as such")
+    captured_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     inputs = {
         "flights": set_entry(root / "data/flights_ecac", "flight-parquet-pairs", days),
@@ -103,6 +119,8 @@ def main() -> None:
         "release": {
             "id": args.release_id,
             "code_commit": commit,
+            "code_commit_captured_at": captured_at,
+            "code_commit_tree_clean": not dirty,
             "days": days,
             "era5_days": era5_days,
             "calibration_days": calibration_days,
