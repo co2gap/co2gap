@@ -2,10 +2,15 @@ name: pipeline regression tests
 
 on:
   push:
-    # master is the published branch and was NOT in this list, so nothing ever
-    # ran against what people actually clone. uncertainty-v1 carries the tests
-    # themselves and the release-manifest tooling, so it guards them too.
-    branches: [master, uncertainty-v1, hardening-2027-01]
+    # master is deliberately NOT here, and adding it was a mistake corrected the
+    # same day. master is the published release artefact: it is roughly 10,000
+    # lines behind the hardened pipeline across 27 files, and NONE of these
+    # tests can run against it - they assert behaviour that only exists on the
+    # development line (ERA5ValidationError, _validate_ingestion_source,
+    # anchor_refs.ANCHOR_METHOD, a parameterised pi backfill). Triggering here
+    # would guarantee a red result on the branch people clone.
+    # CI belongs on the development line, which is where it already was.
+    branches: [uncertainty-v1, hardening-2027-01]
   pull_request:
 
 jobs:
