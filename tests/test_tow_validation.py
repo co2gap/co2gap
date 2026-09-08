@@ -86,9 +86,25 @@ class DesignTests(unittest.TestCase):
     def test_external_file_must_be_outside_repo_and_match_identity(self):
         with self.assertRaisesRegex(TowValidationError, "outside every git worktree"):
             require_outside_repository(ROOT / "private.csv", may_not_exist=True)
-        with self.assertRaisesRegex(TowValidationError, "outside every git worktree"):
-            require_outside_repository(
-                ROOT.parent / "adsb-co2" / "private.csv", may_not_exist=True)
+        # A path inside a SIBLING worktree must be rejected too. This used to be
+        # written as ROOT.parent / "adsb-co2", which exists only on the machine
+        # this project is developed on: everywhere else - a fresh clone, CI - the
+        # directory is absent, the guard correctly finds no .git above it, and
+        # the test failed. It was never portable, and it never ran in CI because
+        # this file exists only on uncertainty-v1, which was not a trigger until
+        # 8 September 2026.
+        #
+        # Building a real worktree marker instead tests the intent AND covers the
+        # case the old form never reached: a linked worktree's .git is a FILE,
+        # not a directory, and the guard's .exists() has to accept both.
+        with tempfile.TemporaryDirectory() as sibling:
+            worktree = Path(sibling) / "adsb-co2"
+            worktree.mkdir()
+            (worktree / ".git").write_text("gitdir: /elsewhere/.git/worktrees/x\n")
+            with self.assertRaisesRegex(TowValidationError,
+                                        "outside every git worktree"):
+                require_outside_repository(worktree / "private.csv",
+                                           may_not_exist=True)
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "flight_list.csv"
             path.write_bytes(b"abc")
