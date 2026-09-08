@@ -220,6 +220,15 @@ rankings; one of them cannot have inflated the headline, only lowered it.
 
 ## Reproducing
 
+**Every input and every derived artefact of a release is fingerprinted.**
+`release-manifest.json`, on the **`uncertainty-v1`** branch, records the release
+id, the code commit, the exact day set, the geographic box, the ground
+definition, the ERA5 configuration, the OpenAP version and the four
+track-quality thresholds, plus SHA-256 over eight inputs and three artefacts.
+`scripts/verify_release_manifest.py <manifest> --root . --include-artifacts`
+checks a copy of the data against it and exits non-zero on any mismatch. Anyone
+disputing a figure should start there rather than from this file.
+
 The two machines have separate direct-dependency locks:
 `requirements-pi.lock` for daily acquisition and fuel computation, and
 `requirements-lab.lock` for decomposition, ERA5 and site generation. OpenAP is
