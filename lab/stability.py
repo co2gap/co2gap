@@ -25,11 +25,23 @@ TWO METHOD CHOICES THAT DECIDE WHETHER THIS TEST MEANS ANYTHING
    at once is ~4 GB of u/v arrays, which would crowd out pandas on a 16 GB
    laptop; per month it is ~640 MB.
 
-Usage: lab-venv/bin/python lab/stability.py
+3. THE WINDOW IS NOT IMPLICIT. FLIGHTS_DIR keeps accumulating every night, so a
+   run without --days-from measures whatever happens to be on disk that
+   evening, not the release. The published figures were produced before this
+   argument existed and are reproducible only by coincidence of timing:
+   re-running on 2026-09-07 read 201 days against the release's 197, and the
+   two weakest month pairs in the published table both involve the month whose
+   day count differed. Point --days-from at the frozen decomposition, the way
+   lab/ground_share.py and lab/airport_stability.py already are, and the run
+   measures the release. Without it the run says so, loudly, and continues.
+
+Usage:
+    lab-venv/bin/python lab/stability.py --days-from data/decomposition_ecac
 """
 
 from __future__ import annotations
 
+import argparse
 import gc
 import sys
 from collections import defaultdict
@@ -50,10 +62,39 @@ RHO_TARGET = 0.6
 BANDS = [150, 300, 500, 800, 1200, 2000, 20000]
 
 
-def months_available() -> list[str]:
+def months_available(days_from: Path | None = None,
+                     from_day: str | None = None,
+                     to_day: str | None = None):
+    """Months and days to measure, and the window is explicit or announced.
+
+    --days-from takes the exact day set from a frozen artefact, the same rule
+    lab/ground_share.py applies with the same argument name. Without it the
+    function returns every day on disk and the caller warns, because
+    FLIGHTS_DIR is four days ahead of the release the day this was written and
+    will be further ahead tomorrow.
+    """
     days = sorted(d.name for d in FLIGHTS_DIR.glob("*")
                   if (d / "flights.parquet").exists())
-    return sorted({d[:7] for d in days}), days
+    pinned_by = None
+    if days_from is not None:
+        frozen = sorted(f.stem for f in Path(days_from).glob("*.parquet"))
+        if not frozen:
+            raise SystemExit(f"--days-from {days_from}: nessun parquet, "
+                             "finestra non determinabile")
+        missing = [d for d in frozen if d not in days]
+        if missing:
+            raise SystemExit(
+                f"--days-from {days_from}: {len(missing)} giorni dell'artefatto "
+                f"congelato non hanno un flights.parquet ({missing[:3]}...); "
+                "la finestra non e' riproducibile da questo FLIGHTS_DIR")
+        days, pinned_by = frozen, str(days_from)
+    if from_day:
+        days = [d for d in days if d >= from_day]
+        pinned_by = pinned_by or "--from-day/--to-day"
+    if to_day:
+        days = [d for d in days if d <= to_day]
+        pinned_by = pinned_by or "--from-day/--to-day"
+    return sorted({d[:7] for d in days}), days, pinned_by
 
 
 def route_excess_for_month(month: str, all_days: list[str], calib: dict):
@@ -87,9 +128,29 @@ def route_excess_for_month(month: str, all_days: list[str], calib: dict):
 
 
 def main():
-    months, all_days = months_available()
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap.add_argument("--days-from", type=Path, default=None,
+                    help="prendi l'insieme esatto dei giorni da questo artefatto "
+                         "congelato (es. data/decomposition_ecac)")
+    ap.add_argument("--from-day", default=None, help="primo giorno incluso, YYYY-MM-DD")
+    ap.add_argument("--to-day", default=None, help="ultimo giorno incluso, YYYY-MM-DD")
+    args = ap.parse_args()
+
+    months, all_days, pinned_by = months_available(args.days_from, args.from_day,
+                                                   args.to_day)
     calib = load_calibration()
-    print(f"mesi disponibili: {', '.join(months)}  ({len(all_days)} giorni con parquet)\n")
+    print(f"mesi disponibili: {', '.join(months)}  ({len(all_days)} giorni con parquet)")
+    print(f"finestra: {all_days[0]} -> {all_days[-1]}")
+    if pinned_by:
+        print(f"finestra FISSATA da {pinned_by}\n")
+    else:
+        # Non fatale, ma non silenzioso: e' esattamente il difetto che l'audit
+        # metodologico ha trovato, e un numero prodotto cosi' non e'
+        # riproducibile se non per coincidenza di tempistica.
+        print("*** ATTENZIONE: finestra NON fissata. Questa corsa misura i "
+              f"{len(all_days)} giorni presenti in {FLIGHTS_DIR} stasera, non "
+              "una release.\n*** Per un numero riproducibile: "
+              "--days-from data/decomposition_ecac\n")
 
     per_month = {}
     for m in months:

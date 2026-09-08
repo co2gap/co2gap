@@ -220,6 +220,27 @@ rankings; one of them cannot have inflated the headline, only lowered it.
 
 ## Reproducing
 
+**Every input and every derived artefact of a release is fingerprinted, and the
+record is on a different branch from this one.** `release-manifest.json` and the
+tooling that reads it — `pipeline/release_manifest.py`,
+`scripts/make_release_manifest.py`, `scripts/verify_release_manifest.py` — live
+on **`uncertainty-v1`**, not on `master`. The manifest records the release id,
+the code commit, the exact day set, the geographic box, the ground definition,
+the ERA5 configuration, the OpenAP version and the four track-quality
+thresholds, plus SHA-256 over eight inputs and three artefacts.
+
+```bash
+git switch uncertainty-v1
+python scripts/verify_release_manifest.py release-manifest.json \
+  --root /path/to/a/checkout/with/data --include-artifacts
+```
+
+It exits non-zero on any mismatch, and prints how far the recorded code commit
+is behind `HEAD` — which is worth reading, because the 2026-09-01 manifest was
+generated three days before the site was built and names a commit eleven behind
+the state that produced it. **Anyone disputing a figure should start there
+rather than from this file.**
+
 The two machines have separate direct-dependency locks:
 `requirements-pi.lock` for daily acquisition and fuel computation, and
 `requirements-lab.lock` for decomposition, ERA5 and site generation. OpenAP is
