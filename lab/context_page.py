@@ -472,11 +472,18 @@ as many as in 2019</span><em>EUROCONTROL</em></div></div>"""
             "and what changes once contrails and NOx are counted. The context around the co2gap "
             "figures, from published sources.")
 
+    # Il <title> e' la riga che compare nei risultati di ricerca, e l'h1 da solo
+    # ("Aviation's 2.5%") non dice il 2,5% di che cosa. E' questa pagina, non la
+    # home, a raccogliere piu' impressioni (Search Console, settembre 2026):
+    # il titolo nomina la domanda che la gente scrive davvero. Una variabile
+    # sola per <title>, og:title e twitter:title, cosi' non possono divergere.
+    title = "Aviation's share of global CO2 emissions: 2.5% in context — co2gap"
+
     return f"""<!doctype html>
 <html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
-<title>Aviation's 2.5% — co2gap</title>
-{meta("Aviation's 2.5% — co2gap", desc, "context.html")}
+<title>{title}</title>
+{meta(title, desc, "context.html")}
 <style>{style}</style>
 <style>{STYLE_CONTEXT}</style></head><body class=context>
 {nav}
