@@ -845,6 +845,30 @@ DESC_DATA = (
     "searchable by airport name or ICAO code. Aggregate data only."
 )
 
+# Cloudflare Web Analytics beacon.
+#
+# The account has carried a Web Analytics site for co2gap.org with auto-install
+# enabled since before the launch, and it has never worked: measured on
+# 2026-10-02, the beacon was absent from all seven served pages and the RUM
+# dataset held one single hour of data in its whole lifetime (2026-09-08 19:00
+# UTC, ten events on /methodology). Automatic injection is performed by the
+# zone's HTML rewriter, and every request to this site is answered through the
+# Pages Function in `functions/_middleware.js`, so the rewriter never sees the
+# response. Emitting the tag here does not depend on that path at all.
+#
+# The token is a public site identifier and not a secret: it ships in the page
+# source by design, which is why it belongs in a public repository.
+#
+# WHY THIS IS HERE AT ALL, given that it is the only external request the site
+# makes — the wordmark is converted to outlines and every asset is self-hosted
+# precisely to avoid one. The edge logs cannot see a referrer: they answer "how
+# many" but never "arriving from where", so an announcement and a reader cannot
+# be connected. This is the one measurement that closes that gap. Cloudflare Web
+# Analytics sets no cookie and writes nothing to the visitor's device.
+BEACON = (
+    '<script type=\'module\' src=\'https://static.cloudflareinsights.com/beacon.min.js\' data-cf-beacon=\'{"token": "5013e6adbac24b3d99f688232bd292d3"}\'></script><!-- End Cloudflare Web Analytics -->'
+)
+
 STYLE = """
 .skip{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--fg);
 padding:10px 16px;border:1px solid var(--line);border-radius:0 0 8px 0;z-index:99}
@@ -1586,7 +1610,7 @@ def build_methodology(df, days, months, lat_w, vert_w, kea, co2_t, excess_t,
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Methodology — co2gap</title>
 {meta("Methodology — co2gap", DESC_METHOD, "methodology.html")}
-<style>{STYLE}</style></head><body>
+<style>{STYLE}</style>{BEACON}</head><body>
 {NAV}
 <div class=wrap>
 
@@ -2619,7 +2643,7 @@ data support."""),
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>co2gap — how far European flights sit from a theoretical optimum</title>
 {meta("co2gap — how far European flights sit from a theoretical optimum", DESC_INDEX)}
-<style>{STYLE_INDEX}</style></head><body>
+<style>{STYLE_INDEX}</style>{BEACON}</head><body>
 {NAV}
 <div class=wrap>
 
@@ -3039,7 +3063,7 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Data — co2gap</title>
 {meta("Data — co2gap", DESC_DATA, "data.html")}
-<style>{STYLE_INDEX}</style></head><body class=data>
+<style>{STYLE_INDEX}</style>{BEACON}</head><body class=data>
 {NAV}
 <div class=wrap>
 <section style="border-top:none;padding-bottom:0">
@@ -3334,7 +3358,7 @@ Contact <a href="mailto:hello@co2gap.org">hello@co2gap.org</a> ·
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>Questions and answers — co2gap</title>
 {meta("Questions and answers — co2gap", DESC_FAQ, "faq.html")}
-<style>{STYLE_INDEX}</style></head><body>
+<style>{STYLE_INDEX}</style>{BEACON}</head><body>
 {NAV}
 <div class=wrap>
 <div class=hero style="padding-bottom:0">
@@ -3471,6 +3495,7 @@ replies are published on this site, in full and unconditionally.</p>
 
     import context_page
     ctx_doc = context_page.build(
+        beacon=BEACON,
         meta=meta, nav=NAV, footnav=FOOTNAV, style=STYLE_INDEX, term=term, release=RELEASE,
         method_version=METHOD_VERSION, n_flights=len(df), days=len(days),
         lat_w=lat_w, vert_w=vert_w)
@@ -3508,7 +3533,7 @@ def simple_page(title, desc, page, body):
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>{esc(title)} — co2gap</title>
 {meta(f"{title} — co2gap", desc, page)}
-<style>{STYLE_INDEX}</style></head><body>
+<style>{STYLE_INDEX}</style>{BEACON}</head><body>
 {NAV}
 <div class=wrap>
 {body}

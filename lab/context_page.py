@@ -303,7 +303,7 @@ el.addEventListener("pointerleave",function(){tip.hidden=true;});});});
 """
 
 
-def build(*, meta, nav, footnav, style, term, release, method_version, n_flights,
+def build(*, beacon, meta, nav, footnav, style, term, release, method_version, n_flights,
           days, lat_w, vert_w):
     """La pagina completa. Le cifre di co2gap arrivano da fuori, mai digitate qui."""
     ext = json.loads(EXTERNAL.read_text(encoding="utf-8"))
@@ -485,7 +485,7 @@ as many as in 2019</span><em>EUROCONTROL</em></div></div>"""
 <title>{title}</title>
 {meta(title, desc, "context.html")}
 <style>{style}</style>
-<style>{STYLE_CONTEXT}</style></head><body class=context>
+<style>{STYLE_CONTEXT}</style>{beacon}</head><body class=context>
 {nav}
 <div class=wrap>
 <div class=hero style="padding-bottom:0">

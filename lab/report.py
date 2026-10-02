@@ -36,6 +36,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "lab"))
 from analysis import (load_flights, build_windfield, quality_gate, enrich,  # noqa: E402
                       load_calibration)
+# This file writes the same site/index.html that site_build.py does, so it has
+# to carry the same analytics tag or running it would silently strip the page's
+# only measurement. Imported rather than copied: two literals drift.
+from site_build import BEACON  # noqa: E402
 
 MIN_N = 10
 OUT = ROOT / "site" / "index.html"
@@ -179,7 +183,7 @@ border-radius:8px;padding:14px 18px;color:var(--mut);font-size:.89rem;margin:16p
 .note b{{color:var(--fg)}}
 .foot{{color:var(--mut);font-size:.8rem;margin-top:44px;border-top:1px solid var(--line);padding-top:16px}}
 a{{color:var(--hi)}}
-</style></head><body><div class=wrap>
+</style>{BEACON}</head><body><div class=wrap>
 
 <h1>Osservatorio CO₂ e inefficienza — aviazione EU-Sud</h1>
 <p class=sub>Emissioni reali e <b>excess CO₂</b> calcolati dalle traiettorie ADS-B
